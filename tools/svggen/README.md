@@ -22,6 +22,12 @@ faithful raster of the exact bytes the device would show.
 
 Adjacent same-colour runs are coalesced to keep the files reasonable.
 
+It also emits `docs/nd_legend.svg` — the annotated ND. The drawers contain a handful of
+`SVG_RENDER`-guarded `svgLandmark()` calls that report a representative screen position for
+each map feature (towered/non-towered airport, navaid, city, distance ring, river, road,
+state line, ground-track / home lines, battery readout). `svggen` dims the rendered ND and
+draws leader lines + labels to those exact points, so every callout lands on a real feature.
+
 ## Regenerate
 
 ```bash

@@ -12911,7 +12911,9 @@
 <line x1="252.5" y1="318.5" x2="240.5" y2="299.5" stroke="#FFFFFF"/>
 <line x1="240.5" y1="319.5" x2="240.5" y2="97.5" stroke="#FF00FF"/>
 <line x1="240.5" y1="97.5" x2="240.5" y2="51.5" stroke="#ADAAAD"/>
-<line x1="240.5" y1="91.5" x2="240.5" y2="51.5" stroke="#FFFFFF"/>
+<line x1="152.5" y1="126.5" x2="128.5" y2="76.5" stroke="#00FF00"/>
+<rect x="212" y="254" width="4" height="4" fill="#00FF00"/>
+<line x1="266.5" y1="92.5" x2="271.5" y2="52.5" stroke="#FFFFFF"/>
 <rect x="264" y="239" width="1" height="1" fill="#0000FF"/>
 <rect x="264" y="240" width="1" height="1" fill="#0000FF"/>
 <rect x="264" y="241" width="1" height="1" fill="#0000FF"/>

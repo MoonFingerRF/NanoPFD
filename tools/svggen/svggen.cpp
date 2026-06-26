@@ -10,6 +10,8 @@
 #include <cstdio>
 #include <cmath>
 #include <cstdint>
+#include <algorithm>
+#include <utility>
 
 #include "config.h"      // BOARD_C config (resolved from /tmp/npfd via -I)
 #include "State.h"
@@ -124,6 +126,15 @@ void svgAttitudeHook   (MyCanvas8 *c) { static_cast<SvgCanvas*>(c)->endAttitude(
 
 int imuSource() { return 1; }   // stub (IMU.ino owns the real one): 1 = BNO08x
 
+// Representative screen positions of map features, recorded by SVG_RENDER hooks
+// in drawChart/drawNavigationDisplay so the legend's callouts point at real spots.
+struct Landmark { std::string name; int x, y; };
+std::vector<Landmark> gLandmarks;
+void svgLandmark(const char *name, int x, int y) {
+  for (auto &L : gLandmarks) if (L.name == name) return;   // keep the first of each kind
+  gLandmarks.push_back({name, x, y});
+}
+
 #include "instrument_drawer.ino"
 #undef p     // the drawer's '#define p 3.1415926' must not leak into our code below
 
@@ -219,6 +230,130 @@ static void writeSvg(const char *path, int W, int H, const std::vector<Group> &g
 }
 
 // ---------------------------------------------------------------------------
+//  Annotated ND legend
+// ---------------------------------------------------------------------------
+static std::string xesc(const std::string &s) {
+  std::string o;
+  for (char c : s) { if (c == '&') o += "&amp;"; else if (c == '<') o += "&lt;"; else if (c == '>') o += "&gt;"; else o += c; }
+  return o;
+}
+struct LM { int x = -1, y = -1; };
+static LM findLM(const char *n) {
+  for (auto &L : gLandmarks) if (L.name == n) return {L.x, L.y};
+  return {};
+}
+
+static void genLegend(const char *path, const std::vector<Elem> &nd) {
+  const int W = RGB_WIDTH, H = ND_CANVAS_H;
+  // Mirror drawNavigationDisplay's BOARD_C / COMBINED geometry.
+  const int sc = 2, hbh = 17 * sc, ringTop = 3 * hbh / 2;
+  const int cyc = H - (int)(0.03 * H), rad = cyc - ringTop, triApex = cyc - (int)(0.03 * H);
+  auto ringPt = [&](double deg, double rr) {
+    double a = deg * M_PI / 180.0;
+    return std::make_pair(W / 2.0 + sin(a) * rr, cyc - cos(a) * rr);
+  };
+
+  struct CO { std::string t; uint8_t col; double ax, ay; };
+  std::vector<CO> C;
+  auto add   = [&](std::string t, uint8_t c, double x, double y) { C.push_back({t, c, x, y}); };
+  auto addLM = [&](const char *n, std::string t, uint8_t c) { LM l = findLM(n); if (l.x >= 0) add(t, c, l.x, l.y); };
+
+  // structural / overlay elements (computed the same way the drawer does)
+  add("Heading — digital readout",        IWHITE,   W / 2.0, ringTop - hbh * 0.6);
+  { auto p = ringPt(-40, rad);      add("Compass card (rotates, heading-up)", IWHITE, p.first, p.second); }
+  { auto p = ringPt(-62, rad * 0.75); add("Range rings (¼ ½ ¾ of range)", IGREY, p.first, p.second); }
+  add("Own-aircraft symbol (fixed)",           IWHITE,   W / 2.0, triApex + 0.03 * H);
+  add("Heading reference (track-up)",          IMAGENTA, W / 2.0 - 1, cyc - rad * 0.55);
+  addLM("track", "Ground track (course made good)", IWHITE);
+  addLM("home",  "Bearing & distance to home",      IGREEN);
+  // map features (anchors recorded during the ND draw)
+  addLM("apt_twr",   "Towered airport",       IBLUE);
+  addLM("apt_ntwr",  "Non-towered airport",   IMAGENTA);
+  addLM("navaid",    "VOR / navaid",          IBLUE);
+  addLM("city",      "City / landmark",       IYELLOW);
+  addLM("apt_closed","Closed airfield",       IGREY);
+  { const char *rn[] = {"ring_lg","ring_md","ring_sm","ring_cl"};
+    uint8_t rc[] = {ICYAN, IGREEN, IYELLOW, IGREY};
+    for (int i = 0; i < 4; i++) { LM l = findLM(rn[i]); if (l.x >= 0) { add("Airport ring (size→colour)", rc[i], l.x, l.y); break; } } }
+  addLM("ring_rstr", "Restricted airspace",   IRED);
+  addLM("river",     "River",                 ISKY);
+  addLM("road",      "Road / highway",        IDGREY);
+  addLM("state",     "State line",            IGREY);
+  add("GPS position (lat / lon)",             IGREEN, 55, H - 9);
+  addLM("batt", "Battery voltage", IGREY);
+
+  // legend canvas: ND in the middle, label columns left & right.
+  const double f = 1.25;
+  const int ndW = (int)(W * f), ndH = (int)(H * f);
+  const int colW = 274, ox = colW, oy = 44, LW = ndW + 2 * colW, LH = oy + ndH + 54;
+  auto TX = [&](double x) { return ox + f * x; };
+  auto TY = [&](double y) { return oy + f * y; };
+
+  std::vector<int> Ls, Rs;
+  for (int i = 0; i < (int)C.size(); i++) (C[i].ax < W / 2.0 ? Ls : Rs).push_back(i);
+  auto byY = [&](int a, int b) { return C[a].ay < C[b].ay; };
+  std::sort(Ls.begin(), Ls.end(), byY);
+  std::sort(Rs.begin(), Rs.end(), byY);
+
+  std::string o; char buf[768];
+  snprintf(buf, sizeof buf,
+    "<svg viewBox=\"0 0 %d %d\" xmlns=\"http://www.w3.org/2000/svg\" "
+    "font-family=\"Helvetica,Arial,sans-serif\">\n", LW, LH);
+  o += buf;
+  snprintf(buf, sizeof buf, "<rect x=\"0\" y=\"0\" width=\"%d\" height=\"%d\" fill=\"#000000\"/>\n", LW, LH);
+  o += buf;
+  // dim the busy map so the bright callouts/leaders/labels stand out on top
+  snprintf(buf, sizeof buf, "<g transform=\"translate(%d %d) scale(%g)\" shape-rendering=\"crispEdges\" opacity=\"0.58\">\n", ox, oy, f);
+  o += buf;
+  emitElems(o, coalesce(nd));
+  o += "</g>\n";
+  snprintf(buf, sizeof buf,
+    "<rect x=\"%d\" y=\"%d\" width=\"%d\" height=\"%d\" fill=\"none\" stroke=\"#444\" stroke-width=\"1\"/>\n",
+    ox, oy, ndW, ndH);
+  o += buf;
+
+  auto place = [&](std::vector<int> &idx, bool right) {
+    int n = (int)idx.size();
+    double top = oy + 18, bot = LH - 30;
+    for (int k = 0; k < n; k++) {
+      const CO &c = C[idx[k]];
+      double ly = (n > 1) ? top + (bot - top) * k / (n - 1) : (top + bot) / 2;
+      double fx = TX(c.ax), fy = TY(c.ay);
+      double sx = right ? ox + ndW + 8 : ox - 8;
+      double lx = right ? ox + ndW + 13 : ox - 13;
+      double mx = right ? sx - 7 : sx + 7;
+      std::string col = hexFor(c.col);
+      // leader (black halo + coloured line)
+      snprintf(buf, sizeof buf,
+        "<polyline points=\"%g,%g %g,%g %g,%g\" fill=\"none\" stroke=\"#000\" stroke-width=\"4\"/>"
+        "<polyline points=\"%g,%g %g,%g %g,%g\" fill=\"none\" stroke=\"%s\" stroke-width=\"1.6\"/>\n",
+        sx, ly, mx, ly, fx, fy, sx, ly, mx, ly, fx, fy, col.c_str());
+      o += buf;
+      // marker ring on the feature
+      snprintf(buf, sizeof buf,
+        "<circle cx=\"%g\" cy=\"%g\" r=\"6.5\" fill=\"none\" stroke=\"#000\" stroke-width=\"3\"/>"
+        "<circle cx=\"%g\" cy=\"%g\" r=\"6.5\" fill=\"none\" stroke=\"%s\" stroke-width=\"1.7\"/>\n",
+        fx, fy, fx, fy, col.c_str());
+      o += buf;
+      // label (haloed text)
+      snprintf(buf, sizeof buf,
+        "<text x=\"%g\" y=\"%g\" fill=\"%s\" font-size=\"14\" font-weight=\"600\" "
+        "text-anchor=\"%s\" paint-order=\"stroke\" stroke=\"#000\" stroke-width=\"3.5\">%s</text>\n",
+        lx, ly + 5, col.c_str(), right ? "start" : "end", xesc(c.t).c_str());
+      o += buf;
+    }
+  };
+  place(Ls, false);
+  place(Rs, true);
+  o += "</svg>\n";
+
+  FILE *fp = fopen(path, "w");
+  if (!fp) { fprintf(stderr, "cannot open %s\n", path); return; }
+  fwrite(o.data(), 1, o.size(), fp); fclose(fp);
+  fprintf(stderr, "wrote %s (%zu bytes, %zu callouts)\n", path, o.size(), C.size());
+}
+
+// ---------------------------------------------------------------------------
 int main() {
   // A representative in-flight state: ~10 deg right bank, slight climb.
   state s; init_state(&s);
@@ -228,10 +363,10 @@ int main() {
   s.ax = 0.06f; s.ay = -1.0f; s.az = 0.0f;         // slip ball slightly off
   s.air_speed = 110;
   s.alt = 3500; s.home_alt = 900; s.vertical_speed = 320;
-  s.heading = 75; s.ground_track = 75; s.ground_speed = 118;
+  s.heading = 75; s.ground_track = 82; s.ground_speed = 118;   // ~7 deg crab -> track distinct
   s.lat = MAP_DEFAULT_LAT; s.lon = MAP_DEFAULT_LON;
   s.last_lat = MAP_DEFAULT_LAT; s.last_lon = MAP_DEFAULT_LON;   // ND centres on last_*
-  s.home_lat = MAP_DEFAULT_LAT - 0.05f; s.home_lon = MAP_DEFAULT_LON - 0.09f;
+  s.home_lat = MAP_DEFAULT_LAT + 0.04f; s.home_lon = MAP_DEFAULT_LON + 0.06f;  // home NE -> green line visible
   s.gps_alt = 3500; s.has_pos = true; s.sats = 11;
 
   static GFXcanvas8 incmap = generate_inc_map(0.6 * PFD_REGION_H, lyt::txtScale(RGB_WIDTH));
@@ -249,5 +384,7 @@ int main() {
   // Combined single panel: PFD on top, ND drawn over the overlap region below.
   writeSvg("docs/combined.svg", RGB_WIDTH, RGB_HEIGHT,
            {{pfd.elems, 0, 0}, {nd.elems, 0, ND_TOP}});
+  // Annotated ND legend (uses landmarks recorded during the ND draw above).
+  genLegend("docs/nd_legend.svg", nd.elems);
   return 0;
 }

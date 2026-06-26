@@ -937,8 +937,14 @@ static void drawChart(MyCanvas8 *canvas, int cx, int cy, int rad,
     int px = 0, py = 0; bool have = false;
     for (int k = 0; k < P.n; k++) {
       int qx, qy; mapXY(m, P.pts[2 * k], P.pts[2 * k + 1], qx, qy);
-      if (have && mapSegVis(px, py, qx, qy, cx, cy, rad))
+      if (have && mapSegVis(px, py, qx, qy, cx, cy, rad)) {
         mapLine(canvas, px, py, qx, qy, col, cx, cy, r2, dash);
+#ifdef SVG_RENDER
+        if (mapInCirc((px+qx)/2, (py+qy)/2, cx, cy, r2)) { extern void svgLandmark(const char *, int, int);
+          svgLandmark(P.type==PLY_RIVER?"river":P.type==PLY_INTERSTATE?"road":P.type==PLY_HIGHWAY?"road":
+                      P.type==PLY_STATE?"state":"border", (px+qx)/2, (py+qy)/2); }
+#endif
+      }
       px = qx; py = qy; have = true;
     }
   }
@@ -951,6 +957,10 @@ static void drawChart(MyCanvas8 *canvas, int cx, int cy, int rad,
     mapXY(m, s.lat1, s.lon1, sx, sy);
     mapXY(m, s.lat2, s.lon2, ex, ey);
     if (!mapSegVis(sx, sy, ex, ey, cx, cy, rad)) continue;
+#ifdef SVG_RENDER
+    if (mapInCirc((sx+ex)/2, (sy+ey)/2, cx, cy, r2)) { extern void svgLandmark(const char *, int, int);
+      svgLandmark(s.type==SG_RIVER?"river":s.type==SG_COAST?"coast":"glidepath", (sx+ex)/2, (sy+ey)/2); }
+#endif
     uint8_t scol = IYELLOW; bool sdash = true;                      // SG_GLIDEPATH (yellow)
     if      (s.type == SG_RIVER) { scol = ISKY; sdash = false; }    // rivers light blue
     else if (s.type == SG_COAST) { scol = IGND; sdash = false; }    // coast tan
@@ -968,6 +978,11 @@ static void drawChart(MyCanvas8 *canvas, int cx, int cy, int rad,
     int rcx, rcy; mapXY(m, r.lat, r.lon, rcx, rcy);
     long ddx = rcx - cx, ddy = rcy - cy, reach = (long)rad + rr;
     if (ddx * ddx + ddy * ddy > reach * reach) continue;   // circle can't reach the view
+#ifdef SVG_RENDER
+    if (mapInCirc(rcx, rcy, cx, cy, r2)) { extern void svgLandmark(const char *, int, int);
+      svgLandmark(r.type==RG_APT_LARGE?"ring_lg":r.type==RG_APT_MEDIUM?"ring_md":
+                  r.type==RG_APT_SMALL?"ring_sm":r.type==RG_APT_CLOSED?"ring_cl":"ring_rstr", rcx, rcy); }
+#endif
     uint8_t col = r.type == RG_APT_LARGE  ? ICYAN   :      // large = bright cyan
                   r.type == RG_APT_MEDIUM ? IGREEN  :      // medium = bright green
                   r.type == RG_APT_SMALL  ? IYELLOW :      // small = bright yellow
@@ -1001,6 +1016,11 @@ static void drawChart(MyCanvas8 *canvas, int cx, int cy, int rad,
     if (pt.tier > MAP_MAX_TIER || MAP_CULL(pt.lat, pt.lon)) continue;
     mapXY(m, pt.lat, pt.lon, sx, sy);
     if (!mapInCirc(sx, sy, cx, cy, r2)) continue;
+#ifdef SVG_RENDER
+    { extern void svgLandmark(const char *, int, int);
+      svgLandmark(pt.type==PT_AIRPORT_TWR?"apt_twr":pt.type==PT_AIRPORT_NTWR?"apt_ntwr":
+                  pt.type==PT_NAVAID?"navaid":pt.type==PT_AIRPORT_CLOSED?"apt_closed":"city", sx, sy); }
+#endif
     int rsym = 2 * sc;
     switch (pt.type) {
       case PT_AIRPORT_TWR:  canvas->drawCircle(sx, sy, rsym, IBLUE);    canvas->drawPixel(sx, sy, IBLUE);    break;
@@ -1199,9 +1219,14 @@ void drawNavigationDisplay(MyCanvas8 *canvas, state *s) {
     float a  = (hb - angle) * p / 180.0f;
     float ey = ndcy - cos(a) * ndr;
     int   hl = lyt::scaled(28, width);                 // 2x the previous 14 px length
-    if (ey < ndcy)
+    if (ey < ndcy) {
       canvas->drawLine(ndcx + sin(a) * (ndr - hl), ndcy - cos(a) * (ndr - hl),
                        ndcx + sin(a) * ndr, ey, IGREEN);
+#ifdef SVG_RENDER
+      { extern void svgLandmark(const char *, int, int);
+        svgLandmark("home", (int)(ndcx + sin(a) * ndr), (int)ey); }
+#endif
+    }
     float hd = distanceToHome(s);
     if (hd >= 0) {
       float rr = ndr * (hd < ND_MAP_RANGE_M ? hd / ND_MAP_RANGE_M : 1.0f);
@@ -1217,9 +1242,14 @@ void drawNavigationDisplay(MyCanvas8 *canvas, state *s) {
     float a = (s->ground_track - angle) * p / 180.0f;
     float ey = ndcy - cos(a) * ndr;
     int   gl = lyt::scaled(20, width);
-    if (ey < ndcy)
+    if (ey < ndcy) {
       canvas->drawLine(ndcx + sin(a) * (ndr - gl), ndcy - cos(a) * (ndr - gl),
                        ndcx + sin(a) * ndr, ey, IWHITE);
+#ifdef SVG_RENDER
+      { extern void svgLandmark(const char *, int, int);
+        svgLandmark("track", (int)(ndcx + sin(a) * ndr), (int)ey); }
+#endif
+    }
   }
 
 #if MAP_ENABLE && MAP_LABELS
@@ -1305,6 +1335,10 @@ void drawNavigationDisplay(MyCanvas8 *canvas, state *s) {
     canvas->getTextBounds(bs, 0, 0, &bbx, &bby, &bbw, &bbh);
     canvas->setCursor(width - bbw - 2, satY + 8 * sc + lyt::scaled(2, width));   // under the SAT slot
     canvas->print(bs);
+#ifdef SVG_RENDER
+    { extern void svgLandmark(const char *, int, int);
+      svgLandmark("batt", width - bbw / 2 - 2, satY + 8 * sc + lyt::scaled(2, width) + 4); }
+#endif
   }
 #endif
 }

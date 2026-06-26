@@ -38,25 +38,106 @@ dual-display board they drive two separate screens.
 
 ---
 
-## Supported hardware
+## Reading the Navigation Display
 
-NanoPFD builds for three board configurations — pick one in [`config.h`](config.h):
+The ND is a heading-up moving map. Every element is colour- and shape-coded the way a real
+chart / EFIS is — here is everything on it (the picture is the actual rendered display, with
+the live values from a sample flight near Cincinnati):
 
-| Board | Display(s) | Interface | Typical FPS |
+<div align="center">
+<img src="docs/nd_legend.svg" alt="Annotated Navigation Display legend" width="100%"/>
+</div>
+
+**Compass &amp; own-ship**
+
+| Element | Looks like | Meaning |
+|---|---|---|
+| Heading readout | white digits in a box (top) | current magnetic heading, tilt-compensated |
+| Compass card | white ring, ticks every 5°, numbers every 30° | rotates so your heading is always **up** (heading-up) |
+| Own-aircraft symbol | white triangle, fixed at the centre | you — the map moves underneath |
+| Heading reference | magenta line up the middle | where the nose points (always straight up) |
+| Ground track | white line | your actual course over the ground (differs from heading in a crosswind) |
+| Bearing to home | green line + green dot | direction and range back to the saved home / takeoff point |
+| Range rings | grey dotted rings at ¼ ½ ¾ | distance scale; the outer white ring is the selected map range |
+
+**Airports &amp; navaids**
+
+| Symbol | Looks like | Meaning |
+|---|---|---|
+| Towered airport | blue ○ with a centre dot | controlled field (has a control tower) |
+| Non-towered airport | magenta ○ with a centre dot | uncontrolled field |
+| Closed airfield | grey ✕ | decommissioned / abandoned |
+| VOR / navaid | blue ◇ diamond | radio navigation aid |
+| City / landmark | yellow ▪ square | town or reference point |
+| Runway | short white line | drawn at the true runway heading |
+
+**Airport &amp; airspace rings — the colour is the size / status**
+
+| Ring colour | Meaning |
+|---|---|
+| Cyan | large airport |
+| Green | medium airport |
+| Yellow | small airport |
+| Grey | closed airport |
+| Red | restricted / prohibited airspace |
+
+**Map geography**
+
+| Line | Colour &amp; style |
+|---|---|
+| River / lake shore | light blue, solid |
+| Coastline &amp; country border | tan, solid |
+| Road / interstate / highway | dark grey, solid |
+| State line | grey, dashed |
+| Glide path | yellow, dashed |
+
+**Text labels** — airport / navaid id with a grey frequency line below it (blue for towered
+fields &amp; navaids, magenta for non-towered, grey for closed); city names in yellow; road
+names in white.
+
+**Status &amp; warnings (corners)**
+
+| Indicator | Meaning |
+|---|---|
+| `lat / lon` (bottom) | map-centre position — **green** with a GPS fix, **grey** when coasting on the last fix |
+| Battery voltage (top-right) | pack voltage — grey, turns **red** below 3.1 V |
+| `SAT n` (top-right, yellow) | shown only when fewer than 5 satellites are tracked |
+| `GPS LOST` box (grey, red outline) | the GPS fix was lost — the map freezes at the last known position (saved to flash, so it survives a power cycle) |
+
+---
+
+## Hardware
+
+NanoPFD builds for three display configurations — pick one in [`config.h`](config.h) (set
+exactly one of `BOARD_A` / `BOARD_C` / `BOARD_D` to `1`). All three use an ESP32-S3 with
+**8 MB octal PSRAM + 16 MB flash** and the **same set of sensors**; only the screen(s) differ.
+
+| Build | Display / MCU | Interface | Layout | Typical FPS |
+|---|---|---|---|---|
+| **BOARD_C** *(recommended)* | [Waveshare ESP32-S3-Touch-LCD-2.8B](https://www.waveshare.com/esp32-s3-touch-lcd-2.8b.htm) — 480×640 IPS (ST7701S) | RGB-parallel (LCD_CAM) | PFD + ND on one panel | ≈13 |
+| **BOARD_D** | [LilyGO T4-S3](https://lilygo.cc/products/t4-s3) — 2.41″ 450×600 AMOLED (RM690B0) | QSPI | PFD + ND on one panel | ≈20 |
+| **BOARD_A** | [Waveshare ESP32-S3-LCD-1.69](https://www.waveshare.com/esp32-s3-lcd-1.69.htm) (MCU + PFD, 240×280 ST7789) **+** [Waveshare 1.69″ LCD Module](https://www.waveshare.com/1.69inch-lcd-module.htm) (ND, ST7789V2) | dual SPI | PFD + ND on two screens | PFD ≈38 / ND ≈14 |
+
+### Bill of materials
+
+The **sensors are identical on every build** (all I²C / Qwiic, except the GPS, which is UART):
+
+| Part | Role on the display | Where to buy | Approx. (USD) |
 |---|---|---|---|
-| **BOARD_A** | 2× ST7789 (≈240×280) | dual SPI | PFD **≈38**, ND **≈14** |
-| **BOARD_C** | Waveshare ESP32-S3-Touch-LCD-2.8B, ST7701S 480×640 IPS | RGB-parallel (LCD_CAM) | **≈13** (combined) |
-| **BOARD_D** | LilyGO T4-S3, RM690B0 2.41″ AMOLED 450×600 | QSPI | **≈20** (combined) |
+| [Adafruit BNO085](https://www.adafruit.com/product/4754) — 9-DOF fusion IMU | attitude (sky/ground), tilt-compensated heading, g-meter, turn coordinator | Adafruit #4754 | ~$25 |
+| [Adafruit BMP390](https://www.adafruit.com/product/4816) — barometer | pressure altitude tape + vertical-speed indicator | Adafruit #4816 | ~$11 |
+| [Matek ASPD-4525](https://www.mateksys.com/?portfolio=aspd-4525) — MS4525DO airspeed | airspeed tape — **kit includes the pitot tube, tubing &amp; cable** | MATEKSYS / FPV shops | ~$20 |
+| [SparkFun MAX-M10S](https://www.sparkfun.com/sparkfun-gnss-receiver-breakout-max-m10s-qwiic.html) — u-blox M10 GPS | ND map centre, ground speed, ground track, lat/lon | SparkFun GPS-18037 (or any u-blox M10 UART module) | ~$35 |
+| Qwiic / STEMMA-QT cables + jumper wire | wiring the I²C bus + GPS UART | any | a few $ |
 
-**Sensors** (all I²C, plus one UART):
+**…plus exactly one display configuration from the table above.**
 
-- **BNO08x** — 9-DOF fused IMU: gravity vector → attitude, rotation vector → tilt-compensated
-  heading, accelerometer → g-meter. (QMI8658 / ICM-20948 supported as fallbacks.)
-- **BMP390** — barometric pressure → pressure altitude + vertical speed.
-- **MS4525DO** — differential pressure (pitot) → indicated airspeed.
-- **u-blox M10** GPS over UART (UBX binary) → position, ground speed, ground track.
+> 💡 The Waveshare 1.69 and 2.8B boards already carry an onboard **QMI8658** 6-axis IMU, and
+> the firmware can fall back to it (or to an **ICM-20948**). But the QMI8658 has no
+> magnetometer, so the **BNO085 is strongly recommended** for a stable, tilt-compensated
+> heading and a usable moving map.
 
-The whole thing runs on the ESP32-S3's two cores with octal PSRAM.
+*Prices are rough ballparks and exclude shipping — check the vendor for current pricing and stock.*
 
 ---
 

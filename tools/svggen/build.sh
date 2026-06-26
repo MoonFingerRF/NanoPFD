@@ -32,4 +32,4 @@ g++ "${FLAGS[@]}" -c "$GFX/Adafruit_GFX.cpp" -o "$TMP/gfx.o"
 g++ "${FLAGS[@]}" "$HERE/svggen.cpp" "$TMP/gfx.o" -o "$TMP/svggen"
 
 ( cd "$ROOT" && "$TMP/svggen" )
-echo "Regenerated $ROOT/docs/{pfd,nd,combined}.svg"
+echo "Regenerated $ROOT/docs/{pfd,nd,combined,nd_legend}.svg"
