@@ -73,13 +73,13 @@ public:
     MyCanvas8::drawPixel(x, y, color);
   }
   void drawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t color) override {
-    if (identity && rotation == 0) {
+    if (identity) {   // record logical coords; the panel rotation only affects the buffer
       if (recording) push('R', x, y, w, 1, (uint8_t)color);
       MyCanvas8::drawFastHLine(x, y, w, color);
     } else MyCanvas8::drawFastHLine(x, y, w, color);   // matrix -> drawPixel records
   }
   void drawFastVLine(int16_t x, int16_t y, int16_t h, uint16_t color) override {
-    if (identity && rotation == 0) {
+    if (identity) {   // record logical coords; the panel rotation only affects the buffer
       if (recording) push('R', x, y, 1, h, (uint8_t)color);
       MyCanvas8::drawFastVLine(x, y, h, color);
     } else MyCanvas8::drawFastVLine(x, y, h, color);
@@ -89,7 +89,7 @@ public:
     GFXcanvas8::fillScreen(color);
   }
   void fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color) override {
-    if (identity && rotation == 0) {
+    if (identity) {   // record logical coords; the panel rotation only affects the buffer
       bool sv = recording; recording = false;
       Adafruit_GFX::fillRect(x, y, w, h, color);       // writes buffer
       recording = sv;
@@ -97,7 +97,7 @@ public:
     } else Adafruit_GFX::fillRect(x, y, w, h, color);
   }
   void drawRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color) override {
-    if (identity && rotation == 0) {
+    if (identity) {   // record logical coords; the panel rotation only affects the buffer
       bool sv = recording; recording = false;
       Adafruit_GFX::drawRect(x, y, w, h, color);
       recording = sv;
