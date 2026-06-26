@@ -1,0 +1,70 @@
+<svg viewBox="0 0 480 320" xmlns="http://www.w3.org/2000/svg" font-family="Consolas,Menlo,monospace">
+  <!-- NanoPFD — Navigation Display (heading-up moving map + compass rose) -->
+  <defs>
+    <clipPath id="rose"><circle cx="240" cy="186" r="150"/></clipPath>
+    <clipPath id="ndscreen"><rect x="0" y="0" width="480" height="320" rx="8"/></clipPath>
+  </defs>
+  <rect width="480" height="320" rx="8" fill="#000"/>
+  <g clip-path="url(#ndscreen)">
+
+    <!-- ---- moving map, clipped to the compass circle (heading 270 -> W up) ---- -->
+    <g clip-path="url(#rose)">
+      <!-- range rings (dotted grey, anchored to north) -->
+      <circle cx="240" cy="186" r="75"  fill="none" stroke="#A8A8A8" stroke-width="1.2" stroke-dasharray="2 6"/>
+      <circle cx="240" cy="186" r="148" fill="none" stroke="#A8A8A8" stroke-width="1.2" stroke-dasharray="2 6"/>
+      <!-- river (light blue) + road (dark grey) + state line (grey dashed) -->
+      <path d="M 120 70 C 160 120 150 170 200 210 S 250 300 300 320" fill="none" stroke="#00AAFF" stroke-width="2.5"/>
+      <path d="M 60 150 L 200 175 L 360 150" fill="none" stroke="#424242" stroke-width="3"/>
+      <path d="M 330 60 L 300 200 L 340 320" fill="none" stroke="#A8A8A8" stroke-width="1.5" stroke-dasharray="6 5"/>
+      <!-- airport distance ring (medium = green) + restricted area (red) -->
+      <circle cx="180" cy="120" r="34" fill="none" stroke="#00FC00" stroke-width="1.6" stroke-dasharray="2 5"/>
+      <circle cx="320" cy="250" r="26" fill="none" stroke="#FF0000" stroke-width="1.6" stroke-dasharray="2 5"/>
+      <!-- airport symbols: towered (cyan), non-towered (magenta), navaid (blue diamond) -->
+      <circle cx="180" cy="120" r="5" fill="none" stroke="#00FCFF" stroke-width="2"/><circle cx="180" cy="120" r="1.5" fill="#00FCFF"/>
+      <circle cx="312" cy="250" r="5" fill="none" stroke="#FF00FF" stroke-width="2"/><circle cx="312" cy="250" r="1.5" fill="#FF00FF"/>
+      <polygon points="150,235 158,243 150,251 142,243" fill="none" stroke="#0000FF" stroke-width="2"/>
+      <text x="190" y="116" fill="#00FCFF" font-size="11">KLUK</text>
+      <text x="322" y="246" fill="#FF00FF" font-size="11">I69</text>
+    </g>
+
+    <!-- ---- compass rose (heading-up: 270 at the lubber line) ---- -->
+    <circle cx="240" cy="186" r="150" fill="none" stroke="#fff" stroke-width="2"/>
+    <g stroke="#fff" stroke-width="1.5">
+      <!-- 36 ticks every 10deg; drawn as a dasharray ring would alias, so explicit majors -->
+      <g id="ticks"></g>
+    </g>
+    <!-- cardinal + heading labels (W up, N right, E down, S left) -->
+    <g fill="#fff" font-size="15" text-anchor="middle" font-weight="bold">
+      <text x="240" y="52">27</text>
+      <text x="380" y="191">N</text>
+      <text x="240" y="332">9</text>
+      <text x="100" y="191">S</text>
+    </g>
+    <g fill="#fff" font-size="11" text-anchor="middle">
+      <text x="305" y="70">30</text><text x="355" y="120">33</text>
+      <text x="355" y="262">3</text><text x="305" y="312">6</text>
+      <text x="175" y="312">12</text><text x="125" y="262">15</text>
+      <text x="125" y="120">21</text><text x="175" y="70">24</text>
+    </g>
+
+    <!-- tick marks around the ring -->
+    <g stroke="#fff" stroke-width="1.5">
+      <line x1="240" y1="36" x2="240" y2="50"/><line x1="390" y1="186" x2="376" y2="186"/>
+      <line x1="240" y1="336" x2="240" y2="322"/><line x1="90" y1="186" x2="104" y2="186"/>
+      <line x1="346" y1="80" x2="338" y2="90"/><line x1="346" y1="292" x2="338" y2="282"/>
+      <line x1="134" y1="292" x2="142" y2="282"/><line x1="134" y1="80" x2="142" y2="90"/>
+    </g>
+
+    <!-- lubber line + heading box -->
+    <polygon points="240,40 234,30 246,30" fill="#FFFC00"/>
+    <rect x="208" y="6" width="64" height="26" fill="#000" stroke="#fff" stroke-width="2"/>
+    <text x="240" y="25" fill="#fff" font-size="18" text-anchor="middle">270</text>
+
+    <!-- own-aircraft symbol (cyan), pointing up -->
+    <polygon points="240,170 252,205 240,197 228,205" fill="#00FCFF" stroke="#00FCFF"/>
+
+    <!-- position read-out -->
+    <text x="10"  y="312" fill="#00FC00" font-size="12">39.10N</text>
+    <text x="470" y="312" fill="#00FC00" font-size="12" text-anchor="end">84.51W</text>
+  </g>
+</svg>

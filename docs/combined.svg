@@ -1,0 +1,79 @@
+<svg viewBox="0 0 360 600" xmlns="http://www.w3.org/2000/svg" font-family="Consolas,Menlo,monospace">
+  <!-- NanoPFD — combined single-screen layout (BOARD_C / BOARD_D): PFD over ND -->
+  <defs>
+    <clipPath id="cAtt"><rect x="24" y="40" width="312" height="250"/></clipPath>
+    <clipPath id="cRose"><circle cx="180" cy="450" r="108"/></clipPath>
+    <linearGradient id="bezel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2b2b2b"/><stop offset="1" stop-color="#141414"/>
+    </linearGradient>
+  </defs>
+
+  <!-- device body -->
+  <rect x="2" y="2" width="356" height="596" rx="34" fill="url(#bezel)" stroke="#000" stroke-width="2"/>
+  <rect x="22" y="38" width="316" height="524" rx="10" fill="#000"/>
+
+  <!-- ================= PFD (top) ================= -->
+  <g clip-path="url(#cAtt)">
+    <g transform="rotate(-8 180 168)">
+      <rect x="-200" y="-200" width="760" height="380" fill="#00AAFF"/>
+      <rect x="-200" y="180"  width="760" height="400" fill="#D68608"/>
+      <line x1="-200" y1="180" x2="560" y2="180" stroke="#fff" stroke-width="3"/>
+      <g stroke="#fff" stroke-width="2" fill="#fff" font-size="11" text-anchor="middle">
+        <line x1="150" y1="128" x2="210" y2="128"/><text x="138" y="132">10</text>
+        <line x1="150" y1="232" x2="210" y2="232"/><text x="138" y="236">10</text>
+      </g>
+    </g>
+  </g>
+  <!-- bank pointer + fixed aircraft (yellow) -->
+  <polygon points="180,58 173,46 187,46" fill="#FFFC00"/>
+  <path d="M 110 70 A 92 92 0 0 1 250 70" fill="none" stroke="#fff" stroke-width="1.5"/>
+  <g stroke="#FFFC00" stroke-width="4" fill="#FFFC00">
+    <line x1="108" y1="168" x2="155" y2="168"/><line x1="252" y1="168" x2="205" y2="168"/>
+    <circle cx="180" cy="168" r="3"/>
+  </g>
+  <!-- speed + altitude tapes -->
+  <rect x="24" y="40" width="46" height="250" fill="#000" opacity="0.5"/>
+  <rect x="290" y="40" width="46" height="250" fill="#000" opacity="0.5"/>
+  <rect x="24" y="152" width="46" height="30" fill="none" stroke="#fff" stroke-width="2"/>
+  <text x="47" y="173" fill="#fff" font-size="15" text-anchor="middle">112</text>
+  <rect x="290" y="152" width="46" height="30" fill="none" stroke="#fff" stroke-width="2"/>
+  <text x="313" y="172" fill="#fff" font-size="13" text-anchor="middle">5500</text>
+  <g fill="#fff" font-size="11">
+    <text x="60" y="100" text-anchor="end">120</text><text x="60" y="240" text-anchor="end">100</text>
+    <text x="296" y="100">5600</text><text x="296" y="240">5400</text>
+  </g>
+  <!-- turn coordinator + g -->
+  <path d="M 138 278 A 60 60 0 0 1 222 278" fill="none" stroke="#fff" stroke-width="2"/>
+  <circle cx="182" cy="270" r="6" fill="#fff"/>
+  <text x="30" y="284" fill="#fff" font-size="11">GS118</text>
+  <text x="330" y="284" fill="#fff" font-size="11" text-anchor="end">1.0G</text>
+
+  <!-- divider -->
+  <line x1="24" y1="300" x2="336" y2="300" stroke="#222" stroke-width="2"/>
+
+  <!-- ================= ND (bottom) ================= -->
+  <g clip-path="url(#cRose)">
+    <circle cx="180" cy="450" r="54"  fill="none" stroke="#A8A8A8" stroke-width="1" stroke-dasharray="2 6"/>
+    <path d="M 95 360 C 130 400 130 440 165 470 S 210 540 250 560" fill="none" stroke="#00AAFF" stroke-width="2"/>
+    <path d="M 80 430 L 180 448 L 290 430" fill="none" stroke="#424242" stroke-width="2.5"/>
+    <circle cx="135" cy="400" r="22" fill="none" stroke="#00FC00" stroke-width="1.4" stroke-dasharray="2 5"/>
+    <circle cx="135" cy="400" r="4.5" fill="none" stroke="#00FCFF" stroke-width="2"/>
+    <circle cx="245" cy="495" r="4.5" fill="none" stroke="#FF00FF" stroke-width="2"/>
+    <text x="144" y="397" fill="#00FCFF" font-size="10">KLUK</text>
+  </g>
+  <circle cx="180" cy="450" r="108" fill="none" stroke="#fff" stroke-width="2"/>
+  <g fill="#fff" font-size="13" text-anchor="middle" font-weight="bold">
+    <text x="180" y="356">27</text><text x="296" y="455">N</text>
+    <text x="180" y="568">9</text><text x="64" y="455">S</text>
+  </g>
+  <g stroke="#fff" stroke-width="1.5">
+    <line x1="180" y1="342" x2="180" y2="354"/><line x1="300" y1="450" x2="288" y2="450"/>
+    <line x1="180" y1="558" x2="180" y2="546"/><line x1="60" y1="450" x2="72" y2="450"/>
+  </g>
+  <polygon points="180,438 190,468 180,461 170,468" fill="#00FCFF"/>
+  <!-- heading box (shared, top of ND) -->
+  <rect x="150" y="316" width="60" height="24" fill="#000" stroke="#fff" stroke-width="2"/>
+  <text x="180" y="334" fill="#fff" font-size="16" text-anchor="middle">270</text>
+  <text x="30" y="556" fill="#00FC00" font-size="11">39.10N</text>
+  <text x="330" y="556" fill="#00FC00" font-size="11" text-anchor="end">84.51W</text>
+</svg>

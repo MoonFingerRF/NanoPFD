@@ -1,0 +1,95 @@
+<svg viewBox="0 0 480 360" xmlns="http://www.w3.org/2000/svg" font-family="Consolas,Menlo,monospace">
+  <!-- NanoPFD — Primary Flight Display (attitude + tapes), colours from color_index[] -->
+  <defs>
+    <clipPath id="att"><rect x="56" y="0" width="368" height="360"/></clipPath>
+    <clipPath id="screen"><rect x="0" y="0" width="480" height="360" rx="8"/></clipPath>
+  </defs>
+  <rect width="480" height="360" rx="8" fill="#000"/>
+  <g clip-path="url(#screen)">
+
+    <!-- Attitude: sky / ground, banked ~9deg right, slight nose-up -->
+    <g clip-path="url(#att)">
+      <g transform="rotate(-9 240 188)">
+        <rect x="-260" y="-260" width="1000" height="460" fill="#00AAFF"/>
+        <rect x="-260" y="200"  width="1000" height="500" fill="#D68608"/>
+        <line x1="-260" y1="200" x2="740" y2="200" stroke="#fff" stroke-width="3"/>
+        <!-- pitch ladder -->
+        <g stroke="#fff" stroke-width="2" fill="#fff" font-size="13" text-anchor="middle">
+          <line x1="205" y1="140" x2="275" y2="140"/><text x="190" y="145">10</text><text x="290" y="145">10</text>
+          <line x1="218" y1="170" x2="262" y2="170"/>
+          <line x1="218" y1="230" x2="262" y2="230"/>
+          <line x1="205" y1="260" x2="275" y2="260"/><text x="190" y="265">10</text><text x="290" y="265">10</text>
+        </g>
+      </g>
+    </g>
+
+    <!-- Bank scale arc + ticks (fixed) -->
+    <g stroke="#fff" stroke-width="2" fill="none">
+      <path d="M 150 78 A 130 130 0 0 1 330 78"/>
+    </g>
+    <g stroke="#fff" stroke-width="2">
+      <line x1="240" y1="58" x2="240" y2="46"/>
+      <line x1="187" y1="70" x2="183" y2="59"/>
+      <line x1="293" y1="70" x2="297" y2="59"/>
+      <line x1="153" y1="96" x2="145" y2="88"/>
+      <line x1="327" y1="96" x2="335" y2="88"/>
+    </g>
+    <!-- bank pointer (moving, shown at the 9deg bank) -->
+    <polygon points="240,64 233,78 247,78" fill="#fff" transform="rotate(-9 240 188)"/>
+    <polygon points="240,58 232,46 248,46" fill="#FFFC00"/>
+
+    <!-- Fixed aircraft reference (yellow) -->
+    <g stroke="#FFFC00" stroke-width="4" fill="#FFFC00">
+      <line x1="150" y1="188" x2="205" y2="188"/>
+      <line x1="330" y1="188" x2="275" y2="188"/>
+      <line x1="205" y1="188" x2="205" y2="198"/>
+      <line x1="275" y1="188" x2="275" y2="198"/>
+      <circle cx="240" cy="188" r="3"/>
+    </g>
+
+    <!-- Speed tape (left) -->
+    <rect x="0" y="0" width="58" height="360" fill="#000" opacity="0.55"/>
+    <g fill="#fff" font-size="14" text-anchor="end">
+      <text x="40" y="105">130</text><text x="40" y="145">120</text>
+      <text x="40" y="225">100</text><text x="40" y="265">90</text>
+    </g>
+    <polygon points="0,170 44,170 56,188 44,206 0,206" fill="#000"/>
+    <rect x="0" y="170" width="56" height="36" fill="none" stroke="#fff" stroke-width="2"/>
+    <text x="30" y="194" fill="#fff" font-size="20" text-anchor="middle">112</text>
+
+    <!-- Altitude tape (right) -->
+    <rect x="422" y="0" width="58" height="360" fill="#000" opacity="0.55"/>
+    <g fill="#fff" font-size="14" text-anchor="start">
+      <text x="430" y="105">5700</text><text x="430" y="145">5600</text>
+      <text x="430" y="225">5400</text><text x="430" y="265">5300</text>
+    </g>
+    <polygon points="480,170 436,170 424,188 436,206 480,206" fill="#000"/>
+    <rect x="424" y="170" width="56" height="36" fill="none" stroke="#fff" stroke-width="2"/>
+    <text x="452" y="194" fill="#fff" font-size="18" text-anchor="middle">5500</text>
+
+    <!-- Heading readout (top centre) -->
+    <rect x="208" y="6" width="64" height="26" fill="#000" stroke="#fff" stroke-width="2"/>
+    <text x="240" y="25" fill="#fff" font-size="18" text-anchor="middle">273</text>
+
+    <!-- Vertical speed indicator (far right) -->
+    <g stroke="#AAAAAA" stroke-width="1.5">
+      <line x1="474" y1="120" x2="480" y2="120"/><line x1="474" y1="155" x2="480" y2="155"/>
+      <line x1="474" y1="225" x2="480" y2="225"/><line x1="474" y1="260" x2="480" y2="260"/>
+    </g>
+    <polygon points="480,188 466,172 466,180 480,180" fill="#00FC00"/>
+
+    <!-- Turn coordinator + slip/skid ball (bottom) -->
+    <path d="M 175 332 A 90 90 0 0 1 305 332" fill="none" stroke="#fff" stroke-width="2"/>
+    <g stroke="#fff" stroke-width="2">
+      <line x1="210" y1="318" x2="208" y2="310"/><line x1="270" y1="318" x2="272" y2="310"/>
+    </g>
+    <circle cx="244" cy="320" r="7" fill="#fff"/>
+    <line x1="231" y1="312" x2="231" y2="330" stroke="#FFFC00" stroke-width="2"/>
+    <line x1="257" y1="312" x2="257" y2="330" stroke="#FFFC00" stroke-width="2"/>
+
+    <!-- annunciations -->
+    <text x="240" y="48" fill="#00FC00" font-size="12" text-anchor="middle">NanoPFD</text>
+    <text x="64" y="350" fill="#fff" font-size="13">GS 118 kt</text>
+    <text x="416" y="350" fill="#fff" font-size="13" text-anchor="end">1.0 G</text>
+  </g>
+</svg>

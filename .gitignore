@@ -1,0 +1,17 @@
+# macOS
+.DS_Store
+
+# chart-data generator download cache (regenerable)
+tools/.cache/
+
+# Python
+__pycache__/
+*.pyc
+
+# stale backup of the old hand-curated chart data
+chart_data.h.bak
+
+# build artifacts
+build/
+*.bin
+*.elf
