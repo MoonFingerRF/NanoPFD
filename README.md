@@ -150,9 +150,14 @@ CombinedDisplayAmoled.ino BOARD_D  — RM690B0 QSPI AMOLED (self-contained drive
 MyCanvas8.h  RLE332.h  layout.h  State.h    rendering primitives + helpers
 chart_data.h            generated aeronautical chart data
 tools/build_chart_data.py    map data generator (OurAirports + Natural Earth)
+tools/svggen/           regenerates docs/*.svg by running the real renderer on the host
 tests/                  host unit tests (layout math, RLE codec)
-docs/                   the SVG illustrations in this README
+docs/                   the SVG illustrations in this README (generated, not hand-drawn)
 ```
+
+> The README illustrations are produced by [`tools/svggen`](tools/svggen) — it compiles
+> the actual PFD/ND drawers off-target against an SVG-recording canvas, so the pictures
+> are exactly what the firmware renders. See [`tools/svggen/README.md`](tools/svggen/README.md).
 
 ---
 

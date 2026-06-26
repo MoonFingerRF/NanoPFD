@@ -519,6 +519,11 @@ void drawHorizonDisplay(MyCanvas8 *canvas, GFXcanvas8 *inc_map, state *s, bool s
   int      mh   = inc_map->height();
   int      r2   = stdW1 * stdW1;
 
+#ifdef SVG_RENDER
+  extern void svgPreAttitudeHook(MyCanvas8 *);
+  svgPreAttitudeHook(canvas);   // snapshot buffer so the SVG gen can diff out the attitude
+#endif
+
   uint8_t rot = canvas->getRotation();
   // Native (constructor) dimensions: odd rotations swap the reported W/H.
   int nativeW = (rot & 1) ? height : width;
@@ -569,6 +574,14 @@ void drawHorizonDisplay(MyCanvas8 *canvas, GFXcanvas8 *inc_map, state *s, bool s
       py -= myy;
     }
   }
+
+#ifdef SVG_RENDER
+  // The attitude above is texture-sampled straight into the buffer (not via GFX
+  // primitives), so the SVG generator captures it here as a raster snapshot; the
+  // overlays below are recorded as vector shapes. No-op on the device build.
+  extern void svgAttitudeHook(MyCanvas8 *);
+  svgAttitudeHook(canvas);
+#endif
 
   drawDualRadialLine(canvas, midPointX, midPointY, 0.166 * topAngle, stdW1, stdW1 + 5, IWHITE);
   drawDualRadialLine(canvas, midPointX, midPointY, 0.334 * topAngle, stdW1, stdW1 + 5, IWHITE);
