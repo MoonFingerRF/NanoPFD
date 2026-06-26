@@ -319,9 +319,12 @@ static void emitElems(std::string &o, const std::vector<Elem> &els) {
           "<circle cx=\"%g\" cy=\"%g\" r=\"%g\" fill=\"none\" stroke=\"%s\"/>\n",
           e.a+0.5f, e.b+0.5f, e.c, col.c_str()); o += buf; break;
       case 'P': case 'p': {
+        // Filled polys are crisp with integer vertices so they tile seam-free with
+        // the integer-cornered rect masks; stroked polys stay pixel-centred (+0.5).
+        float off = (e.kind == 'P') ? 0.0f : 0.5f;
         o += "<polygon points=\"";
         for (size_t i = 0; i + 1 < e.pts.size(); i += 2) {
-          snprintf(buf, sizeof buf, "%g,%g ", e.pts[i]+0.5f, e.pts[i+1]+0.5f); o += buf;
+          snprintf(buf, sizeof buf, "%g,%g ", e.pts[i]+off, e.pts[i+1]+off); o += buf;
         }
         if (e.kind == 'P') { o += "\" fill=\"" + col + "\" shape-rendering=\"crispEdges\"/>\n"; }
         else { o += "\" fill=\"none\" stroke=\"" + col + "\"/>\n"; }

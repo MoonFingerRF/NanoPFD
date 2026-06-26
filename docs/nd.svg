@@ -260,7 +260,7 @@
 <line x1="3.40566" y1="288.757" x2="-14.5258" y2="287.188" stroke="#FFFFFF"/>
 <line x1="-3.73232" y1="266.435" x2="-11.6108" y2="265.046" stroke="#FFFFFF"/>
 <rect x="192" y="0" width="96" height="34" fill="#000000"/>
-<polygon points="240.5,51.5 221.5,34.5 259.5,34.5 " fill="#000000" shape-rendering="crispEdges"/>
+<polygon points="240,51 221,34 259,34 " fill="#000000" shape-rendering="crispEdges"/>
 <line x1="192.5" y1="0.5" x2="288.5" y2="0.5" stroke="#ADAAAD"/>
 <line x1="192.5" y1="0.5" x2="192.5" y2="34.5" stroke="#ADAAAD"/>
 <line x1="288.5" y1="0.5" x2="288.5" y2="34.5" stroke="#ADAAAD"/>
@@ -275,8 +275,8 @@
 <circle cx="240.5" cy="309.5" r="193" fill="none" stroke="#ADAAAD"/>
 <circle cx="240.5" cy="309.5" r="129" fill="none" stroke="#ADAAAD"/>
 <circle cx="240.5" cy="309.5" r="64" fill="none" stroke="#ADAAAD"/>
-<polygon points="0.5,293.5 240.5,309.5 0.5,309.5 " fill="#000000" shape-rendering="crispEdges"/>
-<polygon points="480.5,293.5 240.5,309.5 480.5,309.5 " fill="#000000" shape-rendering="crispEdges"/>
+<polygon points="0,293 240,309 0,309 " fill="#000000" shape-rendering="crispEdges"/>
+<polygon points="480,293 240,309 480,309 " fill="#000000" shape-rendering="crispEdges"/>
 <rect x="0" y="309" width="480" height="10" fill="#000000"/>
 <polygon points="240.5,299.5 227.5,318.5 252.5,318.5 " fill="none" stroke="#FFFFFF"/>
 <line x1="240.5" y1="319.5" x2="240.5" y2="97.5" stroke="#FF00FF"/>

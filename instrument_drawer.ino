@@ -487,8 +487,10 @@ void drawHorizonDisplay(MyCanvas8 *canvas, GFXcanvas8 *inc_map, state *s, bool s
   //draw alt outline
   canvas->fillRect(width - stdW3 - (midPointX - stdW2 - stdW3), midPointY - stdW2 - stdW3 + 1, (midPointX - stdW2), stdW3 + 1, IBLACK);
   canvas->fillRect(width - stdW3 - (midPointX - stdW2 - stdW3), midPointY + stdW2 - 1, (midPointX - stdW2), stdW3 + 1, IBLACK);
-  canvas->drawFastHLine(width - stdW3, midPointY + stdW2, -(midPointX - stdW2 - stdW3), IWHITE);
-  canvas->drawFastHLine(width - stdW3, midPointY - stdW2, -(midPointX - stdW2 - stdW3), IWHITE);
+  // Positive width: drawFastHLine ignores w<=0, so the old negative-width form
+  // never drew these two lines (the speed tape mirror uses positive width).
+  canvas->drawFastHLine(width - stdW3 - (midPointX - stdW2 - stdW3), midPointY + stdW2, midPointX - stdW2 - stdW3, IWHITE);
+  canvas->drawFastHLine(width - stdW3 - (midPointX - stdW2 - stdW3), midPointY - stdW2, midPointX - stdW2 - stdW3, IWHITE);
 
   // ---- draw horizon (attitude indicator) ----------------------------------
   // The pitch ladder lives in inc_map as a tall strip. For each screen pixel in

@@ -12,8 +12,8 @@
 <circle cx="140.5" cy="120.5" r="88.5" fill="#FFFFFF" shape-rendering="crispEdges"/>
 <circle cx="140.5" cy="120.5" r="77.5" fill="#000000" shape-rendering="crispEdges"/>
 <rect x="0" y="31" width="280" height="164" fill="#000000"/>
-<polygon points="160.5,195.5 163.5,207.5 483.5,195.5 " fill="#000000" shape-rendering="crispEdges"/>
-<polygon points="119.5,195.5 116.5,207.5 -202.5,195.5 " fill="#000000" shape-rendering="crispEdges"/>
+<polygon points="160,195 163,207 483,195 " fill="#000000" shape-rendering="crispEdges"/>
+<polygon points="119,195 116,207 -203,195 " fill="#000000" shape-rendering="crispEdges"/>
 <circle cx="161.5" cy="200.5" r="5.5" fill="#FFFFFF" shape-rendering="crispEdges"/>
 <circle cx="118.5" cy="200.5" r="5.5" fill="#FFFFFF" shape-rendering="crispEdges"/>
 <circle cx="140.5" cy="203.5" r="4.5" fill="#000000" shape-rendering="crispEdges"/>
@@ -46,7 +46,7 @@
 <text x="52" y="75" font-family="monospace" font-size="9" fill="#FFFFFF">0</text>
 <rect x="64" y="60" width="4" height="1" fill="#FFFFFF"/>
 <rect x="21" y="104" width="37" height="33" fill="#000000"/>
-<polygon points="57.5,128.5 57.5,112.5 66.5,120.5 " fill="#000000" shape-rendering="crispEdges"/>
+<polygon points="57,128 57,112 66,120 " fill="#000000" shape-rendering="crispEdges"/>
 <line x1="21.5" y1="136.5" x2="57.5" y2="136.5" stroke="#ADAAAD"/>
 <line x1="21.5" y1="104.5" x2="57.5" y2="104.5" stroke="#ADAAAD"/>
 <line x1="21.5" y1="104.5" x2="21.5" y2="136.5" stroke="#ADAAAD"/>
@@ -90,7 +90,7 @@
 <rect x="212" y="60" width="3" height="1" fill="#FFFFFF"/>
 <rect x="212" y="52" width="5" height="1" fill="#FFFFFF"/>
 <rect x="223" y="104" width="37" height="33" fill="#000000"/>
-<polygon points="223.5,128.5 223.5,112.5 214.5,120.5 " fill="#000000" shape-rendering="crispEdges"/>
+<polygon points="223,128 223,112 214,120 " fill="#000000" shape-rendering="crispEdges"/>
 <line x1="223.5" y1="136.5" x2="259.5" y2="136.5" stroke="#ADAAAD"/>
 <line x1="223.5" y1="104.5" x2="259.5" y2="104.5" stroke="#ADAAAD"/>
 <line x1="259.5" y1="104.5" x2="259.5" y2="136.5" stroke="#ADAAAD"/>
@@ -103,6 +103,8 @@
 <text x="247" y="125" font-family="monospace" font-size="14" fill="#FFFFFF">0</text>
 <rect x="200" y="26" width="80" height="36" fill="#000000"/>
 <rect x="200" y="179" width="80" height="36" fill="#000000"/>
+<rect x="200" y="180" width="45" height="1" fill="#FFFFFF"/>
+<rect x="200" y="60" width="45" height="1" fill="#FFFFFF"/>
 <image x="80" y="49" width="121" height="143" preserveAspectRatio="none" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAHkAAACPCAYAAADeMXRNAAACkUlEQVR42u3cW44TQQwF0Ppk42yG/bCeoPmLItLT6QfY18fS1QjEh8eHSnWpVVkroX49HrdFhYGCH4wK/V7Y56oE+7YvtR/2+efr31cA3tMv1I2P478NreJq3t0v3Pcff6/Dq4R8qF8r9/0gt/7d3XV1v9nYH+xx3+191fbkw/1OOgJtraCKT9eX9+t8OyiAQcOFDRg0YNCdcY+cg2FbvUOgDTwc2qDDoQ04HNpgw6ENNBzaIMOhG/7Cd7w/zoW2QsKhDSwc2qAGQBtSOLIBhUMbTDi0gQyADv4lY8/FHyH73z4A2hAgC+Tbr59U3j/b9FvtAanDXah2/VZeGdXvJ7fpt8PQKt5PbtVv9aFVvJ98pl/IjfbkVv1W/zadbt/+4+laIAtkgSyQIXufDFkgC2SBLJAFskCWROSx95OtZCvZECALZIEskAWyQPY+GbJAhiyQBbJAFshycR4qvtbvnz8ekh3IkAWyQBbIAlkg78x3BVkgC2SBLJAFskCWZOSzBVkgC2SBLJAFskCG7H0yZIEskAXy6/65tadW3O879LuqPSBtDbHS4Dr1W3olP/+54mru0m8L5Nef+g1Dfl0dV78/PnOOPtIv5EZ7cqd+yz14vVsdFYG79Ouc7JwskAWyQJZ/hfxV3ieHA6cjW8VPZSDhwKCHAIMeAgx5CDLoAcCghwB3hp56P3mdKSskHBj0EGDQQ4BBDwEGPQQY9BBg0EOAO0GnnIvX/y6rLBgX9CBg0EOAz2K7QdEE9yj0d7cDq90tuqvf1bXODLH6/eSr+l0pdeTjr/L95Cv6Xam197s3Kt9PPtNvNO4W9t5hVt2T9/a7pta71Vj56frTfpfKPWNTDQWnFwpOKRCdQhh8wnz+ANCtVaFRZ1s7AAAAAElFTkSuQmCC"/>
 <line x1="152.5" y1="49.5" x2="153.5" y2="44.5" stroke="#FFFFFF"/>
 <line x1="127.5" y1="49.5" x2="126.5" y2="44.5" stroke="#FFFFFF"/>
@@ -116,8 +118,8 @@
 <line x1="77.5" y1="84.5" x2="73.5" y2="81.5" stroke="#ADAAAD"/>
 <polygon points="140.5,48.5 136.5,41.5 143.5,41.5 " fill="none" stroke="#FFFFFF"/>
 <polygon points="140.5,49.5 144.5,57.5 136.5,57.5 " fill="none" stroke="#FFFFFF"/>
-<polygon points="140.5,120.5 116.5,122.5 122.5,126.5 " fill="#000000" shape-rendering="crispEdges"/>
-<polygon points="140.5,120.5 164.5,122.5 158.5,126.5 " fill="#000000" shape-rendering="crispEdges"/>
+<polygon points="140,120 116,122 122,126 " fill="#000000" shape-rendering="crispEdges"/>
+<polygon points="140,120 164,122 158,126 " fill="#000000" shape-rendering="crispEdges"/>
 <polygon points="140.5,120.5 116.5,122.5 122.5,126.5 " fill="none" stroke="#FFFFFF"/>
 <polygon points="140.5,120.5 164.5,122.5 158.5,126.5 " fill="none" stroke="#FFFFFF"/>
 <text x="35" y="31" font-family="monospace" font-size="9" fill="#00FF00">F</text>
@@ -156,7 +158,7 @@
 <rect x="272" y="120" width="4" height="1" fill="#FFFFFF"/>
 <rect x="274" y="90" width="2" height="1" fill="#FFFFFF"/>
 <rect x="272" y="60" width="4" height="1" fill="#FFFFFF"/>
-<polygon points="276.5,120.5 271.5,117.5 271.5,123.5 " fill="#00FF00" shape-rendering="crispEdges"/>
+<polygon points="276,120 271,117 271,123 " fill="#00FF00" shape-rendering="crispEdges"/>
 <rect x="4" y="60" width="1" height="120" fill="#FFFFFF"/>
 <rect x="4" y="180" width="7" height="1" fill="#FFFFFF"/>
 <rect x="4" y="150" width="4" height="1" fill="#FFFFFF"/>
@@ -164,7 +166,7 @@
 <rect x="4" y="90" width="4" height="1" fill="#FFFFFF"/>
 <rect x="4" y="60" width="7" height="1" fill="#FFFFFF"/>
 <rect x="4" y="144" width="9" height="1" fill="#FFFF00"/>
-<polygon points="4.5,150.5 11.5,147.5 11.5,153.5 " fill="#00FF00" shape-rendering="crispEdges"/>
+<polygon points="4,150 11,147 11,153 " fill="#00FF00" shape-rendering="crispEdges"/>
 <text x="4" y="57" font-family="monospace" font-size="9" fill="#FFFF00">1</text>
 <text x="10" y="57" font-family="monospace" font-size="9" fill="#FFFF00">.</text>
 <text x="16" y="57" font-family="monospace" font-size="9" fill="#FFFF00">2</text>
@@ -206,7 +208,7 @@
 <line x1="72.5" y1="244.5" x2="67.5" y2="233.5" stroke="#0000FF"/>
 <circle cx="72.5" cy="244.5" r="2.5" fill="#0000FF" shape-rendering="crispEdges"/>
 <line x1="140.5" y1="217.5" x2="140.5" y2="239.5" stroke="#00FFFF"/>
-<polygon points="140.5,217.5 136.5,212.5 144.5,212.5 " fill="#00FFFF" shape-rendering="crispEdges"/>
+<polygon points="140,217 136,212 144,212 " fill="#00FFFF" shape-rendering="crispEdges"/>
 </g></g>
 <g clip-path="url(#clipN)"><g transform="translate(460 40) scale(1.3)">
 <rect x="0" y="0" width="240" height="280" fill="#000000"/>
@@ -466,7 +468,7 @@
 <line x1="-89.6971" y1="238.11" x2="-98.6628" y2="237.326" stroke="#FFFFFF"/>
 <line x1="-92.2185" y1="218.992" x2="-96.1577" y2="218.297" stroke="#FFFFFF"/>
 <rect x="96" y="11" width="48" height="17" fill="#000000"/>
-<polygon points="120.5,35.5 111.5,27.5 129.5,27.5 " fill="#000000" shape-rendering="crispEdges"/>
+<polygon points="120,35 111,27 129,27 " fill="#000000" shape-rendering="crispEdges"/>
 <line x1="96.5" y1="11.5" x2="144.5" y2="11.5" stroke="#ADAAAD"/>
 <line x1="96.5" y1="11.5" x2="96.5" y2="27.5" stroke="#ADAAAD"/>
 <line x1="144.5" y1="11.5" x2="144.5" y2="27.5" stroke="#ADAAAD"/>
@@ -481,8 +483,8 @@
 <circle cx="120.5" cy="256.5" r="165" fill="none" stroke="#ADAAAD"/>
 <circle cx="120.5" cy="256.5" r="110" fill="none" stroke="#ADAAAD"/>
 <circle cx="120.5" cy="256.5" r="55" fill="none" stroke="#ADAAAD"/>
-<polygon points="0.5,242.5 120.5,256.5 0.5,256.5 " fill="#000000" shape-rendering="crispEdges"/>
-<polygon points="240.5,242.5 120.5,256.5 240.5,256.5 " fill="#000000" shape-rendering="crispEdges"/>
+<polygon points="0,242 120,256 0,256 " fill="#000000" shape-rendering="crispEdges"/>
+<polygon points="240,242 120,256 240,256 " fill="#000000" shape-rendering="crispEdges"/>
 <rect x="0" y="256" width="240" height="24" fill="#000000"/>
 <polygon points="120.5,256.5 108.5,272.5 131.5,272.5 " fill="none" stroke="#FFFFFF"/>
 <line x1="120.5" y1="280.5" x2="120.5" y2="58.5" stroke="#FF00FF"/>
