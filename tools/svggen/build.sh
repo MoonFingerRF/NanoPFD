@@ -1,9 +1,14 @@
 #!/usr/bin/env bash
-# Regenerate docs/{pfd,nd,combined}.svg from the REAL PFD/ND renderers.
+# Regenerate docs/*.svg from the REAL PFD/ND renderers.
 #
 # svggen.cpp compiles instrument_drawer.ino on the host against a tiny Arduino
 # shim and an SVG-recording GFX canvas, so the README illustrations are produced
-# by the exact same code that runs on the device — not drawn by hand.
+# by the exact same code that runs on the device — not drawn by hand. Everything
+# except the attitude texture (inc_map) comes out as clean SVG vectors.
+#
+# It is compiled twice: once for the single-panel config (BOARD_C) which emits
+# pfd/nd/combined/nd_legend, and once for the dual-display config (BOARD_A) which
+# emits dual.svg (two rounded-corner viewports).
 #
 # Usage:  tools/svggen/build.sh [path-to-Adafruit_GFX_Library]
 set -euo pipefail
@@ -19,17 +24,26 @@ fi
 
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
+COMMON=(-std=c++17 -DARDUINO=10819 -DSVG_RENDER -O1 -I"$HERE/shim")
 
-# Render the combined single-panel layout (BOARD_C) without touching config.h.
-sed -e 's/#define BOARD_A 1/#define BOARD_A 0/' \
-    -e 's/#define BOARD_C 0/#define BOARD_C 1/' \
-    "$ROOT/config.h" > "$TMP/config.h"
+# Adafruit_GFX itself is board/SVG-agnostic — compile it once and reuse.
+g++ "${COMMON[@]}" -I"$ROOT" -I"$GFX" -c "$GFX/Adafruit_GFX.cpp" -o "$TMP/gfx.o"
 
-# Array (not a string) so paths containing spaces survive word-splitting.
-FLAGS=(-std=c++17 -DARDUINO=10819 -DSVG_RENDER -O1
-       -I"$HERE/shim" -I"$TMP" -I"$ROOT" -I"$GFX")
-g++ "${FLAGS[@]}" -c "$GFX/Adafruit_GFX.cpp" -o "$TMP/gfx.o"
-g++ "${FLAGS[@]}" "$HERE/svggen.cpp" "$TMP/gfx.o" -o "$TMP/svggen"
+board_config() {   # $1 = A|C|D  -> write a config.h with only that board selected
+  sed -e "s/#define BOARD_A [01]/#define BOARD_A $([ "$1" = A ] && echo 1 || echo 0)/" \
+      -e "s/#define BOARD_C [01]/#define BOARD_C $([ "$1" = C ] && echo 1 || echo 0)/" \
+      -e "s/#define BOARD_D [01]/#define BOARD_D $([ "$1" = D ] && echo 1 || echo 0)/" \
+      "$ROOT/config.h"
+}
 
-( cd "$ROOT" && "$TMP/svggen" )
-echo "Regenerated $ROOT/docs/{pfd,nd,combined,nd_legend}.svg"
+# ---- single-panel config (BOARD_C): pfd / nd / combined / nd_legend ----
+mkdir -p "$TMP/c"; board_config C > "$TMP/c/config.h"
+g++ "${COMMON[@]}" -I"$TMP/c" -I"$ROOT" -I"$GFX" "$HERE/svggen.cpp" "$TMP/gfx.o" -o "$TMP/svggen_c"
+( cd "$ROOT" && "$TMP/svggen_c" )
+
+# ---- dual-display config (BOARD_A): dual.svg ----
+mkdir -p "$TMP/a"; board_config A > "$TMP/a/config.h"
+g++ "${COMMON[@]}" -I"$TMP/a" -I"$ROOT" -I"$GFX" "$HERE/svggen.cpp" "$TMP/gfx.o" -o "$TMP/svggen_a"
+( cd "$ROOT" && "$TMP/svggen_a" )
+
+echo "Regenerated $ROOT/docs/{pfd,nd,combined,nd_legend,dual}.svg"

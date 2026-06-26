@@ -38,6 +38,24 @@ dual-display board they drive two separate screens.
 
 ---
 
+## One screen or two
+
+The same renderer drives either a **single combined panel** or **two separate displays** —
+just pick the board in [`config.h`](config.h):
+
+<table>
+<tr>
+<td align="center" width="34%"><img src="docs/combined.svg" width="190" alt="Single combined panel"/></td>
+<td align="center" width="66%"><img src="docs/dual.svg" width="460" alt="Dual display"/></td>
+</tr>
+<tr>
+<td align="center"><sub><b>Single panel</b> — BOARD_C / BOARD_D<br/>PFD over ND on one screen</sub></td>
+<td align="center"><sub><b>Dual display</b> — BOARD_A<br/>PFD and ND on two Waveshare 1.69″ screens</sub></td>
+</tr>
+</table>
+
+---
+
 ## Reading the Navigation Display
 
 The ND is a heading-up moving map. Every element is colour- and shape-coded the way a real

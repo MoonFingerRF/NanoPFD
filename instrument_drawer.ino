@@ -764,6 +764,12 @@ static inline bool mapSegVis(int x0, int y0, int x1, int y1, int cx, int cy, int
 // feature crossing the rim is cut cleanly. `dashed` skips alternate 4px runs.
 static void mapLine(MyCanvas8 *c, int x0, int y0, int x1, int y1, uint8_t col,
                     int cx, int cy, long r2, bool dashed) {
+#ifdef SVG_RENDER
+  // SVG generator: record one clean vector segment (clipped to the radar circle in
+  // SVG) instead of rasterising it pixel-by-pixel.
+  { extern void svgVecLine(MyCanvas8 *, int, int, int, int, uint8_t, bool);
+    svgVecLine(c, x0, y0, x1, y1, col, dashed); return; }
+#endif
   int dx = abs(x1 - x0), sx = x0 < x1 ? 1 : -1;
   int dy = -abs(y1 - y0), sy = y0 < y1 ? 1 : -1;
   int err = dx + dy, n = 0;
@@ -902,6 +908,9 @@ static void mapLabelRoad(MyCanvas8 *c, const ChartPoly &P, const MapProj &m, uin
 static void drawChart(MyCanvas8 *canvas, int cx, int cy, int rad,
                       float clat, float clon, float headingDeg) {
   canvas->setRotationMatrix();          // identity: the projection does the rotation
+#ifdef SVG_RENDER
+  { extern void svgSetClip(int, int, int); svgSetClip(cx, cy, rad); }   // map clip circle
+#endif
   const int  width = canvas->width();
   const int  sc    = lyt::txtScale(width);
   const long r2    = (long)rad * rad;
@@ -987,6 +996,11 @@ static void drawChart(MyCanvas8 *canvas, int cx, int cy, int rad,
                   r.type == RG_APT_MEDIUM ? IGREEN  :      // medium = bright green
                   r.type == RG_APT_SMALL  ? IYELLOW :      // small = bright yellow
                   r.type == RG_APT_CLOSED ? IGREY   : IRED; // closed = grey, restricted = red
+#ifdef SVG_RENDER
+    // SVG generator: one clean dashed circle (clipped to the radar circle) instead
+    // of the rasterised dotted ring.
+    { extern void svgVecRingDashed(MyCanvas8 *, int, int, int, uint8_t); svgVecRingDashed(canvas, rcx, rcy, rr, col); }
+#else
     int npt = rr; if (npt < 24) npt = 24; if (npt > 140) npt = 140;
     float ca = cosf(2.0f * p / npt), sa = sinf(2.0f * p / npt);
     float vx = -rr * m.sinH, vy = -rr * m.cosH;   // anchored to geographic north
@@ -995,6 +1009,7 @@ static void drawChart(MyCanvas8 *canvas, int cx, int cy, int rad,
       if (mapInCirc(px, py, cx, cy, r2)) canvas->drawPixel(px, py, col);
       float nx = vx * ca - vy * sa; vy = vx * sa + vy * ca; vx = nx;
     }
+#endif
   }
 
   // ---- runways (short white lines at the true heading) ----------------------

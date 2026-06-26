@@ -27,10 +27,14 @@ uint16_t color_index[NUM_COLORS] = {
 //  Recorded SVG element
 // ---------------------------------------------------------------------------
 struct Elem {
-  char kind = 0;            // R rectfill, r rectstroke, L line, C circfill,
-                            // c circstroke, P polyfill, p polystroke, X pixel
-  float a=0,b=0,c=0,d=0;    // rect:x,y,w,h | line:x0,y0,x1,y1 | circ:cx,cy,r | px:x,y
+  char kind = 0;            // R rectfill r rectstroke | L line | M map-line(clipped)
+                            // C/c circ fill/stroke | O map-ring(clipped) | P/p poly
+                            // T text | X pixel
+  float a=0,b=0,c=0,d=0;    // rect:x,y,w,h | line:x0,y0,x1,y1 | circ:cx,cy,r | text:x,y
   std::vector<float> pts;   // polygons
+  std::string text;         // T: the character(s)
+  float fs=0, ang=0;        // T: font size px, rotation deg
+  bool dashed=false, mono=false;
   uint8_t col=0;            // palette index
 };
 
@@ -52,6 +56,12 @@ public:
     float x_ = x - offX, y_ = y - offY;
     ox = (int)lround(rotA * x_ - rotB * y_ + offX);
     oy = (int)lround(rotA * y_ + rotB * x_ + offY);
+  }
+  inline void xfd(double x, double y, double &ox, double &oy) {
+    if (identity) { ox = x; oy = y; return; }
+    double x_ = x - offX, y_ = y - offY;
+    ox = rotA * x_ - rotB * y_ + offX;
+    oy = rotA * y_ + rotB * x_ + offY;
   }
   inline void push(char k, float a, float b, float c, float d, uint8_t col) {
     Elem e; e.kind = k; e.a = a; e.b = b; e.c = c; e.d = d; e.col = col;
@@ -94,28 +104,65 @@ public:
       if (recording) push('r', x, y, w, h, (uint8_t)color);
     } else Adafruit_GFX::drawRect(x, y, w, h, color);
   }
+  // A clean <line> — endpoints transformed through the active matrix (so the
+  // rotated compass ticks come out as real vectors, not pixels).
   void drawLine(int16_t x0, int16_t y0, int16_t x1, int16_t y1, uint16_t color) override {
-    if (identity && rotation == 0) {
-      bool sv = recording; recording = false;
-      Adafruit_GFX::drawLine(x0, y0, x1, y1, color);
-      recording = sv;
-      if (recording) push('L', x0, y0, x1, y1, (uint8_t)color);
-    } else Adafruit_GFX::drawLine(x0, y0, x1, y1, color);  // matrix -> drawPixel records
+    if (!recording) { Adafruit_GFX::drawLine(x0, y0, x1, y1, color); return; }
+    double ax, ay, bx, by; xfd(x0, y0, ax, ay); xfd(x1, y1, bx, by);
+    push('L', ax, ay, bx, by, (uint8_t)color);
   }
-  // drawCircle/fillCircle/drawTriangle/fillTriangle are NOT virtual in
-  // Adafruit_GFX, so they can't be intercepted as whole shapes; they decompose
-  // into writePixel/drawFastVLine/drawFastHLine, which the overrides above
-  // capture (circles -> pixel runs, filled shapes -> span rects). Faithful to
-  // the on-device pixel result, which is the point.
+  // Clean circles / polygons (virtual via the SVG_RENDER shim in MyCanvas8).
+  void drawCircle(int16_t x, int16_t y, int16_t r, uint16_t color) override { if (recording) push('c', x, y, r, 0, (uint8_t)color); }
+  void fillCircle(int16_t x, int16_t y, int16_t r, uint16_t color) override { if (recording) push('C', x, y, r, 0, (uint8_t)color); }
+  void drawTriangle(int16_t x0,int16_t y0,int16_t x1,int16_t y1,int16_t x2,int16_t y2,uint16_t color) override { pushTri('p', x0,y0,x1,y1,x2,y2,(uint8_t)color); }
+  void fillTriangle(int16_t x0,int16_t y0,int16_t x1,int16_t y1,int16_t x2,int16_t y2,uint16_t color) override { pushTri('P', x0,y0,x1,y1,x2,y2,(uint8_t)color); }
+  void pushTri(char k,int x0,int y0,int x1,int y1,int x2,int y2,uint8_t col) {
+    if (!recording) return;
+    Elem e; e.kind = k; e.col = col;
+    double ax,ay; xfd(x0,y0,ax,ay); e.pts.push_back(ax); e.pts.push_back(ay);
+    xfd(x1,y1,ax,ay); e.pts.push_back(ax); e.pts.push_back(ay);
+    xfd(x2,y2,ax,ay); e.pts.push_back(ax); e.pts.push_back(ay);
+    elems.push_back(std::move(e));
+  }
+  // Clean text: catch each printed glyph at the live cursor + font and emit a
+  // <text> element (all the firmware's fonts are monospace). The base write still
+  // runs (recording suppressed) so the cursor advances exactly as on-device.
+  size_t write(uint8_t ch) override {
+    if (recording && ch != '\n' && ch != '\r' && ch != ' ') {
+      bool custom = (gfxFont != nullptr);
+      double sx = textsize_x, sy = textsize_y;
+      double bx = cursor_x, by = custom ? cursor_y : cursor_y + 7.0 * sy;  // baseline
+      double ox, oy; xfd(bx, by, ox, oy);
+      Elem e; e.kind = 'T'; e.col = (uint8_t)textcolor;
+      e.a = ox; e.b = oy; e.mono = true;
+      e.fs = custom ? 14.0 * sy : 9.0 * sy;     // tuned to the 5x7 / FreeMono cells
+      e.ang = identity ? 0.0 : atan2((double)rotB, (double)rotA) * 180.0 / M_PI;
+      e.text = std::string(1, (char)ch);
+      elems.push_back(std::move(e));
+    }
+    bool sv = recording; recording = false;
+    size_t r = GFXcanvas8::write(ch);
+    recording = sv;
+    return r;
+  }
 
   // Attitude (inc_map) capture: snapshot before, diff after -> exact pixels.
   void beginAttitude() { uint8_t *b = getBuffer(); bufBefore.assign(b, b + (size_t)width()*height()); }
   void endAttitude() {
-    uint8_t *b = getBuffer(); int W = width(), H = height();
-    for (int yy = 0; yy < H; yy++)
-      for (int xx = 0; xx < W; xx++) {
-        size_t i = (size_t)yy*W + xx;
-        if (b[i] != bufBefore[i]) push('X', xx, yy, 0, 0, b[i]);
+    uint8_t *b = getBuffer();
+    int LW = width(), LH = height();      // logical (rotated) dims
+    int NW = WIDTH, NH = HEIGHT;          // native buffer dims
+    uint8_t rot = getRotation();
+    for (int y = 0; y < LH; y++)
+      for (int x = 0; x < LW; x++) {
+        long idx;
+        switch (rot) {                    // logical (x,y) -> raw buffer index
+          case 1:  idx = (long)(NW-1-y) + (long)x * NW; break;
+          case 2:  idx = (long)(NW-1-x) + (long)(NH-1-y) * NW; break;
+          case 3:  idx = (long)y + (long)(NH-1-x) * NW; break;
+          default: idx = (long)x + (long)y * NW; break;   // 0
+        }
+        if (b[idx] != bufBefore[idx]) push('X', x, y, 0, 0, b[idx]);
       }
   }
 };
@@ -135,8 +182,28 @@ void svgLandmark(const char *name, int x, int y) {
   gLandmarks.push_back({name, x, y});
 }
 
+// Radar clip circle (set by drawChart) — map lines/rings are clipped to it in SVG.
+int gClipX = 0, gClipY = 0, gClipR = 0;
+void svgSetClip(int cx, int cy, int rad) { gClipX = cx; gClipY = cy; gClipR = rad; }
+
+// Map geometry as clean vectors (clipped to the radar circle), instead of pixels.
+void svgVecLine(MyCanvas8 *c, int x0, int y0, int x1, int y1, uint8_t col, bool dashed) {
+  SvgCanvas *s = static_cast<SvgCanvas *>(c);
+  if (!s->recording) return;
+  Elem e; e.kind = 'M'; e.a = x0; e.b = y0; e.c = x1; e.d = y1; e.dashed = dashed; e.col = col;
+  s->elems.push_back(std::move(e));
+}
+void svgVecRingDashed(MyCanvas8 *c, int cx, int cy, int rr, uint8_t col) {
+  SvgCanvas *s = static_cast<SvgCanvas *>(c);
+  if (!s->recording) return;
+  Elem e; e.kind = 'O'; e.a = cx; e.b = cy; e.c = rr; e.dashed = true; e.col = col;
+  s->elems.push_back(std::move(e));
+}
+
 #include "instrument_drawer.ino"
 #undef p     // the drawer's '#define p 3.1415926' must not leak into our code below
+#undef min   // Arduino shim's min()/max() macros would break std::min/std::max
+#undef max
 
 // ---------------------------------------------------------------------------
 //  Emit
@@ -200,6 +267,30 @@ static void emitElems(std::string &o, const std::vector<Elem> &els) {
         else { o += "\" fill=\"none\" stroke=\"" + col + "\"/>\n"; }
         break;
       }
+      case 'M':   // map polyline segment, clipped to the radar circle
+        snprintf(buf, sizeof buf,
+          "<line x1=\"%g\" y1=\"%g\" x2=\"%g\" y2=\"%g\" stroke=\"%s\"%s clip-path=\"url(#ndclip)\"/>\n",
+          e.a+0.5f, e.b+0.5f, e.c+0.5f, e.d+0.5f, col.c_str(),
+          e.dashed ? " stroke-dasharray=\"3 3\"" : ""); o += buf; break;
+      case 'O':   // map distance ring (dotted), clipped to the radar circle
+        snprintf(buf, sizeof buf,
+          "<circle cx=\"%g\" cy=\"%g\" r=\"%g\" fill=\"none\" stroke=\"%s\" "
+          "stroke-dasharray=\"2 3\" clip-path=\"url(#ndclip)\"/>\n",
+          e.a+0.5f, e.b+0.5f, e.c, col.c_str()); o += buf; break;
+      case 'T': {  // text glyph
+        std::string t = e.text; std::string esc;
+        for (char ch : t) { if (ch=='&') esc+="&amp;"; else if (ch=='<') esc+="&lt;"; else if (ch=='>') esc+="&gt;"; else esc+=ch; }
+        if (e.ang != 0.0f)
+          snprintf(buf, sizeof buf,
+            "<text x=\"%g\" y=\"%g\" font-family=\"monospace\" font-size=\"%g\" fill=\"%s\" "
+            "transform=\"rotate(%g %g %g)\">%s</text>\n",
+            e.a, e.b, e.fs, col.c_str(), e.ang, e.a, e.b, esc.c_str());
+        else
+          snprintf(buf, sizeof buf,
+            "<text x=\"%g\" y=\"%g\" font-family=\"monospace\" font-size=\"%g\" fill=\"%s\">%s</text>\n",
+            e.a, e.b, e.fs, col.c_str(), esc.c_str());
+        o += buf; break;
+      }
     }
   }
 }
@@ -210,11 +301,19 @@ static void writeSvg(const char *path, int W, int H, const std::vector<Group> &g
   std::string o;
   char hdr[256];
   snprintf(hdr, sizeof hdr,
-    "<svg viewBox=\"0 0 %d %d\" xmlns=\"http://www.w3.org/2000/svg\" "
-    "shape-rendering=\"crispEdges\" stroke-width=\"1\">\n", W, H);
+    "<svg viewBox=\"0 0 %d %d\" xmlns=\"http://www.w3.org/2000/svg\" stroke-width=\"1\">\n", W, H);
   o += hdr;
+  o += "<defs>";
+  snprintf(hdr, sizeof hdr, "<clipPath id=\"vp\"><rect x=\"0\" y=\"0\" width=\"%d\" height=\"%d\"/></clipPath>", W, H);
+  o += hdr;
+  if (gClipR > 0) {
+    snprintf(hdr, sizeof hdr, "<clipPath id=\"ndclip\"><circle cx=\"%d\" cy=\"%d\" r=\"%d\"/></clipPath>", gClipX, gClipY, gClipR);
+    o += hdr;
+  }
+  o += "</defs>\n";
   o += "<rect x=\"0\" y=\"0\" width=\"" + std::to_string(W) + "\" height=\"" +
        std::to_string(H) + "\" fill=\"#000000\"/>\n";
+  o += "<g clip-path=\"url(#vp)\">\n";   // nothing overflows the panel edges
   for (const Group &g : groups) {
     char gt[64];
     snprintf(gt, sizeof gt, "<g transform=\"translate(%g %g)\">\n", g.dx, g.dy);
@@ -222,7 +321,7 @@ static void writeSvg(const char *path, int W, int H, const std::vector<Group> &g
     emitElems(o, coalesce(g.els));
     o += "</g>\n";
   }
-  o += "</svg>\n";
+  o += "</g></svg>\n";
   FILE *f = fopen(path, "w");
   if (!f) { fprintf(stderr, "cannot open %s\n", path); return; }
   fwrite(o.data(), 1, o.size(), f); fclose(f);
@@ -230,8 +329,9 @@ static void writeSvg(const char *path, int W, int H, const std::vector<Group> &g
 }
 
 // ---------------------------------------------------------------------------
-//  Annotated ND legend
+//  Annotated ND legend  (single-panel config only)
 // ---------------------------------------------------------------------------
+#if COMBINED_DISPLAY
 static std::string xesc(const std::string &s) {
   std::string o;
   for (char c : s) { if (c == '&') o += "&amp;"; else if (c == '<') o += "&lt;"; else if (c == '>') o += "&gt;"; else o += c; }
@@ -300,13 +400,21 @@ static void genLegend(const char *path, const std::vector<Elem> &nd) {
     "<svg viewBox=\"0 0 %d %d\" xmlns=\"http://www.w3.org/2000/svg\" "
     "font-family=\"Helvetica,Arial,sans-serif\">\n", LW, LH);
   o += buf;
+  o += "<defs>";
+  snprintf(buf, sizeof buf, "<clipPath id=\"ndframe\"><rect x=\"%d\" y=\"%d\" width=\"%d\" height=\"%d\"/></clipPath>", ox, oy, ndW, ndH);
+  o += buf;
+  if (gClipR > 0) {
+    snprintf(buf, sizeof buf, "<clipPath id=\"ndclip\"><circle cx=\"%d\" cy=\"%d\" r=\"%d\"/></clipPath>", gClipX, gClipY, gClipR);
+    o += buf;
+  }
+  o += "</defs>\n";
   snprintf(buf, sizeof buf, "<rect x=\"0\" y=\"0\" width=\"%d\" height=\"%d\" fill=\"#000000\"/>\n", LW, LH);
   o += buf;
   // dim the busy map so the bright callouts/leaders/labels stand out on top
-  snprintf(buf, sizeof buf, "<g transform=\"translate(%d %d) scale(%g)\" shape-rendering=\"crispEdges\" opacity=\"0.58\">\n", ox, oy, f);
+  snprintf(buf, sizeof buf, "<g clip-path=\"url(#ndframe)\"><g transform=\"translate(%d %d) scale(%g)\" opacity=\"0.7\">\n", ox, oy, f);
   o += buf;
   emitElems(o, coalesce(nd));
-  o += "</g>\n";
+  o += "</g></g>\n";
   snprintf(buf, sizeof buf,
     "<rect x=\"%d\" y=\"%d\" width=\"%d\" height=\"%d\" fill=\"none\" stroke=\"#444\" stroke-width=\"1\"/>\n",
     ox, oy, ndW, ndH);
@@ -352,39 +460,104 @@ static void genLegend(const char *path, const std::vector<Elem> &nd) {
   fwrite(o.data(), 1, o.size(), fp); fclose(fp);
   fprintf(stderr, "wrote %s (%zu bytes, %zu callouts)\n", path, o.size(), C.size());
 }
+#endif  // COMBINED_DISPLAY (legend)
+
+// ---------------------------------------------------------------------------
+//  Dual-display layout: two rounded-corner viewports (Waveshare 1.69" screens)
+// ---------------------------------------------------------------------------
+#if !COMBINED_DISPLAY
+static void genDual(const char *path, const std::vector<Elem> &pe, int pw, int ph,
+                    const std::vector<Elem> &ne, int nw, int nh) {
+  const double f = 1.3;
+  const int rx = (int)(15 * f);            // screen corner radius
+  const int bez = 11;                       // bezel thickness
+  const int margin = 40, gap = 56, labelH = 46;
+  const int pW = (int)(pw*f), pH = (int)(ph*f), nW = (int)(nw*f), nH = (int)(nh*f);
+  const int contentH = std::max(pH, nH);
+  const int LW = margin + pW + gap + nW + margin;
+  const int LH = margin + contentH + labelH;
+  const int pX = margin,                pY = margin + (contentH - pH) / 2;
+  const int nX = margin + pW + gap,     nY = margin + (contentH - nH) / 2;
+
+  std::string o; char buf[1024];
+  snprintf(buf, sizeof buf,
+    "<svg viewBox=\"0 0 %d %d\" xmlns=\"http://www.w3.org/2000/svg\" "
+    "font-family=\"Helvetica,Arial,sans-serif\" stroke-width=\"1\">\n", LW, LH);
+  o += buf;
+  o += "<defs>\n";
+  if (gClipR > 0) {
+    snprintf(buf, sizeof buf, "<clipPath id=\"ndclip\"><circle cx=\"%d\" cy=\"%d\" r=\"%d\"/></clipPath>\n", gClipX, gClipY, gClipR);
+    o += buf;
+  }
+  snprintf(buf, sizeof buf, "<clipPath id=\"clipP\"><rect x=\"%d\" y=\"%d\" width=\"%d\" height=\"%d\" rx=\"%d\"/></clipPath>\n", pX, pY, pW, pH, rx); o += buf;
+  snprintf(buf, sizeof buf, "<clipPath id=\"clipN\"><rect x=\"%d\" y=\"%d\" width=\"%d\" height=\"%d\" rx=\"%d\"/></clipPath>\n", nX, nY, nW, nH, rx); o += buf;
+  o += "</defs>\n";
+  snprintf(buf, sizeof buf, "<rect x=\"0\" y=\"0\" width=\"%d\" height=\"%d\" fill=\"#0d0d0d\"/>\n", LW, LH); o += buf;
+  // bezels (rounded rects around each screen, matching the Waveshare panels)
+  snprintf(buf, sizeof buf, "<rect x=\"%d\" y=\"%d\" width=\"%d\" height=\"%d\" rx=\"%d\" fill=\"#000\" stroke=\"#2c2c2c\" stroke-width=\"%d\"/>\n", pX-bez, pY-bez, pW+2*bez, pH+2*bez, rx+bez, bez); o += buf;
+  snprintf(buf, sizeof buf, "<rect x=\"%d\" y=\"%d\" width=\"%d\" height=\"%d\" rx=\"%d\" fill=\"#000\" stroke=\"#2c2c2c\" stroke-width=\"%d\"/>\n", nX-bez, nY-bez, nW+2*bez, nH+2*bez, rx+bez, bez); o += buf;
+  // PFD screen (content clipped to the rounded screen)
+  snprintf(buf, sizeof buf, "<g clip-path=\"url(#clipP)\"><g transform=\"translate(%d %d) scale(%g)\">\n", pX, pY, f); o += buf;
+  emitElems(o, coalesce(pe));
+  o += "</g></g>\n";
+  // ND screen
+  snprintf(buf, sizeof buf, "<g clip-path=\"url(#clipN)\"><g transform=\"translate(%d %d) scale(%g)\">\n", nX, nY, f); o += buf;
+  emitElems(o, coalesce(ne));
+  o += "</g></g>\n";
+  // captions
+  const int ly = margin + contentH + 30;
+  snprintf(buf, sizeof buf, "<text x=\"%d\" y=\"%d\" fill=\"#c8c8c8\" font-size=\"19\" text-anchor=\"middle\">Primary Flight Display</text>\n", pX + pW/2, ly); o += buf;
+  snprintf(buf, sizeof buf, "<text x=\"%d\" y=\"%d\" fill=\"#c8c8c8\" font-size=\"19\" text-anchor=\"middle\">Navigation Display</text>\n", nX + nW/2, ly); o += buf;
+  o += "</svg>\n";
+
+  FILE *fp = fopen(path, "w");
+  if (!fp) { fprintf(stderr, "cannot open %s\n", path); return; }
+  fwrite(o.data(), 1, o.size(), fp); fclose(fp);
+  fprintf(stderr, "wrote %s (%zu bytes)\n", path, o.size());
+}
+#endif
 
 // ---------------------------------------------------------------------------
 int main() {
-  // A representative in-flight state: ~10 deg right bank, slight climb.
+  // A representative in-flight state: wings level (so the attitude horizon is a
+  // clean horizontal split — pixelated but not aliased), low pattern altitude.
   state s; init_state(&s);
   s.IMU = true; s.BPS = true; s.ASI = true; s.GPS = true;
-  s.gx = 0.17f; s.gy = -0.97f; s.gz = 0.06f;       // bank + slight nose-up
-  s.g = 1.04f; s.max_g = 1.6f;
-  s.ax = 0.06f; s.ay = -1.0f; s.az = 0.0f;         // slip ball slightly off
+  s.gx = 0.0f; s.gy = -1.0f; s.gz = 0.0f;          // wings level, no pitch
+  s.g = 1.0f; s.max_g = 1.2f;
+  s.ax = 0.0f; s.ay = -1.0f; s.az = 0.0f;          // slip ball centred
   s.air_speed = 110;
-  s.alt = 3500; s.home_alt = 900; s.vertical_speed = 320;
+  s.alt = 850; s.home_alt = 480; s.vertical_speed = 0;   // 850 ft, level
   s.heading = 75; s.ground_track = 82; s.ground_speed = 118;   // ~7 deg crab -> track distinct
   s.lat = MAP_DEFAULT_LAT; s.lon = MAP_DEFAULT_LON;
   s.last_lat = MAP_DEFAULT_LAT; s.last_lon = MAP_DEFAULT_LON;   // ND centres on last_*
   s.home_lat = MAP_DEFAULT_LAT + 0.04f; s.home_lon = MAP_DEFAULT_LON + 0.06f;  // home NE -> green line visible
-  s.gps_alt = 3500; s.has_pos = true; s.sats = 11;
+  s.gps_alt = 850; s.has_pos = true; s.sats = 11;
 
+#if COMBINED_DISPLAY
+  // ---- Single-panel config (BOARD_C / BOARD_D): PFD over ND ----
   static GFXcanvas8 incmap = generate_inc_map(0.6 * PFD_REGION_H, lyt::txtScale(RGB_WIDTH));
-
-  // ---- PFD ----
   SvgCanvas pfd(RGB_WIDTH, PFD_REGION_H);
   drawHorizonDisplay(&pfd, &incmap, &s, /*showCompass*/ false);
-
-  // ---- ND ----
   SvgCanvas nd(RGB_WIDTH, ND_CANVAS_H);
   drawNavigationDisplay(&nd, &s);
 
   writeSvg("docs/pfd.svg", RGB_WIDTH, PFD_REGION_H, {{pfd.elems, 0, 0}});
   writeSvg("docs/nd.svg",  RGB_WIDTH, ND_CANVAS_H, {{nd.elems, 0, 0}});
-  // Combined single panel: PFD on top, ND drawn over the overlap region below.
   writeSvg("docs/combined.svg", RGB_WIDTH, RGB_HEIGHT,
            {{pfd.elems, 0, 0}, {nd.elems, 0, ND_TOP}});
-  // Annotated ND legend (uses landmarks recorded during the ND draw above).
   genLegend("docs/nd_legend.svg", nd.elems);
+#else
+  // ---- Dual-display config (BOARD_A): two separate ST7789 screens ----
+  SvgCanvas pfd(SCREEN1_WIDTH, SCREEN1_HEIGHT);
+  pfd.setRotation(PFD_CANVAS_ROTATION);
+  static GFXcanvas8 incmap = generate_inc_map(0.6 * pfd.height(), lyt::txtScale(pfd.width()));
+  drawHorizonDisplay(&pfd, &incmap, &s, /*showCompass*/ true);
+  SvgCanvas nd(SCREEN2_WIDTH, SCREEN2_HEIGHT);
+  nd.setRotation(ND_CANVAS_ROTATION);
+  drawNavigationDisplay(&nd, &s);
+
+  genDual("docs/dual.svg", pfd.elems, pfd.width(), pfd.height(), nd.elems, nd.width(), nd.height());
+#endif
   return 0;
 }

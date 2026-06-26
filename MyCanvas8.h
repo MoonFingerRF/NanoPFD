@@ -83,4 +83,17 @@ public:
   // one knob covers every setTextSize() the drawers issue on this canvas.
   uint8_t textScale = 1;
   void setTextSize(uint8_t s) { GFXcanvas8::setTextSize((uint8_t)(s * textScale)); }
+
+#ifdef SVG_RENDER
+  // Host SVG generator (tools/svggen) only: Adafruit_GFX's drawCircle/fillCircle/
+  // drawTriangle/fillTriangle are non-virtual, so the recording canvas can't
+  // intercept them as whole shapes. Re-declaring them here as virtual lets the
+  // generator capture clean vector circles/polygons instead of rasterised pixels.
+  // On the device build (SVG_RENDER undefined) none of this exists and the base
+  // (non-virtual) GFX implementations are used exactly as before.
+  virtual void drawCircle(int16_t x, int16_t y, int16_t r, uint16_t c) { Adafruit_GFX::drawCircle(x, y, r, c); }
+  virtual void fillCircle(int16_t x, int16_t y, int16_t r, uint16_t c) { Adafruit_GFX::fillCircle(x, y, r, c); }
+  virtual void drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t c) { Adafruit_GFX::drawTriangle(x0, y0, x1, y1, x2, y2, c); }
+  virtual void fillTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t c) { Adafruit_GFX::fillTriangle(x0, y0, x1, y1, x2, y2, c); }
+#endif
 };
