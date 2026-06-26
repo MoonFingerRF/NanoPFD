@@ -38,12 +38,12 @@ board_config() {   # $1 = A|C|D  -> write a config.h with only that board select
 
 # ---- single-panel config (BOARD_C): pfd / nd / combined / nd_legend ----
 mkdir -p "$TMP/c"; board_config C > "$TMP/c/config.h"
-g++ "${COMMON[@]}" -I"$TMP/c" -I"$ROOT" -I"$GFX" "$HERE/svggen.cpp" "$TMP/gfx.o" -o "$TMP/svggen_c"
+g++ "${COMMON[@]}" -I"$TMP/c" -I"$ROOT" -I"$GFX" "$HERE/svggen.cpp" "$TMP/gfx.o" -lz -o "$TMP/svggen_c"
 ( cd "$ROOT" && "$TMP/svggen_c" )
 
 # ---- dual-display config (BOARD_A): dual.svg ----
 mkdir -p "$TMP/a"; board_config A > "$TMP/a/config.h"
-g++ "${COMMON[@]}" -I"$TMP/a" -I"$ROOT" -I"$GFX" "$HERE/svggen.cpp" "$TMP/gfx.o" -o "$TMP/svggen_a"
+g++ "${COMMON[@]}" -I"$TMP/a" -I"$ROOT" -I"$GFX" "$HERE/svggen.cpp" "$TMP/gfx.o" -lz -o "$TMP/svggen_a"
 ( cd "$ROOT" && "$TMP/svggen_a" )
 
 echo "Regenerated $ROOT/docs/{pfd,nd,combined,nd_legend,dual}.svg"

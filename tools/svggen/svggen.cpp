@@ -12,6 +12,7 @@
 #include <cstdint>
 #include <algorithm>
 #include <utility>
+#include <zlib.h>
 
 #include "config.h"      // BOARD_C config (resolved from /tmp/npfd via -I)
 #include "State.h"
@@ -22,6 +23,40 @@ uint16_t color_index[NUM_COLORS] = {
   0x0000, 0x001F, 0xF800, 0x07E0, 0x07FF, 0xF81F,
   0xFFE0, 0xFFFF, 0x055F, 0xD421, 0xAD55, 0x4208
 };
+
+// --- minimal PNG (RGBA) + base64, for embedding the attitude as a smooth raster ---
+static void be32(std::string &s, uint32_t v) { s += (char)(v>>24); s += (char)(v>>16); s += (char)(v>>8); s += (char)(v&0xFF); }
+static void pngChunk(std::string &out, const char *type, const std::string &data) {
+  be32(out, (uint32_t)data.size());
+  size_t at = out.size();
+  out.append(type, 4);
+  out += data;
+  uint32_t crc = (uint32_t)crc32(0, (const Bytef*)(out.data()+at), (uInt)(4 + data.size()));
+  be32(out, crc);
+}
+static std::string pngEncodeRGBA(const std::vector<uint8_t> &rgba, int w, int h) {
+  std::string png; png.append("\x89PNG\r\n\x1a\n", 8);
+  std::string ihdr; be32(ihdr, (uint32_t)w); be32(ihdr, (uint32_t)h);
+  ihdr += (char)8; ihdr += (char)6;          // 8-bit, colour type 6 (RGBA)
+  ihdr += (char)0; ihdr += (char)0; ihdr += (char)0;
+  pngChunk(png, "IHDR", ihdr);
+  std::string raw; raw.reserve((size_t)h * (1 + (size_t)w*4));
+  for (int y = 0; y < h; y++) { raw += (char)0; raw.append((const char*)&rgba[(size_t)y*w*4], (size_t)w*4); }
+  uLongf clen = compressBound((uLong)raw.size());
+  std::vector<uint8_t> comp(clen);
+  compress2(comp.data(), &clen, (const Bytef*)raw.data(), (uLong)raw.size(), 9);
+  pngChunk(png, "IDAT", std::string((const char*)comp.data(), clen));
+  pngChunk(png, "IEND", "");
+  return png;
+}
+static std::string b64(const std::string &in) {
+  static const char *T = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+  std::string o; int val = 0, bits = -6;
+  for (unsigned char c : in) { val = (val<<8) + c; bits += 8; while (bits >= 0) { o += T[(val>>bits)&0x3F]; bits -= 6; } }
+  if (bits > -6) o += T[((val<<8)>>(bits+8))&0x3F];
+  while (o.size() % 4) o += '=';
+  return o;
+}
 
 // ---------------------------------------------------------------------------
 //  Recorded SVG element
@@ -153,17 +188,42 @@ public:
     int LW = width(), LH = height();      // logical (rotated) dims
     int NW = WIDTH, NH = HEIGHT;          // native buffer dims
     uint8_t rot = getRotation();
-    for (int y = 0; y < LH; y++)
-      for (int x = 0; x < LW; x++) {
-        long idx;
-        switch (rot) {                    // logical (x,y) -> raw buffer index
-          case 1:  idx = (long)(NW-1-y) + (long)x * NW; break;
-          case 2:  idx = (long)(NW-1-x) + (long)(NH-1-y) * NW; break;
-          case 3:  idx = (long)y + (long)(NH-1-x) * NW; break;
-          default: idx = (long)x + (long)y * NW; break;   // 0
-        }
-        if (b[idx] != bufBefore[idx]) push('X', x, y, 0, 0, b[idx]);
+    auto idxOf = [&](int x, int y) -> long {
+      switch (rot) {                      // logical (x,y) -> raw buffer index
+        case 1:  return (long)(NW-1-y) + (long)x * NW;
+        case 2:  return (long)(NW-1-x) + (long)(NH-1-y) * NW;
+        case 3:  return (long)y + (long)(NH-1-x) * NW;
+        default: return (long)x + (long)y * NW;
       }
+    };
+    // Bounding box of the pixels the attitude loop changed.
+    int minx = LW, miny = LH, maxx = -1, maxy = -1;
+    for (int y = 0; y < LH; y++)
+      for (int x = 0; x < LW; x++)
+        if (b[idxOf(x,y)] != bufBefore[idxOf(x,y)]) {
+          if (x < minx) minx = x; if (x > maxx) maxx = x;
+          if (y < miny) miny = y; if (y > maxy) maxy = y;
+        }
+    if (maxx < 0) return;
+    int bw = maxx - minx + 1, bh = maxy - miny + 1;
+    // Build an RGBA image (changed pixels opaque, the rest transparent) so the
+    // attitude is one smooth raster texture rather than thousands of stacked
+    // 1px rects (which alias into visible scan lines).
+    std::vector<uint8_t> rgba((size_t)bw * bh * 4, 0);
+    for (int y = miny; y <= maxy; y++)
+      for (int x = minx; x <= maxx; x++) {
+        long i = idxOf(x, y);
+        if (b[i] == bufBefore[i]) continue;
+        uint16_t cc = color_index[b[i]];
+        size_t o = ((size_t)(y - miny) * bw + (x - minx)) * 4;
+        rgba[o]   = ((cc >> 11) & 0x1F) * 255 / 31;
+        rgba[o+1] = ((cc >> 5)  & 0x3F) * 255 / 63;
+        rgba[o+2] = ( cc        & 0x1F) * 255 / 31;
+        rgba[o+3] = 255;
+      }
+    Elem e; e.kind = 'I'; e.a = minx; e.b = miny; e.c = bw; e.d = bh;
+    e.text = "data:image/png;base64," + b64(pngEncodeRGBA(rgba, bw, bh));
+    elems.push_back(std::move(e));
   }
 };
 
@@ -250,9 +310,9 @@ static void emitElems(std::string &o, const std::vector<Elem> &els) {
         snprintf(buf, sizeof buf,
           "<line x1=\"%g\" y1=\"%g\" x2=\"%g\" y2=\"%g\" stroke=\"%s\"/>\n",
           e.a+0.5f, e.b+0.5f, e.c+0.5f, e.d+0.5f, col.c_str()); o += buf; break;
-      case 'C':
+      case 'C':   // filled circle — crisp so it pixel-matches the device fillCircle
         snprintf(buf, sizeof buf,
-          "<circle cx=\"%g\" cy=\"%g\" r=\"%g\" fill=\"%s\"/>\n",
+          "<circle cx=\"%g\" cy=\"%g\" r=\"%g\" fill=\"%s\" shape-rendering=\"crispEdges\"/>\n",
           e.a+0.5f, e.b+0.5f, e.c+0.5f, col.c_str()); o += buf; break;
       case 'c':
         snprintf(buf, sizeof buf,
@@ -263,7 +323,7 @@ static void emitElems(std::string &o, const std::vector<Elem> &els) {
         for (size_t i = 0; i + 1 < e.pts.size(); i += 2) {
           snprintf(buf, sizeof buf, "%g,%g ", e.pts[i]+0.5f, e.pts[i+1]+0.5f); o += buf;
         }
-        if (e.kind == 'P') { o += "\" fill=\"" + col + "\"/>\n"; }
+        if (e.kind == 'P') { o += "\" fill=\"" + col + "\" shape-rendering=\"crispEdges\"/>\n"; }
         else { o += "\" fill=\"none\" stroke=\"" + col + "\"/>\n"; }
         break;
       }
@@ -277,6 +337,11 @@ static void emitElems(std::string &o, const std::vector<Elem> &els) {
           "<circle cx=\"%g\" cy=\"%g\" r=\"%g\" fill=\"none\" stroke=\"%s\" "
           "stroke-dasharray=\"2 3\" clip-path=\"url(#ndclip)\"/>\n",
           e.a+0.5f, e.b+0.5f, e.c, col.c_str()); o += buf; break;
+      case 'I':    // attitude raster (embedded PNG)
+        o += "<image x=\"" + std::to_string((int)e.a) + "\" y=\"" + std::to_string((int)e.b) +
+             "\" width=\"" + std::to_string((int)e.c) + "\" height=\"" + std::to_string((int)e.d) +
+             "\" preserveAspectRatio=\"none\" href=\"" + e.text + "\"/>\n";
+        break;
       case 'T': {  // text glyph
         std::string t = e.text; std::string esc;
         for (char ch : t) { if (ch=='&') esc+="&amp;"; else if (ch=='<') esc+="&lt;"; else if (ch=='>') esc+="&gt;"; else esc+=ch; }

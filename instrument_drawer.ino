@@ -102,7 +102,7 @@ void drawRadialLine(GFXcanvas8 *canvas, float x, float y, float angle, float min
   canvas->drawLine(x + dx * min_length, y - dy * min_length, x + dx * max_length, y - dy * max_length, IWHITE);
 }
 
-void drawBankAngleTriangle(GFXcanvas8 *canvas, float x, float y, float r, float angle, float maxAngle, float minAngle) {
+void drawBankAngleTriangle(MyCanvas8 *canvas, float x, float y, float r, float angle, float maxAngle, float minAngle) {
   bool overAngle = false;
   if (angle > maxAngle) {
     overAngle = true;
@@ -132,7 +132,7 @@ void printCentered(GFXcanvas8 *canvas, const char *str, int x, int y) {
   canvas->print(str);
 }
 
-void drawArrowNumber(GFXcanvas8 *canvas, const char *str, int x, int y, int w, int h, int dir) {
+void drawArrowNumber(MyCanvas8 *canvas, const char *str, int x, int y, int w, int h, int dir) {
   const uint8_t outline_col = IGREY;
   switch (dir) {
     case 0:
@@ -191,7 +191,7 @@ void drawArrowNumber(GFXcanvas8 *canvas, const char *str, int x, int y, int w, i
 
 float battery_voltage = 4.2;
 
-void drawTurnCoordinator(GFXcanvas8 *canvas, float x, float y, float r1, float r2, float range, float angle) {
+void drawTurnCoordinator(MyCanvas8 *canvas, float x, float y, float r1, float r2, float range, float angle) {
   canvas->fillCircle(x, y, r2 - 1, IWHITE);
   canvas->fillCircle(x, y, r1 - 1, IBLACK);
   float r = (r1 + r2) / 2.0;
