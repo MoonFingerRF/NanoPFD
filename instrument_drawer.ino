@@ -14,7 +14,11 @@
 #define p 3.1415926
 
 #include "layout.h"
+#ifdef CHART_DATA_HEADER          // the SVG legend build swaps in a fabricated map
+#include CHART_DATA_HEADER
+#else
 #include "chart_data.h"
+#endif
 
 // Place string `s` on canvas `c` so the (ax,ay) anchor lands on the requested
 // edge/center of the text, using the glyph's MEASURED bounds (getTextBounds) — so
@@ -907,6 +911,22 @@ static void mapLabelRoad(MyCanvas8 *c, const ChartPoly &P, const MapProj &m, uin
   c->setTextColor(col); c->setCursor(bx, by); c->print(P.name);
 }
 
+#ifdef SVG_RENDER
+// Record a legend landmark for a map polyline segment at the point on it closest
+// to the radar centre (so a feature that only clips the edge of the view still
+// anchors at a visible, on-screen spot — not at a midpoint that may be off-circle).
+static void svgLineLM(MyCanvas8 *canvas, const char *name, int px, int py, int qx, int qy, int cx, int cy, long r2) {
+  float dx = qx - px, dy = qy - py, len2 = dx * dx + dy * dy;
+  float t = len2 > 0 ? (((cx - px) * dx + (cy - py) * dy) / len2) : 0.0f;
+  t = t < 0 ? 0 : (t > 1 ? 1 : t);
+  int ax = px + (int)(t * dx), ay = py + (int)(t * dy);
+  if (mapInCirc(ax, ay, cx, cy, r2) && !mapBotMask(canvas, cx, cy, ax, ay)) {
+    extern void svgLandmark(const char *, int, int);
+    svgLandmark(name, ax, ay);
+  }
+}
+#endif
+
 static void drawChart(MyCanvas8 *canvas, int cx, int cy, int rad,
                       float clat, float clon, float headingDeg) {
   canvas->setRotationMatrix();          // identity: the projection does the rotation
@@ -951,9 +971,8 @@ static void drawChart(MyCanvas8 *canvas, int cx, int cy, int rad,
       if (have && mapSegVis(px, py, qx, qy, cx, cy, rad)) {
         mapLine(canvas, px, py, qx, qy, col, cx, cy, r2, dash);
 #ifdef SVG_RENDER
-        if (mapInCirc((px+qx)/2, (py+qy)/2, cx, cy, r2)) { extern void svgLandmark(const char *, int, int);
-          svgLandmark(P.type==PLY_RIVER?"river":P.type==PLY_INTERSTATE?"road":P.type==PLY_HIGHWAY?"road":
-                      P.type==PLY_STATE?"state":"border", (px+qx)/2, (py+qy)/2); }
+        svgLineLM(canvas, P.type==PLY_RIVER?"river":P.type==PLY_INTERSTATE?"road":P.type==PLY_HIGHWAY?"road":
+                  P.type==PLY_STATE?"state":"border", px, py, qx, qy, cx, cy, r2);
 #endif
       }
       px = qx; py = qy; have = true;
@@ -969,8 +988,7 @@ static void drawChart(MyCanvas8 *canvas, int cx, int cy, int rad,
     mapXY(m, s.lat2, s.lon2, ex, ey);
     if (!mapSegVis(sx, sy, ex, ey, cx, cy, rad)) continue;
 #ifdef SVG_RENDER
-    if (mapInCirc((sx+ex)/2, (sy+ey)/2, cx, cy, r2)) { extern void svgLandmark(const char *, int, int);
-      svgLandmark(s.type==SG_RIVER?"river":s.type==SG_COAST?"coast":"glidepath", (sx+ex)/2, (sy+ey)/2); }
+    svgLineLM(canvas, s.type==SG_RIVER?"river":s.type==SG_COAST?"coast":"glidepath", sx, sy, ex, ey, cx, cy, r2);
 #endif
     uint8_t scol = IYELLOW; bool sdash = true;                      // SG_GLIDEPATH (yellow)
     if      (s.type == SG_RIVER) { scol = ISKY; sdash = false; }    // rivers light blue
@@ -990,7 +1008,7 @@ static void drawChart(MyCanvas8 *canvas, int cx, int cy, int rad,
     long ddx = rcx - cx, ddy = rcy - cy, reach = (long)rad + rr;
     if (ddx * ddx + ddy * ddy > reach * reach) continue;   // circle can't reach the view
 #ifdef SVG_RENDER
-    if (mapInCirc(rcx, rcy, cx, cy, r2)) { extern void svgLandmark(const char *, int, int);
+    if (mapInCirc(rcx, rcy, cx, cy, r2) && !mapBotMask(canvas, cx, cy, rcx, rcy)) { extern void svgLandmark(const char *, int, int);
       svgLandmark(r.type==RG_APT_LARGE?"ring_lg":r.type==RG_APT_MEDIUM?"ring_md":
                   r.type==RG_APT_SMALL?"ring_sm":r.type==RG_APT_CLOSED?"ring_cl":"ring_rstr", rcx, rcy); }
 #endif
@@ -1034,7 +1052,7 @@ static void drawChart(MyCanvas8 *canvas, int cx, int cy, int rad,
     mapXY(m, pt.lat, pt.lon, sx, sy);
     if (!mapInCirc(sx, sy, cx, cy, r2)) continue;
 #ifdef SVG_RENDER
-    { extern void svgLandmark(const char *, int, int);
+    if (!mapBotMask(canvas, cx, cy, sx, sy)) { extern void svgLandmark(const char *, int, int);
       svgLandmark(pt.type==PT_AIRPORT_TWR?"apt_twr":pt.type==PT_AIRPORT_NTWR?"apt_ntwr":
                   pt.type==PT_NAVAID?"navaid":pt.type==PT_AIRPORT_CLOSED?"apt_closed":"city", sx, sy); }
 #endif

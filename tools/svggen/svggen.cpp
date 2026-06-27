@@ -397,9 +397,9 @@ static void writeSvg(const char *path, int W, int H, const std::vector<Group> &g
 }
 
 // ---------------------------------------------------------------------------
-//  Annotated ND legend  (single-panel config only)
+//  Annotated ND legend  (built separately with the fabricated legend map)
 // ---------------------------------------------------------------------------
-#if COMBINED_DISPLAY
+#if defined(LEGEND_BUILD)
 static std::string xesc(const std::string &s) {
   std::string o;
   for (char c : s) { if (c == '&') o += "&amp;"; else if (c == '<') o += "&lt;"; else if (c == '>') o += "&gt;"; else o += c; }
@@ -411,11 +411,19 @@ static LM findLM(const char *n) {
   return {};
 }
 
-static void genLegend(const char *path, const std::vector<Elem> &nd) {
-  const int W = RGB_WIDTH, H = ND_CANVAS_H;
-  // Mirror drawNavigationDisplay's BOARD_C / COMBINED geometry.
-  const int sc = 2, hbh = 17 * sc, ringTop = 3 * hbh / 2;
-  const int cyc = H - (int)(0.03 * H), rad = cyc - ringTop, triApex = cyc - (int)(0.03 * H);
+static void genLegend(const char *path, const std::vector<Elem> &nd, int W, int H) {
+  // Mirror drawNavigationDisplay's compass geometry for this board.
+  const int sc = lyt::txtScale(W);
+  const int hbh = 17 * sc;
+  int ringTop = H / 8;
+  { int need = 3 * hbh / 2 + 4 * sc; if (ringTop < need) ringTop = need; }
+  int cyc = H * 11 / 12, rad = cyc - ringTop, triApex = cyc;
+#if COMBINED_DISPLAY
+  cyc = H - (int)(0.03 * H);
+  ringTop = 3 * hbh / 2;
+  rad = cyc - ringTop;
+  triApex = cyc - (int)(0.03 * H);
+#endif
   auto ringPt = [&](double deg, double rr) {
     double a = deg * M_PI / 180.0;
     return std::make_pair(W / 2.0 + sin(a) * rr, cyc - cos(a) * rr);
@@ -451,9 +459,13 @@ static void genLegend(const char *path, const std::vector<Elem> &nd) {
   addLM("batt", "Battery voltage", IGREY);
 
   // legend canvas: ND in the middle, label columns left & right.
-  const double f = 1.25;
+#if COMBINED_DISPLAY
+  const double f = 1.35;
+#else
+  const double f = 2.0;
+#endif
   const int ndW = (int)(W * f), ndH = (int)(H * f);
-  const int colW = 274, ox = colW, oy = 44, LW = ndW + 2 * colW, LH = oy + ndH + 54;
+  const int colW = 292, ox = colW, oy = 46, LW = ndW + 2 * colW, LH = oy + ndH + 56;
   auto TX = [&](double x) { return ox + f * x; };
   auto TY = [&](double y) { return oy + f * y; };
 
@@ -528,7 +540,7 @@ static void genLegend(const char *path, const std::vector<Elem> &nd) {
   fwrite(o.data(), 1, o.size(), fp); fclose(fp);
   fprintf(stderr, "wrote %s (%zu bytes, %zu callouts)\n", path, o.size(), C.size());
 }
-#endif  // COMBINED_DISPLAY (legend)
+#endif  // LEGEND_BUILD (legend)
 
 // ---------------------------------------------------------------------------
 //  Dual-display layout: two rounded-corner viewports (Waveshare 1.69" screens)
@@ -602,7 +614,20 @@ int main() {
   s.home_lat = MAP_DEFAULT_LAT + 0.04f; s.home_lon = MAP_DEFAULT_LON + 0.06f;  // home NE -> green line visible
   s.gps_alt = 850; s.has_pos = true; s.sats = 11;
 
-#if COMBINED_DISPLAY
+#if defined(LEGEND_BUILD)
+  // ---- Annotated ND legend: the single-panel ND over a real NYC-area map ----
+  s.heading = 0; s.ground_track = 14; s.ground_speed = 130;  // north-up; track slightly right
+  // Philadelphia, centred just south of PHL so the dense variety sits AHEAD (north,
+  // in the visible fan): PHL + nearby towered fields, many non-towered NJ fields,
+  // navaids, the city, and the Delaware River (which IS the PA/NJ state line).
+  s.lat = 39.85f; s.lon = -75.13f;
+  s.last_lat = 39.85f; s.last_lon = -75.13f;
+  s.home_lat = 39.85f + 0.16f; s.home_lon = -75.13f - 0.05f; // NNW -> green bearing line shows
+  s.home_alt = 30;
+  SvgCanvas nd(RGB_WIDTH, ND_CANVAS_H);
+  drawNavigationDisplay(&nd, &s);
+  genLegend("docs/nd_legend.svg", nd.elems, nd.width(), nd.height());
+#elif COMBINED_DISPLAY
   // ---- Single-panel config (BOARD_C / BOARD_D): PFD over ND ----
   static GFXcanvas8 incmap = generate_inc_map(0.6 * PFD_REGION_H, lyt::txtScale(RGB_WIDTH));
   SvgCanvas pfd(RGB_WIDTH, PFD_REGION_H);
@@ -614,7 +639,6 @@ int main() {
   writeSvg("docs/nd.svg",  RGB_WIDTH, ND_CANVAS_H, {{nd.elems, 0, 0}});
   writeSvg("docs/combined.svg", RGB_WIDTH, RGB_HEIGHT,
            {{pfd.elems, 0, 0}, {nd.elems, 0, ND_TOP}});
-  genLegend("docs/nd_legend.svg", nd.elems);
 #else
   // ---- Dual-display config (BOARD_A): two separate ST7789 screens ----
   SvgCanvas pfd(SCREEN1_WIDTH, SCREEN1_HEIGHT);

@@ -59,8 +59,8 @@ just pick the board in [`config.h`](config.h):
 ## Reading the Navigation Display
 
 The ND is a heading-up moving map. Every element is colour- and shape-coded the way a real
-chart / EFIS is — here is everything on it (the picture is the actual rendered display, with
-the live values from a sample flight near Cincinnati):
+chart / EFIS is — here is everything on it (the picture is the actual rendered display over a
+real map of the Philadelphia area, where the Delaware River doubles as the PA/NJ state line):
 
 <div align="center">
 <img src="docs/nd_legend.svg" alt="Annotated Navigation Display legend" width="100%"/>
@@ -145,7 +145,7 @@ The **sensors are identical on every build** (all I²C / Qwiic, except the GPS, 
 | [Adafruit BNO085](https://www.adafruit.com/product/4754) — 9-DOF fusion IMU | attitude (sky/ground), tilt-compensated heading, g-meter, turn coordinator | Adafruit #4754 | ~$25 |
 | [Adafruit BMP390](https://www.adafruit.com/product/4816) — barometer | pressure altitude tape + vertical-speed indicator | Adafruit #4816 | ~$11 |
 | [Matek ASPD-4525](https://www.mateksys.com/?portfolio=aspd-4525) — MS4525DO airspeed | airspeed tape — **kit includes the pitot tube, tubing &amp; cable** | MATEKSYS / FPV shops | ~$20 |
-| [SparkFun MAX-M10S](https://www.sparkfun.com/sparkfun-gnss-receiver-breakout-max-m10s-qwiic.html) — u-blox M10 GPS | ND map centre, ground speed, ground track, lat/lon | SparkFun GPS-18037 (or any u-blox M10 UART module) | ~$35 |
+| [Matek SAM-M10Q](https://www.getfpv.com/mateksys-gnss-sam-m10q-gps-module-gallileo-glonass-beidoub1c.html) — u-blox M10 GPS (**UART**) | ND map centre, ground speed, ground track, lat/lon | MATEKSYS / FPV shops — JST-GH **UART** (the firmware talks UBX over a serial port, not I²C); any FPV u-blox M10 UART module works | ~$25 |
 | Qwiic / STEMMA-QT cables + jumper wire | wiring the I²C bus + GPS UART | any | a few $ |
 
 **…plus exactly one display configuration from the table above.**
