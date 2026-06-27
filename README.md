@@ -202,11 +202,14 @@ NanoPFD is a from-scratch renderer tuned to squeeze a smooth glass cockpit out o
 ## Building & flashing
 
 NanoPFD builds with [`arduino-cli`](https://arduino.github.io/arduino-cli/) and the Espressif
-ESP32 core (3.3.x). **Octal PSRAM must be enabled** (`PSRAM=opi`).
+ESP32 core. **Octal PSRAM must be enabled** (`PSRAM=opi`). **Use core `3.3.6`** if you want the
+Bluetooth Remote ID receiver: cores `3.3.7`–`3.3.10` have a regression that panics ESP32-S3 BLE
+startup ([arduino-esp32 #12357](https://github.com/espressif/arduino-esp32/issues/12357)) — WiFi
+is unaffected, but BLE won't initialize. `build.sh` warns if the wrong core is installed.
 
 ```bash
-# 1. ESP32 core
-arduino-cli core install esp32:esp32
+# 1. ESP32 core — pin 3.3.6 (3.3.7+ breaks ESP32-S3 BLE; see above)
+arduino-cli core install esp32:esp32@3.3.6
 
 # 2. Libraries
 arduino-cli lib install "Adafruit BNO08x" "Adafruit BMP3XX Library" \

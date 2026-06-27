@@ -20,6 +20,17 @@ GFX=/tmp/Arduino_GFX_fixed
 SKB=/tmp/clean_sketchbook
 USERLIB="$HOME/Documents/Arduino/libraries"
 
+# --- 0. CORE VERSION: the Remote ID BLE receiver needs arduino-esp32 core 3.3.6.
+#   Cores 3.3.7..3.3.10 have a regression that PANICS ESP32-S3 BLE startup
+#   ("HLI Magic mismatch" / TLSF assert; arduino-esp32 issue #12357). WiFi is
+#   unaffected, but BLE (most Remote ID traffic) won't init. Pin 3.3.6 here.
+CORE_VER=$(arduino-cli core list 2>/dev/null | awk '$1=="esp32:esp32"{print $2}')
+if [ "$CORE_VER" != "3.3.6" ]; then
+  echo "WARNING: arduino-esp32 core is '$CORE_VER' — ESP32-S3 BLE (Remote ID) needs 3.3.6."
+  echo "         Install it:  arduino-cli core install esp32:esp32@3.3.6"
+  echo "         (Continuing; BLE will crash on boot until you downgrade.)"
+fi
+
 # --- 1. Clean Arduino_GFX clone (the user's installed copies are too old) -----
 if [ ! -f "$GFX/src/Arduino_GFX_Library.h" ]; then
   git clone --depth 1 https://github.com/moononournation/Arduino_GFX "$GFX"

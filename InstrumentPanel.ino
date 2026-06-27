@@ -31,11 +31,6 @@
 
 HWCDC USBSerial;
 
-// The Remote ID BLE controller init wants more stack than the 8 KB loop-task
-// default. Only relevant when BLE is enabled (it's currently off — see config.h).
-#if RID_ENABLE && RID_USE_BLE
-SET_LOOP_TASK_STACK_SIZE(16 * 1024);
-#endif
 
 // RGB565 values for the 8-bit indexed canvas palette (indices defined in config.h)
 uint16_t color_index[NUM_COLORS] = {

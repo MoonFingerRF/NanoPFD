@@ -186,27 +186,13 @@ static void ble_host_task(void *param) {
   nimble_port_freertos_deinit();
 }
 
-// Run the controller bring-up on core 0 then self-delete. The Arduino loop task
-// (where setup() runs) is on core 1, but the BT controller is pinned to core 0;
-// initializing it from core 1 panics in btdm_controller_init.
-static void ble_begin();                        // defined below
-static void ble_init_task(void *) {
-  ble_begin();
-  vTaskDelete(nullptr);
-}
-
 static void ble_begin() {
-  RID_LOG("[RID] before BLE init: internal free=%u largest=%u\n",
-          (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL),
-          (unsigned)heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL));
-  // Bring the BLE controller up via the Arduino HAL (esp_bt_controller_init +
-  // enable, with the classic-BT memory released) — calling NimBLE's all-in-one
-  // nimble_port_init() here panics in the controller's init malloc, but btStart()
-  // is the path the core's own BLE library uses. Then init only the NimBLE *host*.
-  if (!btStart()) { RID_LOG("[RID] btStart() (BLE controller) FAILED\n"); return; }
-  RID_LOG("[RID] btStart() ok; esp_nimble_init...\n");
-  esp_err_t e = esp_nimble_init();               // NimBLE host stack (controller already up)
-  if (e != ESP_OK) { RID_LOG("[RID] esp_nimble_init err %d\n", e); return; }
+  // nimble_port_init() brings up the BLE controller + host in one call.
+  // IMPORTANT: this requires arduino-esp32 core <= 3.3.6 — core 3.3.7..3.3.10
+  // have a regression that panics S3 BLE startup ("HLI Magic mismatch" / TLSF
+  // assert; arduino-esp32 issue #12357). On 3.3.6 this returns ESP_OK and scans.
+  esp_err_t e = nimble_port_init();
+  if (e != ESP_OK) { RID_LOG("[RID] nimble_port_init err %d\n", e); return; }
   ble_hs_cfg.sync_cb  = ble_on_sync;             // start scanning once the host is ready
   ble_hs_cfg.reset_cb = ble_on_reset;
   nimble_port_freertos_init(ble_host_task);
@@ -301,9 +287,7 @@ void remoteid_begin() {
   // Claiming it before WiFi (which also allocates internal RAM) is what keeps
   // nimble_port_init from crashing in its controller malloc.
 #if RID_USE_BLE
-  // Controller init MUST run on core 0 (see ble_init_task); big stack — the
-  // controller init is stack-hungry — and the task self-deletes afterward.
-  xTaskCreatePinnedToCore(ble_init_task, "bleinit", 16384, nullptr, 5, nullptr, 0);
+  ble_begin();
 #endif
 #if RID_USE_WIFI
   wifi_begin();

@@ -412,11 +412,10 @@
 // Listens for drone/UAS Remote ID broadcasts on the ESP32's BLE + WiFi radios
 // and plots them on the ND (orange dot + altitude in ft). See RemoteID.cpp.
 #define RID_ENABLE    1     // master enable for the receiver
-#define RID_USE_BLE   0     // Bluetooth LE: OFF — the BLE controller (btStart /
-                            //   nimble_port_init) panics on this ESP32-S3 + core
-                            //   3.3.7 even in a stock 5-line sketch (independent of
-                            //   PSRAM and of this firmware). Re-enable once the core
-                            //   BLE issue is resolved (core update/reinstall).
+#define RID_USE_BLE   1     // Bluetooth LE advertisements (most consumer drones +
+                            //   standalone Remote ID modules). REQUIRES arduino-esp32
+                            //   core <= 3.3.6 — 3.3.7..3.3.10 have a regression that
+                            //   panics S3 BLE startup (issue #12357). See build.sh.
 #define RID_USE_WIFI  1     // WiFi beacons (channel-hopping)
 #define RID_AGE_MS    12000 // drop a target not heard from within this long (ms)
 #define RID_HOP_MS    700   // WiFi channel dwell (ms) — long enough to reliably
