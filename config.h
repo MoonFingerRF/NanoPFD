@@ -42,8 +42,8 @@
 //  Enable exactly ONE board.
 // ============================================================================
 #define BOARD_A 0
-#define BOARD_C 1
-#define BOARD_D 0
+#define BOARD_C 0
+#define BOARD_D 1
 
 #if (BOARD_A + BOARD_C + BOARD_D) != 1
 #error "Enable exactly one board (BOARD_A, BOARD_C, or BOARD_D) in config.h"
@@ -355,7 +355,13 @@
 // radius (px) at each corner. Keep text/readouts inset past it. Tune to taste.
 #define SCREEN_CORNER        20
 #define FOV                  45        // attitude-indicator vertical FOV (deg)
-#define SEALEVELPRESSURE_HPA 1013.25f  // QNH used for pressure-altitude calc
+#define SEALEVELPRESSURE_HPA 1013.25f  // standard QNH (= the gBaroInHg 29.92 default)
+// Adjustable local altimeter setting in inHg (the "Kollsman" setting), changed by the
+// IO0 button (tap = +0.01, hold = continuous, wraps 31.00 -> 28.00). The altitude calc
+// (ASI.ino) uses gBaroInHg * 33.8639 (inHg -> hPa). Defined in InstrumentPanel.ino.
+extern volatile float gBaroInHg;
+#define BARO_MIN_INHG 28.00f
+#define BARO_MAX_INHG 31.00f
 #define VSI_FULL_SCALE       20.0f     // ft/SEC at the ends of the VSI bar (+/- climb/descent)
 #define VSI_TICK             10.0f     // ft/sec between VSI indentation ticks (0, +/-10, +/-20)
 #define GMETER_FS            4.0f      // g-meter full scale (top of bar); over = pulsing red
@@ -410,7 +416,9 @@
 #define IGREY    10
 #define IDGREY   11    // darker grey: roads (distinct from the IGREY range rings)
 #define IORANGE  12    // Remote ID traffic dots (unique; not used by any other symbol)
-#define NUM_COLORS 13
+#define IDBLUE   13    // dim blue: rivers + lakes (water bodies)
+#define IMROAD   14    // dim dark grey: regional medium roads (darker than IDGREY interstates)
+#define NUM_COLORS 15
 
 // ---- Remote ID receiver (ASTM F3411 / OpenDroneID) ------------------------
 // Listens for drone/UAS Remote ID broadcasts on the ESP32's BLE + WiFi radios

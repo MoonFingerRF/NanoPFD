@@ -260,6 +260,15 @@ void svgVecRingDashed(MyCanvas8 *c, int cx, int cy, int rr, uint8_t col) {
   s->elems.push_back(std::move(e));
 }
 
+// Runtime-zoom + altimeter globals — the device defines these in map_zoom.cpp /
+// InstrumentPanel.ino; the host legend build pins them to one representative view.
+volatile int     gMapRangeM      = MAP_RANGE_M;
+volatile uint8_t gMapLod         = 6;        // finest LOD (show the full variety of features)
+volatile bool    gMapFieldActive = false;
+volatile float   gMapFieldLat    = 0.0f;
+volatile float   gMapFieldLon    = 0.0f;
+volatile float   gBaroInHg       = 29.92f;
+
 #include "instrument_drawer.ino"
 #undef p     // the drawer's '#define p 3.1415926' must not leak into our code below
 #undef min   // Arduino shim's min()/max() macros would break std::min/std::max
@@ -519,12 +528,7 @@ static void genLegend(const char *path, const std::vector<Elem> &nd, int W, int 
         "<polyline points=\"%g,%g %g,%g %g,%g\" fill=\"none\" stroke=\"%s\" stroke-width=\"1.6\"/>\n",
         sx, ly, mx, ly, fx, fy, sx, ly, mx, ly, fx, fy, col.c_str());
       o += buf;
-      // marker ring on the feature
-      snprintf(buf, sizeof buf,
-        "<circle cx=\"%g\" cy=\"%g\" r=\"6.5\" fill=\"none\" stroke=\"#000\" stroke-width=\"3\"/>"
-        "<circle cx=\"%g\" cy=\"%g\" r=\"6.5\" fill=\"none\" stroke=\"%s\" stroke-width=\"1.7\"/>\n",
-        fx, fy, fx, fy, col.c_str());
-      o += buf;
+      // (no marker ring on the feature — the leader line alone points at it)
       // label (haloed text)
       snprintf(buf, sizeof buf,
         "<text x=\"%g\" y=\"%g\" fill=\"%s\" font-size=\"14\" font-weight=\"600\" "

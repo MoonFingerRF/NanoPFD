@@ -20,11 +20,14 @@
 #include <Arduino.h>
 #include "HWCDC.h"
 #include "esp_task_wdt.h"
+#include <Preferences.h>   // NVS storage for the altimeter setting (recalled after power-off)
 #include "Arduino_GFX_Library.h"
 
 #include "config.h"      // pins, screen sizes, tunables, color indices
 #include "State.h"       // shared flight-state struct + init/copy helpers
 #include "RemoteID.h"    // FAA Remote ID (OpenDroneID) BLE + WiFi traffic receiver
+#include "map_zoom.h"    // runtime touch-zoom range/tier + field-mode state
+#include "Touch.h"       // GT911/CST226 tap reader that drives the zoom
 #include "MyCanvas8.h"   // GFXcanvas8 subclass with a rotation matrix (ND uses it)
 #include "layout.h"      // resolution-independent layout math (txtScale, etc.)
 #include "chart_data.h"  // ND moving-map data + MapProj (types needed before auto-prototypes)
@@ -46,8 +49,16 @@ uint16_t color_index[NUM_COLORS] = {
   0xD421,  // IGND
   0xAD55,  // IGREY
   0x4208,  // IDGREY (dark grey for roads)
-  0xFD20   // IORANGE (Remote ID traffic)
+  0xFD20,  // IORANGE (Remote ID traffic)
+  0x000C,  // IDBLUE (dark blue water: (0,0,98) on RGB565, -> RGB332 0x01 on the LilyGO)
+  0x2104   // IMROAD (dim dark grey for medium roads — darker than IDGREY interstates)
 };
+
+// Local altimeter setting (inHg, the "Kollsman" value). The IO0 button adjusts it
+// (see loop()); the altitude calc (ASI.ino) uses gBaroInHg * 33.8639 -> hPa. Persisted
+// to NVS (debounced) so it survives power-off.
+volatile float gBaroInHg = 29.92f;
+Preferences    baroPrefs;
 
 // ----------------------------------------------------------------------------
 //  Shared state + locking
@@ -195,6 +206,7 @@ void sensorTask(void *params) {
       updateBPS(&gLocal);
       updateASI(&gLocal);
       remoteid_fill(&gLocal);     // pull in Remote ID traffic (cheap; ages out stale targets)
+      touchPoll(&gLocal);         // capacitive tap -> map zoom in/out (top/bottom half)
       lastSlow = now;
     }
     updateIMU(&gLocal);            // IMU as fast as it streams (FIFO drained each loop)
@@ -398,6 +410,13 @@ void setup(void) {
   Wire.begin(IIC_SDA, IIC_SCL);   // explicit I2C pins for this board
   Wire.setClock(400000);
 
+  pinMode(0, INPUT_PULLUP);        // IO0 (BOOT button) — adjusts the altimeter setting
+  baroPrefs.begin("baro", false);  // recall the saved altimeter setting (default 29.92)
+  gBaroInHg = baroPrefs.getFloat("inHg", 29.92f);
+  if (gBaroInHg < BARO_MIN_INHG || gBaroInHg > BARO_MAX_INHG) gBaroInHg = 29.92f;
+
+  mapZoomInit();                  // set the boot map zoom level (range/tier)
+
   init_state(&State);
   init_state(&gLocal);
 
@@ -440,6 +459,8 @@ void setup(void) {
                            // ST7701/expander I2C traffic can't race the sensor task)
 #endif
 
+  touchInit();             // GT911/CST226 reset + start (AFTER the expander is up; no-op on BOARD_A)
+
   xTaskCreatePinnedToCore(sensorTask, "sensors", STACK_SENSORS, NULL, PRIO_SENSORS, NULL, CORE_SENSORS);
 #if COMBINED_DISPLAY
   xTaskCreatePinnedToCore(combinedTask, "combined", STACK_PFD, NULL, PRIO_PFD, NULL, CORE_PFD);
@@ -476,6 +497,29 @@ void loop() {
     pressed = false;
   }
 #endif
+
+  // IO0 (BOOT button): tap = +0.01 inHg on the altimeter setting; hold (>450 ms) =
+  // continuous. One button, so it only counts up and wraps 31.00 -> 28.00.
+  {
+    static bool bprev = false, bdirty = false;
+    static uint32_t bpress = 0, brepeat = 0, bsaveT = 0;
+    bool bdown = (digitalRead(0) == LOW);
+    uint32_t bnow = millis();
+    bool tap = bdown && !bprev;
+    bool rep = bdown && bprev && (bnow - bpress > 450) && (bnow - brepeat > 90);
+    if (tap) bpress = bnow;
+    if (tap || rep) {
+      brepeat = bnow;
+      gBaroInHg = roundf((gBaroInHg + 0.01f) * 100.0f) / 100.0f;
+      if (gBaroInHg > BARO_MAX_INHG + 0.005f) gBaroInHg = BARO_MIN_INHG;
+      bdirty = true; bsaveT = bnow;
+    }
+    if (bdirty && bnow - bsaveT > 1500) {        // persist once the user settles (coalesces a scroll into one write)
+      baroPrefs.putFloat("inHg", gBaroInHg);
+      bdirty = false;
+    }
+    bprev = bdown;
+  }
 
 #if DEBUG_SERIAL
   static unsigned long lastPrint = 0;

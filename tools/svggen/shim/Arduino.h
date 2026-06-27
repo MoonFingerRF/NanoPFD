@@ -44,6 +44,7 @@ static inline float radians(float d){ return d*(float)PI/180.0f; }
 static inline float degrees(float r){ return r*180.0f/(float)PI; }
 static inline unsigned long millis(){ return 0; }
 static inline unsigned long micros(){ return 0; }
+static inline void *ps_malloc(size_t n){ return malloc(n); }   // ESP32 PSRAM alloc -> heap on host
 static inline void yield(){}
 #define LOW 0
 #define HIGH 1

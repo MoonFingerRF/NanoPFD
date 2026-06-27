@@ -100,6 +100,21 @@
 <rect x="330" y="253" width="150" height="61" fill="#000000"/>
 <rect x="330" y="254" width="90" height="1" fill="#FFFFFF"/>
 <rect x="330" y="74" width="90" height="1" fill="#FFFFFF"/>
+<text x="352" y="66" font-family="monospace" font-size="18" fill="#FFFFFF">2</text>
+<text x="364" y="66" font-family="monospace" font-size="18" fill="#FFFFFF">9</text>
+<text x="376" y="66" font-family="monospace" font-size="18" fill="#FFFFFF">.</text>
+<text x="388" y="66" font-family="monospace" font-size="18" fill="#FFFFFF">9</text>
+<text x="400" y="66" font-family="monospace" font-size="18" fill="#FFFFFF">2</text>
+<text x="308" y="272" font-family="monospace" font-size="18" fill="#FFFFFF">G</text>
+<text x="320" y="272" font-family="monospace" font-size="18" fill="#FFFFFF">P</text>
+<text x="332" y="272" font-family="monospace" font-size="18" fill="#FFFFFF">S</text>
+<text x="308" y="292" font-family="monospace" font-size="18" fill="#FFFFFF">A</text>
+<text x="320" y="292" font-family="monospace" font-size="18" fill="#FFFFFF">L</text>
+<text x="332" y="292" font-family="monospace" font-size="18" fill="#FFFFFF">T</text>
+<rect x="348" y="257" width="1" height="38" fill="#ADAAAD"/>
+<text x="352" y="292" font-family="monospace" font-size="18" fill="#FFFFFF">8</text>
+<text x="364" y="292" font-family="monospace" font-size="18" fill="#FFFFFF">5</text>
+<text x="376" y="292" font-family="monospace" font-size="18" fill="#FFFFFF">0</text>
 <image x="150" y="57" width="181" height="215" preserveAspectRatio="none" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALUAAADXCAYAAABcbxD4AAAEJElEQVR42u3dQW7bMBRFUQ2z8W4m+8l6VGRWD2pZFCmR7x8Cd1Ckk3we2JJC2NtmnVvf+357lrUsXtitUoBBt96tfQ9CDHltyP+uKqhffmcr+xU5Hffh72etd318tKnVUb/83Jr78uJoU6tehhyhd3ky4VMLqK+jfpmH9exN3zu8Z9En3yg2zcsa/8p8eZOgbpoXfAMxt25m643ibKvb04/WeVnjrpnvQh37SO/qvKx2zFc3ySO9wfOy2kBDPTFqsM9jPntt23qjVOUGcei8rM8wQ70Qari3reofPpwOhFlwAy2wgRbYMKs2bhupKNiFj3T2PssBNsyCG2iBDbQKwLYxioJtQxQF20YoCrYNUBRsg1cUbANXFGyDVhRsA1YUbIO99fNAzHg0bANVFGyDVBRsA1QcbMNTFGqDUxRsA1MUbINSHGxDUhRqA1IUbINRFGwDURxsw/C5H1GoDUJxsA1BUEtQD712bb3GrXqtX2JeNglqqCd7utC6iVW/0KjEvGwS1FAv8nb66VequfwInJdNghrqRTfp6N9QB83LJkEN9WKbdPS2+vTne9x1VuSueUH9bZPMC+puj6Cg9kjPJkEN9d3nlf2Z3LyghhpqCWoJaglqCWpBLUEtn/sBtQS1BLWglqCWoJaglqAW1IYgqCWoJagTz3g4EwK1BLUEtaCWoJaglqCWoBbUEtQS1BLUeWdCzAxqCWpBLUEtQS1BLUEtqA1BUEtQS1BLV9otK2xtP3++dikpqAW1BLUEtQS1BLWglqCWoJaglqC+rbPLzKCWoBbUEtQS1BLUEtSC2hAEtQS1BLUE9fxnPJwJgVqCWoJaUEtQS1BLUEtQC2oJaglqCeq8MyFmBrUEtaCWoH762rX1GrfqtX6FeUENNdSzPV1o3cQquCvOC2qooV7l7fR/P696GVJpXlBDDfWqm3T0b6hz5gU11FCvtklHb6u9z3LM+nkgd80L6gVQV3ulhnrBGx+oPdKzSVBD/dR5ZX8mNy+ooYZaglqCWoJaglpQS2ui/l0G4XM/okBDrUjUYCsONNiKBA22IkFDrUjUYCsONNiKBA22IkFDrUjUYCsONNiKBA32M58HYsaDQYOtSNBgKxI02IoEDbYiQYOtSNBgKxI02IoEDbYiQYOtSNBgKxI02IoEXR23Mx6hmL1qKxY02IoEDbciMfeE7esx1pvXVmFBXQf1Vm21bM6nP6/+lXNPz2urvKDOQ71Zfa+1jzbBc+Jx86K4M26on5sXtRdhf3ojc7RpVVCPnhetHXBDPQdqOjvgPovw7CY+9fkeo86KjJoXjZ3XE6hTn36cnRd9E9xMeqTX55WdtglvKKFu+/90TXJp8skjqeo3iO/mQNEir95QH6OmptBfKR0FtQAH2QIcZAtyiK1s6HbJWha7qZ9bfwHbX/mrs28vRgAAAABJRU5ErkJggg=="/>
 <line x1="258.5" y1="57.5" x2="259.5" y2="52.5" stroke="#FFFFFF"/>
 <line x1="221.5" y1="57.5" x2="220.5" y2="52.5" stroke="#FFFFFF"/>

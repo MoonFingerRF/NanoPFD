@@ -128,13 +128,13 @@ void updateBPS(state *s) {
       // Capture the ground (home) altitude by averaging the first samples.
       float avg = 0;
       for (int n = 0; n < 10; n++) {
-        avg += bmp.readAltitude(SEALEVELPRESSURE_HPA);
+        avg += bmp.readAltitude(gBaroInHg * 33.8639f);
       }
       s->home_alt = avg / 10.0;
       BPS_First_Alt = true;
     }
 
-    float new_alt = s->alt * (1 - ALPHA_ALT) + ALPHA_ALT * 3.28084 * bmp.readAltitude(SEALEVELPRESSURE_HPA);
+    float new_alt = s->alt * (1 - ALPHA_ALT) + ALPHA_ALT * 3.28084 * bmp.readAltitude(gBaroInHg * 33.8639f);
 
     // Vertical speed = d(altitude)/dt, expressed in ft/min and smoothed.
     unsigned long now = millis();

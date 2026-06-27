@@ -19,6 +19,8 @@
 #else
 #include "chart_data.h"
 #endif
+#include "map_zoom.h"             // runtime zoom range/tier + field-mode state
+#include "chart_cull.h"           // latitude-band binary search for the national data
 
 // Place string `s` on canvas `c` so the (ax,ay) anchor lands on the requested
 // edge/center of the text, using the glyph's MEASURED bounds (getTextBounds) — so
@@ -496,6 +498,28 @@ void drawHorizonDisplay(MyCanvas8 *canvas, GFXcanvas8 *inc_map, state *s, bool s
   canvas->drawFastHLine(width - stdW3 - (midPointX - stdW2 - stdW3), midPointY + stdW2, midPointX - stdW2 - stdW3, IWHITE);
   canvas->drawFastHLine(width - stdW3 - (midPointX - stdW2 - stdW3), midPointY - stdW2, midPointX - stdW2 - stdW3, IWHITE);
 
+  // alt-tape labels, on TOP of the frame. Barometric setting (Kollsman, white) ABOVE:
+  { char baro[8]; sprintf(baro, "%.2f", gBaroInHg);
+    canvas->setTextColor(IWHITE);
+    drawText(canvas, baro, midPointX + stdW1 + lyt::scaled(2, width),
+             midPointY - stdW2 - lyt::scaled(7, width), lyt::HL, lyt::VC); }
+  // GPS altitude (ft) BELOW: a two-line "GPS"/"ALT" label + a divider line, with the
+  // value to the right — mirrors the "GS" block under the airspeed tape.
+  {
+    canvas->setFont(); canvas->setTextSize(1); canvas->setTextColor(IWHITE);
+    int by     = midPointY + stdW2 + 4;
+    int by2    = by + 10 * lyt::txtScale(width);
+    int lineX  = midPointX + stdW1;                      // divider UNDER the alt tape line
+    int labelX = lineX - lyt::scaled(20, width);         // "GPS"/"ALT" to the left of it
+    canvas->setCursor(labelX, by);  canvas->print("GPS");
+    canvas->setCursor(labelX, by2); canvas->print("ALT");
+    canvas->drawFastVLine(lineX, by - 1, 19 * lyt::txtScale(width), IGREY);
+    char ga[8];
+    if (!s->GPS) sprintf(ga, "--"); else sprintf(ga, "%d", (int)s->gps_alt);
+    canvas->setCursor(lineX + 4, by2);
+    canvas->print(ga);
+  }
+
   // ---- draw horizon (attitude indicator) ----------------------------------
   // The pitch ladder lives in inc_map as a tall strip. For each screen pixel in
   // the circular attitude window we sample inc_map at a position that is rotated
@@ -927,8 +951,124 @@ static void svgLineLM(MyCanvas8 *canvas, const char *name, int px, int py, int q
 }
 #endif
 
+// Latitude lower-bound for the lat-sorted polyline (.la0) and glide-seg (.lat1)
+// arrays, so those per-frame loops touch only the visible latitude band (like the
+// point/ring loops) instead of linearly scanning the whole LOD.
+static inline int chartSegLower(const ChartSeg *a, int n, float v) {
+  int lo = 0, hi = n; while (lo < hi) { int m = (lo + hi) >> 1; if (a[m].lat1 < v) lo = m + 1; else hi = m; } return lo;
+}
+static inline int chartPolyLower(const ChartPoly *a, int n, float v) {
+  int lo = 0, hi = n; while (lo < hi) { int m = (lo + hi) >> 1; if (a[m].la0 < v) lo = m + 1; else hi = m; } return lo;
+}
+
+// Even-odd scanline fill of a GROUP of closed lat/lon rings (the ocean = box minus
+// continent; or all lakes), projected through m and clipped to the radar circle.
+// Projects the verts of rings whose bbox overlaps the view into a static buffer,
+// then fills row by row. Optionally draws the ring outlines white (lake shores).
+// ND-only (single task) so the static buffers are safe.
+// Fill scratch lives in the PSRAM HEAP (allocated once) so it never competes with the
+// PFD canvas for scarce internal RAM. Active-edge-table buffers: edges bucketed by top
+// scan-row so the fill is O(edges + rows*active), not O(rows*edges) — the whole-US
+// coastline ring is otherwise far too costly to brute-force every frame.
+#define FILL_V 2048      // max projected vertices in view
+#define FILL_E 2560      // max edges
+static int16_t  *gFillX, *gFillY, *gE_ytop, *gE_ybot, *gE_xtop, *gE_next, *gBucket;
+static uint16_t *gRingStart, *gActive;
+static float    *gE_dxdy;
+static bool fillBufAlloc() {
+  static int8_t st = 0;                                   // 0 untried, 1 ok, -1 failed
+  if (st) return st > 0;
+  gFillX = (int16_t *)ps_malloc(FILL_V * 2); gFillY = (int16_t *)ps_malloc(FILL_V * 2);
+  gE_ytop = (int16_t *)ps_malloc(FILL_E * 2); gE_ybot = (int16_t *)ps_malloc(FILL_E * 2);
+  gE_xtop = (int16_t *)ps_malloc(FILL_E * 2); gE_next = (int16_t *)ps_malloc(FILL_E * 2);
+  gE_dxdy = (float *)ps_malloc(FILL_E * 4);
+  gBucket = (int16_t *)ps_malloc(700 * 2); gActive = (uint16_t *)ps_malloc(512 * 2);
+  gRingStart = (uint16_t *)ps_malloc(128 * 2);
+  st = (gFillX && gFillY && gE_ytop && gE_ybot && gE_xtop && gE_next && gE_dxdy &&
+        gBucket && gActive && gRingStart) ? 1 : -1;
+  return st > 0;
+}
+static void mapFillGroup(MyCanvas8 *canvas, const ChartFill *fills, int nf,
+                         const MapProj &m, uint8_t col, bool outline,
+                         int cx, int cy, int rad, long r2,
+                         float clat, float clon, float dLatMax, float dLonMax) {
+  if (!fillBufAlloc()) return;
+  int nv = 0, nr = 0, ymin = cy + rad, ymax = cy - rad;
+  for (int f = 0; f < nf && nr < 127; f++) {
+    const ChartFill &F = fills[f];
+    if (F.n < 3) continue;
+    if (F.la1 < clat - dLatMax || F.la0 > clat + dLatMax ||
+        F.lo1 < clon - dLonMax || F.lo0 > clon + dLonMax) continue;   // ring off-screen
+    if (nv + F.n > FILL_V - 1) break;                                 // buffer full
+    gRingStart[nr++] = nv;
+    for (int k = 0; k < F.n; k++) {
+      int x, y; mapXY(m, F.pts[2 * k], F.pts[2 * k + 1], x, y);
+      gFillX[nv] = x; gFillY[nv] = y; nv++;
+      if (y < ymin) ymin = y;
+      if (y > ymax) ymax = y;
+    }
+  }
+  gRingStart[nr] = nv;
+  if (nr == 0) return;
+  if (ymin < cy - rad) ymin = cy - rad;
+  if (ymax > cy + rad) ymax = cy + rad;
+  if (ymin < 0) ymin = 0;                                           // clamp to the canvas: the radar
+  if (ymax > canvas->height() - 1) ymax = canvas->height() - 1;     // circle can extend off-screen
+  // build edges into per-row buckets (active-edge-table fill)
+  int H = ymax - ymin; if (H < 0) return; if (H > 698) H = 698;
+  for (int i = 0; i <= H; i++) gBucket[i] = -1;
+  int ne = 0;
+  for (int r = 0; r < nr && ne < FILL_E - 6; r++) {
+    int s = gRingStart[r], e = gRingStart[r + 1];
+    for (int i = s; i < e && ne < FILL_E - 6; i++) {
+      int a = i, b = (i + 1 < e) ? i + 1 : s;
+      int ya = gFillY[a], yb = gFillY[b];
+      if (ya == yb) continue;                                        // horizontal edge: no crossing
+      int xa = gFillX[a], xb = gFillX[b], yt, yo, xt; float dd;
+      if (ya < yb) { yt = ya; yo = yb; xt = xa; dd = (xb - xa) / (float)(yb - ya); }
+      else         { yt = yb; yo = ya; xt = xb; dd = (xa - xb) / (float)(ya - yb); }
+      if (yo < ymin || yt > ymax) continue;                          // edge entirely off the band
+      int br = yt - ymin; if (br < 0) br = 0;
+      gE_ytop[ne] = yt; gE_ybot[ne] = yo; gE_xtop[ne] = xt; gE_dxdy[ne] = dd;
+      gE_next[ne] = gBucket[br]; gBucket[br] = ne; ne++;
+    }
+  }
+  int na = 0;
+  for (int y = ymin, ry = 0; y <= ymax; y++, ry++) {
+    if (ry <= H) for (int e = gBucket[ry]; e != -1; e = gE_next[e]) if (na < 512) gActive[na++] = e;
+    int xs[256], nx = 0, w = 0;
+    for (int k = 0; k < na; k++) {                                   // drop finished edges + read crossings
+      int e = gActive[k];
+      if (gE_ybot[e] <= y) continue;
+      gActive[w++] = e;
+      if (nx < 256) xs[nx++] = gE_xtop[e] + (int)((y - gE_ytop[e]) * gE_dxdy[e]);
+    }
+    na = w;
+    for (int i = 1; i < nx; i++) { int v = xs[i], j = i - 1; while (j >= 0 && xs[j] > v) { xs[j + 1] = xs[j]; j--; } xs[j + 1] = v; }
+    long dy = (long)y - cy, h2 = r2 - dy * dy;                        // span clip to the radar circle
+    if (h2 < 0) continue;
+    int hw = (int)sqrtf((float)h2);
+    for (int k = 0; k + 1 < nx; k += 2) {
+      int x0 = xs[k], x1 = xs[k + 1];
+      if (x0 < cx - hw) x0 = cx - hw;
+      if (x1 > cx + hw) x1 = cx + hw;
+      if (x1 >= x0) canvas->drawFastHLine(x0, y, x1 - x0 + 1, col);
+    }
+  }
+  if (outline)
+    for (int r = 0; r < nr; r++) {
+      int s = gRingStart[r], e = gRingStart[r + 1];
+      for (int i = s; i < e; i++) {
+        int a = i, b = (i + 1 < e) ? i + 1 : s;
+        if (mapSegVis(gFillX[a], gFillY[a], gFillX[b], gFillY[b], cx, cy, rad))
+          mapLine(canvas, gFillX[a], gFillY[a], gFillX[b], gFillY[b], IWHITE, cx, cy, r2, false);
+      }
+    }
+}
+
 static void drawChart(MyCanvas8 *canvas, int cx, int cy, int rad,
-                      float clat, float clon, float headingDeg) {
+                      float clat, float clon, float headingDeg,
+                      int rangeM, int lod) {
   canvas->setRotationMatrix();          // identity: the projection does the rotation
 #ifdef SVG_RENDER
   { extern void svgSetClip(int, int, int); svgSetClip(cx, cy, rad); }   // map clip circle
@@ -943,11 +1083,11 @@ static void drawChart(MyCanvas8 *canvas, int cx, int cy, int rad,
   m.cosLat = cosf(clat * p / 180.0f);
   float h = headingDeg * p / 180.0f;
   m.cosH = cosf(h); m.sinH = sinf(h);
-  m.scale = (float)rad / MAP_RANGE_M;
+  m.scale = (float)rad / rangeM;
 
   // Cheap "grid" cull: reject by a lat/lon bbox (a bit beyond the range) before
   // any trig, so far-off features (e.g. when the dataset is extended) cost ~nothing.
-  const float dLatMax = (MAP_RANGE_M * 1.5f) / 111320.0f;
+  const float dLatMax = (rangeM * 1.5f) / 111320.0f;
   const float dLonMax = dLatMax / (m.cosLat > 0.1f ? m.cosLat : 0.1f);
   #define MAP_CULL(la, lo) (fabsf((la) - clat) > dLatMax || fabsf((lo) - clon) > dLonMax)
   #define MAP_CULL_POLY(P) ((P).la1 < clat - dLatMax || (P).la0 > clat + dLatMax || \
@@ -955,16 +1095,26 @@ static void drawChart(MyCanvas8 *canvas, int cx, int cy, int rad,
 
   int sx, sy, ex, ey;
 
-  // ---- base geography: borders, state lines, rivers, roads (polylines) ------
-  // Straight segments between vertices; dense source geometry shows the real
-  // intersections/turns (no spline smoothing).
-  for (int i = 0; i < N_CHART_POLYS; i++) {
-    const ChartPoly &P = CHART_POLYS[i];
-    if (P.tier > MAP_MAX_TIER || MAP_CULL_POLY(P)) continue;
+  // ---- filled water FIRST (under everything): oceans + lakes, dim blue. Lakes get a
+  // white shore outline; the ocean's white shore is the coastline polyline below.
+  // Ocean only at the zoomed-out LODs: its continent ring spans the whole US so it
+  // can't cull, and at close zoom there's rarely ocean in view anyway (white shore
+  // delineates it). Lakes cull by bbox and stay at every LOD.
+  if (lod <= 2)
+    mapFillGroup(canvas, LOD_OCEAN[lod], LOD_NOCEAN[lod], m, IDBLUE, false, cx, cy, rad, r2, clat, clon, dLatMax, dLonMax);
+  mapFillGroup(canvas, LOD_LAKE[lod],  LOD_NLAKE[lod],  m, IDBLUE, true,  cx, cy, rad, r2, clat, clon, dLatMax, dLonMax);
+
+  // ---- base geography: white coast/borders, state lines, rivers, roads (polylines) -
+  const ChartPoly *POLYS = LOD_POLYS[lod];
+  for (int i = chartPolyLower(POLYS, LOD_NPOLYS[lod], clat - dLatMax - 2.0f), n = LOD_NPOLYS[lod];
+       i < n && POLYS[i].la0 <= clat + dLatMax; i++) {
+    const ChartPoly &P = POLYS[i];
+    if (MAP_CULL_POLY(P)) continue;
     uint8_t col = P.type == PLY_INTERSTATE ? IDGREY :    // roads dark grey (vs the IGREY rings)
                   P.type == PLY_RIVER      ? ISKY   :    // rivers light blue
-                  P.type == PLY_STATE      ? IGREY  : IGND;  // state grey (dashed), border tan
-    bool dash = (P.type == PLY_STATE);
+                  P.type == PLY_RESTRICTED ? IRED   :    // restricted/prohibited airspace red
+                  P.type == PLY_STATE      ? IGREY  : IWHITE;  // state grey (dashed); BORDER = coast/country white
+    bool dash = (P.type == PLY_STATE || P.type == PLY_RESTRICTED);
     int px = 0, py = 0; bool have = false;
     for (int k = 0; k < P.n; k++) {
       int qx, qy; mapXY(m, P.pts[2 * k], P.pts[2 * k + 1], qx, qy);
@@ -979,10 +1129,27 @@ static void drawChart(MyCanvas8 *canvas, int cx, int cy, int rad,
     }
   }
 
+  // ---- regional medium roads (OSM secondary/tertiary), close-in only (<= "5NM" =
+  // the 10 km level, which the range readout rounds to 5 NM) ----
+  if (rangeM <= 10000)
+    for (int i = chartPolyLower(MEDROADS, N_MEDROADS, clat - dLatMax - 0.4f), n = N_MEDROADS;
+         i < n && MEDROADS[i].la0 <= clat + dLatMax; i++) {
+      const ChartPoly &P = MEDROADS[i];
+      if (MAP_CULL_POLY(P)) continue;
+      int px = 0, py = 0; bool have = false;
+      for (int k = 0; k < P.n; k++) {
+        int qx, qy; mapXY(m, P.pts[2 * k], P.pts[2 * k + 1], qx, qy);
+        if (have && mapSegVis(px, py, qx, qy, cx, cy, rad))
+          mapLine(canvas, px, py, qx, qy, IMROAD, cx, cy, r2, false);
+        px = qx; py = qy; have = true;
+      }
+    }
+
   // ---- rivers (light blue), coast (tan), glide paths (dashed green) ---------
-  for (int i = 0; i < N_CHART_SEGS; i++) {
-    const ChartSeg &s = CHART_SEGS[i];
-    if (s.tier > MAP_MAX_TIER) continue;
+  const ChartSeg *SEGS = LOD_SEGS[lod];
+  for (int i = chartSegLower(SEGS, LOD_NSEGS[lod], clat - dLatMax - 0.3f), n = LOD_NSEGS[lod];
+       i < n && SEGS[i].lat1 <= clat + dLatMax + 0.3f; i++) {
+    const ChartSeg &s = SEGS[i];
     if (MAP_CULL(s.lat1, s.lon1) && MAP_CULL(s.lat2, s.lon2)) continue;
     mapXY(m, s.lat1, s.lon1, sx, sy);
     mapXY(m, s.lat2, s.lon2, ex, ey);
@@ -999,9 +1166,10 @@ static void drawChart(MyCanvas8 *canvas, int cx, int cy, int rad,
   // ---- distance circles around airports (bright, color by size/status) + restricted
   // NOT culled by the center bbox: a ring whose center is off the panel still draws
   // if its circle reaches into the radar view (center distance <= rad + ringRadius).
-  for (int i = 0; i < N_CHART_RINGS; i++) {
-    const ChartRing &r = CHART_RINGS[i];
-    if (r.tier > MAP_MAX_TIER) continue;
+  const ChartRing *RINGS = LOD_RINGS[lod];
+  for (int i = chartLatLower(RINGS, LOD_NRINGS[lod], clat - dLatMax - 0.2f), n = LOD_NRINGS[lod];
+       i < n && RINGS[i].lat <= clat + dLatMax + 0.2f; i++) {
+    const ChartRing &r = RINGS[i];
     int rr = (int)(r.rad_m * m.scale);
     if (rr < 2) continue;
     int rcx, rcy; mapXY(m, r.lat, r.lon, rcx, rcy);
@@ -1033,9 +1201,11 @@ static void drawChart(MyCanvas8 *canvas, int cx, int cy, int rad,
   }
 
   // ---- runways (short white lines at the true heading) ----------------------
-  for (int i = 0; i < N_CHART_RWYS; i++) {
-    const ChartRwy &r = CHART_RWYS[i];
-    if (r.tier > MAP_MAX_TIER || MAP_CULL(r.lat, r.lon)) continue;
+  const ChartRwy *RWYS = LOD_RWYS[lod];
+  for (int i = chartLatLower(RWYS, LOD_NRWYS[lod], clat - dLatMax), n = LOD_NRWYS[lod];
+       i < n && RWYS[i].lat <= clat + dLatMax; i++) {
+    const ChartRwy &r = RWYS[i];
+    if (MAP_CULL(r.lat, r.lon)) continue;
     float hr = r.hdg * p / 180.0f, half = r.len_m / 2.0f;
     float dN = half * cosf(hr), dE = half * sinf(hr);
     mapXY(m, r.lat + dN / 111320.0f, r.lon + dE / (111320.0f * m.cosLat), sx, sy);
@@ -1046,9 +1216,11 @@ static void drawChart(MyCanvas8 *canvas, int cx, int cy, int rad,
   // ---- point symbols: airports, navaids, landmarks --------------------------
   canvas->setFont();
   canvas->setTextSize(1);
-  for (int i = 0; i < N_CHART_PTS; i++) {
-    const ChartPt &pt = CHART_PTS[i];
-    if (pt.tier > MAP_MAX_TIER || MAP_CULL(pt.lat, pt.lon)) continue;
+  const ChartPt *PTS = LOD_PTS[lod];
+  for (int i = chartLatLower(PTS, LOD_NPTS[lod], clat - dLatMax), n = LOD_NPTS[lod];
+       i < n && PTS[i].lat <= clat + dLatMax; i++) {
+    const ChartPt &pt = PTS[i];
+    if (MAP_CULL(pt.lat, pt.lon)) continue;
     mapXY(m, pt.lat, pt.lon, sx, sy);
     if (!mapInCirc(sx, sy, cx, cy, r2)) continue;
 #ifdef SVG_RENDER
@@ -1066,7 +1238,8 @@ static void drawChart(MyCanvas8 *canvas, int cx, int cy, int rad,
       case PT_AIRPORT_CLOSED:   // decommissioned airfield: grey X
         canvas->drawLine(sx - rsym, sy - rsym, sx + rsym, sy + rsym, IGREY);
         canvas->drawLine(sx - rsym, sy + rsym, sx + rsym, sy - rsym, IGREY); break;
-      default:              canvas->fillRect(sx - sc, sy - sc, 2 * sc, 2 * sc, IYELLOW); break;
+      case PT_CITY:         canvas->fillCircle(sx, sy, sc, IWHITE); break;        // city: small white dot
+      default:              canvas->fillRect(sx - sc, sy - sc, 2 * sc, 2 * sc, IYELLOW); break;  // PT_LANDMARK
     }
   }
 
@@ -1084,7 +1257,8 @@ static void drawChart(MyCanvas8 *canvas, int cx, int cy, int rad,
 // cities, then road names. Every label is placed (never dropped) by trying
 // candidate positions that avoid collisions and stay on the map.
 static void drawChartLabels(MyCanvas8 *canvas, int cx, int cy, int rad,
-                            float clat, float clon, float headingDeg) {
+                            float clat, float clon, float headingDeg,
+                            int rangeM, int lod) {
   const int  width = canvas->width();
   const int  sc    = lyt::txtScale(width);
   const long r2    = (long)rad * rad;
@@ -1095,9 +1269,9 @@ static void drawChartLabels(MyCanvas8 *canvas, int cx, int cy, int rad,
   m.cosLat = cosf(clat * p / 180.0f);
   float hh = headingDeg * p / 180.0f;
   m.cosH = cosf(hh); m.sinH = sinf(hh);
-  m.scale = (float)rad / MAP_RANGE_M;
+  m.scale = (float)rad / rangeM;
 
-  const float dLatMax = (MAP_RANGE_M * 1.5f) / 111320.0f;
+  const float dLatMax = (rangeM * 1.5f) / 111320.0f;
   const float dLonMax = dLatMax / (m.cosLat > 0.1f ? m.cosLat : 0.1f);
   #define MAP_CULL(la, lo) (fabsf((la) - clat) > dLatMax || fabsf((lo) - clon) > dLonMax)
   #define MAP_CULL_POLY(P) ((P).la1 < clat - dLatMax || (P).la0 > clat + dLatMax || \
@@ -1109,9 +1283,10 @@ static void drawChartLabels(MyCanvas8 *canvas, int cx, int cy, int rad,
   canvas->textScale = 1; canvas->setTextSize(1);   // all map text is small (size 1)
 
   // 1) airports + navaids: id + grey frequency line --------------------------
-  for (int i = 0; i < N_CHART_PTS; i++) {
-    const ChartPt &pt = CHART_PTS[i];
-    if (pt.tier > MAP_MAX_TIER || pt.type == PT_LANDMARK || MAP_CULL(pt.lat, pt.lon)) continue;
+  const ChartPt *PTS = LOD_PTS[lod]; int nPts = LOD_NPTS[lod];
+  for (int i = chartLatLower(PTS, nPts, clat - dLatMax); i < nPts && PTS[i].lat <= clat + dLatMax; i++) {
+    const ChartPt &pt = PTS[i];
+    if (pt.type == PT_LANDMARK || pt.type == PT_CITY || MAP_CULL(pt.lat, pt.lon)) continue;
     mapXY(m, pt.lat, pt.lon, sx, sy);
     if (!mapInCirc(sx, sy, cx, cy, r2) || mapBotMask(canvas, cx, cy, sx, sy) ||
         !mapPtOnScreen(canvas, sx, sy)) continue;          // off-screen symbol -> no floating label
@@ -1120,20 +1295,22 @@ static void drawChartLabels(MyCanvas8 *canvas, int cx, int cy, int rad,
                cx, cy, rl2);
   }
   // 2) cities / landmarks: id only -------------------------------------------
-  for (int i = 0; i < N_CHART_PTS; i++) {
-    const ChartPt &pt = CHART_PTS[i];
-    if (pt.tier > MAP_MAX_TIER || pt.type != PT_LANDMARK || MAP_CULL(pt.lat, pt.lon)) continue;
+  for (int i = chartLatLower(PTS, nPts, clat - dLatMax); i < nPts && PTS[i].lat <= clat + dLatMax; i++) {
+    const ChartPt &pt = PTS[i];
+    if ((pt.type != PT_LANDMARK && pt.type != PT_CITY) || MAP_CULL(pt.lat, pt.lon)) continue;
     mapXY(m, pt.lat, pt.lon, sx, sy);
     if (!mapInCirc(sx, sy, cx, cy, r2) || mapBotMask(canvas, cx, cy, sx, sy) ||
         !mapPtOnScreen(canvas, sx, sy)) continue;          // off-screen symbol -> no floating label
-    mapLabelPt(canvas, pt.id, "", sx, sy, sc + 2, IYELLOW, cx, cy, rl2);
+    mapLabelPt(canvas, pt.id, "", sx, sy, sc + 2, pt.type == PT_CITY ? IWHITE : IYELLOW, cx, cy, rl2);
   }
   // 3) road / highway names: best visible spot along the road ----------------
   // mapLabelRoad clips each segment to the circle, so a road that runs partly
   // off-screen is still named at its best on-screen position.
-  for (int i = 0; i < N_CHART_POLYS; i++) {
-    const ChartPoly &P = CHART_POLYS[i];
-    if (P.tier > MAP_MAX_TIER || MAP_CULL_POLY(P) || !P.name || !P.name[0]) continue;
+  const ChartPoly *POLYS = LOD_POLYS[lod];
+  for (int i = chartPolyLower(POLYS, LOD_NPOLYS[lod], clat - dLatMax - 2.0f), nP = LOD_NPOLYS[lod];
+       i < nP && POLYS[i].la0 <= clat + dLatMax; i++) {
+    const ChartPoly &P = POLYS[i];
+    if (MAP_CULL_POLY(P) || !P.name || !P.name[0]) continue;
     mapLabelRoad(canvas, P, m, IWHITE, cx, cy, rad, r2, rl2);
   }
 
@@ -1165,8 +1342,18 @@ void drawNavigationDisplay(MyCanvas8 *canvas, state *s) {
   // (restored from NVS across power cycles); only if there has never been one
   // does it fall back to the hard-coded default (Cincinnati).
   bool  gpsOk = s->GPS;
-  float clat  = s->has_pos ? s->last_lat : MAP_DEFAULT_LAT;
-  float clon  = s->has_pos ? s->last_lon : MAP_DEFAULT_LON;
+  // Map centre: live GPS normally; in field mode it freezes on the captured field
+  // point P so the small field stays put (and is shareable).
+  bool  field = gMapFieldActive;
+  float clat  = field ? gMapFieldLat : (s->has_pos ? s->last_lat : MAP_DEFAULT_LAT);
+  float clon  = field ? gMapFieldLon : (s->has_pos ? s->last_lon : MAP_DEFAULT_LON);
+  // ringRangeM = the ACTUAL range (range rings, Remote ID, own-ship distance) — RID
+  // is never magnified. chartRangeM/chartLod = the basemap: in field mode it renders
+  // zoomed to range*FIELD_MAP_MULT (~80 km and in) around P for context; gMapLod is
+  // already that basemap's LOD (see map_zoom.cpp).
+  int ringRangeM  = gMapRangeM;
+  int chartRangeM = field ? gMapRangeM * FIELD_MAP_MULT : gMapRangeM;
+  int chartLod    = gMapLod;
 
   // Compass geometry. Lower the ring top just enough that the heading box (which
   // rises ~1.5x its height above the ring top) fits on-canvas above it. At the
@@ -1190,7 +1377,7 @@ void drawNavigationDisplay(MyCanvas8 *canvas, state *s) {
 
 #if MAP_ENABLE
   // Moving-map chart UNDER the compass card (clipped to the radar circle).
-  drawChart(canvas, width / 2, cyc, rad, clat, clon, angle);
+  drawChart(canvas, width / 2, cyc, rad, clat, clon, angle, chartRangeM, chartLod);
 #endif
 
   for (int n = 0; n < 72; n++) {
@@ -1264,7 +1451,7 @@ void drawNavigationDisplay(MyCanvas8 *canvas, state *s) {
     }
     float hd = distanceToHome(s);
     if (hd >= 0) {
-      float rr = ndr * (hd < ND_MAP_RANGE_M ? hd / ND_MAP_RANGE_M : 1.0f);
+      float rr = ndr * (hd < ringRangeM ? hd / ringRangeM : 1.0f);
       float hx = ndcx + sin(a) * rr, hy = ndcy - cos(a) * rr;
       if (hy < ndcy)
         canvas->fillRect(hx - 2, hy - 2, 4, 4, IGREEN);   // home map point
@@ -1295,7 +1482,7 @@ void drawNavigationDisplay(MyCanvas8 *canvas, state *s) {
     MapProj rm;
     rm.clat = clat; rm.clon = clon; rm.cosLat = cosf(clat * p / 180.0f);
     float hh = angle * p / 180.0f; rm.cosH = cosf(hh); rm.sinH = sinf(hh);
-    rm.scale = (float)rad / MAP_RANGE_M; rm.cx = width / 2; rm.cy = cyc;
+    rm.scale = (float)rad / ringRangeM; rm.cx = width / 2; rm.cy = cyc;   // ACTUAL range — RID never magnified
     for (int i = 0; i < s->n_rid && i < RID_MAX; i++) {
       int rx, ry; mapXY(rm, s->rid[i].lat, s->rid[i].lon, rx, ry);
       if (!mapInCirc(rx, ry, width / 2, cyc, (long)rad * rad)) continue;
@@ -1315,7 +1502,7 @@ void drawNavigationDisplay(MyCanvas8 *canvas, state *s) {
 #if MAP_ENABLE && MAP_LABELS
   // ---- map text: drawn LAST so labels sit on top of the compass/rings/overlays
   //      and are always readable; placement avoids collisions and stays on-map.
-  drawChartLabels(canvas, width / 2, cyc, rad, clat, clon, angle);
+  drawChartLabels(canvas, width / 2, cyc, rad, clat, clon, angle, chartRangeM, chartLod);
 #endif
 
   // ---- GPS-lost warning over the radar: an exact copy of the PFD status box
@@ -1365,7 +1552,9 @@ void drawNavigationDisplay(MyCanvas8 *canvas, state *s) {
 
   // ---- GPS satellite count: LOW-SAT warning (< 5), upper-right (BOTH configs) ---
   int sc = lyt::txtScale(width);
-  int satY = lyt::scaled(4, width);
+  // Corner text (SAT count, PROXIMITY, range readout, battery) sits below the top
+  // edge — shifted down ~2 lines so it clears the heading box / top of the radar.
+  int satY = lyt::scaled(4, width) + 18 * sc;
   if (s->sats < 5) {
     canvas->setRotationMatrix();          // identity for this static label
     canvas->setFont();
@@ -1389,6 +1578,23 @@ void drawNavigationDisplay(MyCanvas8 *canvas, state *s) {
     canvas->setTextColor(IORANGE);
     canvas->setCursor(2, satY);
     canvas->print("PROXIMITY");
+    canvas->setTextColor(IWHITE);
+  }
+
+  // ---- range readout: the outer-ring radius = the current ACTUAL zoom. In field
+  //      mode it's orange (the basemap is magnified to ~80 km but the rings + RID
+  //      stay at this real range) and the frozen field point is shown at bottom. --
+  {
+    canvas->setRotationMatrix();
+    canvas->setFont();
+    canvas->setTextSize(1);
+    char rng[16];
+    float nm = ringRangeM / 1852.0f;
+    if (nm < 1.0f) sprintf(rng, "%dm", ringRangeM);
+    else           sprintf(rng, "%.0fNM", nm);
+    canvas->setTextColor(field ? IORANGE : IGREY);
+    canvas->setCursor(2, satY + 9 * sc);
+    canvas->print(rng);
     canvas->setTextColor(IWHITE);
   }
 

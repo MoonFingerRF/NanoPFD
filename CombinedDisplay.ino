@@ -50,7 +50,8 @@ static uint8_t exioWriteReg(uint8_t reg, uint8_t val) {
 }
 
 // pin is 1-based (EXIO_PINx); the chip drives bit (pin-1).
-static void exioSet(uint8_t pin, bool high) {
+// Non-static so Touch.cpp can drive the GT911 reset line (TCA9554 P1 = EXIO2).
+void exioSet(uint8_t pin, bool high) {
   uint8_t mask = (uint8_t)(1u << (pin - 1));
   if (high) gExio |= mask; else gExio &= ~mask;
   exioWriteReg(TCA9554_OUTPUT_REG, gExio);
