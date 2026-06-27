@@ -1379,6 +1379,18 @@ void drawNavigationDisplay(MyCanvas8 *canvas, state *s) {
     canvas->print(sg);
   }
 
+  // ---- Remote ID PROXIMITY warning: red, far left, at the SAT-count height,
+  //      shown whenever any Remote ID traffic is being tracked. -----------------
+  if (s->n_rid_seen > 0) {
+    canvas->setRotationMatrix();
+    canvas->setFont();
+    canvas->setTextSize(1);
+    canvas->setTextColor(IRED);
+    canvas->setCursor(2, satY);
+    canvas->print("PROXIMITY");
+    canvas->setTextColor(IWHITE);
+  }
+
 #if BATT_ADC_PIN >= 0
   // ---- battery voltage: small text just UNDER the SAT-count slot (upper-right,
   //      BOTH configs). Grey normally, red below 3.1 V. Each board reads its

@@ -443,6 +443,7 @@ static void genLegend(const char *path, const std::vector<Elem> &nd, int W, int 
   addLM("track", "Ground track (course made good)", IWHITE);
   addLM("home",  "Bearing & distance to home",      IGREEN);
   addLM("rid",   "Remote ID traffic — altitude (ft)", IORANGE);
+  add("Proximity warning (Remote ID nearby)", IRED, 30, lyt::scaled(4, W) + 4 * sc);
   // map features (anchors recorded during the ND draw)
   addLM("apt_twr",   "Towered airport",       IBLUE);
   addLM("apt_ntwr",  "Non-towered airport",   IMAGENTA);
@@ -615,7 +616,7 @@ int main() {
   s.home_lat = MAP_DEFAULT_LAT + 0.04f; s.home_lon = MAP_DEFAULT_LON + 0.06f;  // home NE -> green line visible
   s.gps_alt = 850; s.has_pos = true; s.sats = 11;
   // demo Remote ID target (~3.5 km NE of the map centre, 350 ft) for the figures
-  s.rid[0] = { s.last_lat + 0.026f, s.last_lon + 0.030f, 350 }; s.n_rid = 1;
+  s.rid[0] = { s.last_lat + 0.026f, s.last_lon + 0.030f, 350 }; s.n_rid = 1; s.n_rid_seen = 1;
 
 #if defined(LEGEND_BUILD)
   // ---- Annotated ND legend: the single-panel ND over a real NYC-area map ----

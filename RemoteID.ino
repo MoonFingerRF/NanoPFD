@@ -229,12 +229,13 @@ void remoteid_begin() {
 
 void remoteid_fill(state *s) {
   uint32_t now = millis();
-  int n = 0;
+  int n = 0, seen = 0;
   portENTER_CRITICAL(&g_mux);
   for (int i = 0; i < RID_MAX; i++) {
     if (!g_tab[i].used) continue;
     if (now - g_tab[i].last_ms > RID_AGE_MS) { g_tab[i].used = false; continue; }
-    if (!g_tab[i].have_loc) continue;
+    seen++;                                       // any tracked target -> PROXIMITY
+    if (!g_tab[i].have_loc) continue;             // only positioned ones get a dot
     if (n < RID_MAX) {
       s->rid[n].lat    = g_tab[i].lat;
       s->rid[n].lon    = g_tab[i].lon;
@@ -244,9 +245,10 @@ void remoteid_fill(state *s) {
   }
   portEXIT_CRITICAL(&g_mux);
   s->n_rid = n;
+  s->n_rid_seen = seen;
 }
 
 #else  // !RID_ENABLE
 void remoteid_begin() {}
-void remoteid_fill(state *s) { s->n_rid = 0; }
+void remoteid_fill(state *s) { s->n_rid = 0; s->n_rid_seen = 0; }
 #endif

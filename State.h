@@ -49,7 +49,8 @@ struct state {
   // Drones/aircraft broadcasting their position + altitude over BLE / WiFi,
   // received by RemoteID.ino. alt_ft is height AGL (Remote ID is capped 400 ft).
   rid_target rid[RID_MAX];
-  int        n_rid;                // number of valid entries in rid[]
+  int        n_rid;                // entries in rid[] that have a position (drawn as dots)
+  int        n_rid_seen;           // total Remote ID targets being tracked (drives PROXIMITY)
 };
 
 // Zero every field, then apply "level and stationary" defaults so the PFD draws

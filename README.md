@@ -121,6 +121,7 @@ names in white.
 | `lat / lon` (bottom) | map-centre position — **green** with a GPS fix, **grey** when coasting on the last fix |
 | Battery voltage (top-right) | pack voltage — grey, turns **red** below 3.1 V |
 | `SAT n` (top-right, yellow) | shown only when fewer than 5 satellites are tracked |
+| `PROXIMITY` (top-left, **red**) | at least one aircraft/drone broadcasting Remote ID is being tracked nearby (see the orange traffic dots) |
 | `GPS LOST` box (grey, red outline) | the GPS fix was lost — the map freezes at the last known position (saved to flash, so it survives a power cycle) |
 
 ---
