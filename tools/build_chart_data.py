@@ -93,6 +93,33 @@ LODS = [
 ]
 NLOD = len(LODS)
 
+# Per-LOD spatial grid: cell size (deg) ~ that LOD's range, so the view box overlaps a
+# few cells. The numerous point-type arrays (points/rings/runways) are sorted by grid
+# cell and a cell->index table is emitted, so the renderer jumps straight to the visible
+# cells (O(on-screen)) instead of scanning the whole latitude strip across the country.
+GRID_DEG = [23.0, 11.5, 5.8, 2.9, 1.4, 0.72, 0.36]   # one per LOD (indices 0..6)
+GRID_LA0, GRID_LO0 = 24.0, -125.0                    # CONUS grid origin (the point box min)
+GRID_LASPAN, GRID_LOSPAN = 25.5, 58.5
+
+def grid_sort(rows, deg):
+    """Sort point-rows (lat = rows[i][0], lon = rows[i][1]) by row-major grid cell and
+    return (sorted_rows, cellOff, NX, NY). cellOff[k] = first index with cell >= k, so
+    cell (cy,cx) occupies [cellOff[cy*NX+cx], cellOff[cy*NX+cx+1])."""
+    NX = max(1, int(math.ceil(GRID_LOSPAN / deg)))
+    NY = max(1, int(math.ceil(GRID_LASPAN / deg)))
+    def cell(r):
+        cx = int((r[1] - GRID_LO0) / deg); cy = int((r[0] - GRID_LA0) / deg)
+        cx = 0 if cx < 0 else NX - 1 if cx >= NX else cx
+        cy = 0 if cy < 0 else NY - 1 if cy >= NY else cy
+        return cy * NX + cx
+    rows = sorted(rows, key=cell)
+    cells = [cell(r) for r in rows]
+    off, j = [], 0
+    for k in range(NX * NY + 1):
+        while j < len(rows) and cells[j] < k: j += 1
+        off.append(j)
+    return rows, off, NX, NY
+
 # ---------------------------------------------------------------------------
 def fetch(name):
     os.makedirs(CACHE, exist_ok=True)
@@ -465,10 +492,15 @@ def main():
         lk = [ft for ft in lakes_f if lake_sr(ft) <= cfg["lakes_sr"]]
         lake_arrs, lake_rows = build_fills("%sLK" % P, lk, gbox, cfg["fill_tol"])
 
-        pts.sort(key=lambda p: p[0]); rwys.sort(key=lambda r: r[0])
-        rings.sort(key=lambda r: r[0]); segs.sort(key=lambda s: s[0])
+        deg = GRID_DEG[i]                         # numerous point-type arrays -> 2-D grid;
+        pts,   pts_off,   gnx, gny = grid_sort(pts,   deg)   # segs/polys stay on the lat-band
+        rings, rings_off, _,   _   = grid_sort(rings, deg)
+        rwys,  rwys_off,  _,   _   = grid_sort(rwys,  deg)
+        segs.sort(key=lambda s: s[0])
         poly_rows.sort(key=lambda t: t[0])       # by la0 -> renderer lat-bands polylines
         lods.append(dict(pts=pts, rwys=rwys, rings=rings, segs=segs,
+                         pts_off=pts_off, rings_off=rings_off, rwys_off=rwys_off,
+                         gnx=gnx, gny=gny, gdeg=deg,
                          poly_arrs=poly_arrs, polys=[r for _, r in poly_rows],
                          ocean_arrs=ocean_arrs, ocean=ocean_rows,
                          lake_arrs=lake_arrs, lake=lake_rows))
@@ -517,6 +549,11 @@ def write_header(lods, med_arrs, med_rows):
         return 0
 
     counts = {k: [] for k in ("PTS", "RWYS", "RINGS", "SEGS", "POLYS", "OCEAN", "LAKE")}
+    grid_nx, grid_ny, grid_deg = [], [], []                # per-LOD flat-grid parameters
+
+    def emit_cells(var, off):                              # cellOff: NX*NY+1 prefix offsets
+        L.append("static const uint16_t %s[] = { %s };" % (var, ", ".join(str(o) for o in off)))
+
     for i, d in enumerate(lods):
         ptrows = ['  { %s, %s, %s, "%s", "%s" },' % (fnum(la), fnum(lo), ty, idv, info)
                   for (la, lo, ty, idv, info) in d["pts"]]
@@ -534,6 +571,10 @@ def write_header(lods, med_arrs, med_rows):
         counts["POLYS"].append(emit("ChartPoly", "L%d_POLYS" % i, d["polys"], '{ LOD_DUMMYF,0,0,"",0.0f,0.0f,0.0f,0.0f }'))
         counts["OCEAN"].append(emit("ChartFill", "L%d_OCEAN" % i, d["ocean"], '{ LOD_DUMMYF,0,0.0f,0.0f,0.0f,0.0f }'))
         counts["LAKE"].append( emit("ChartFill", "L%d_LAKE"  % i, d["lake"],  '{ LOD_DUMMYF,0,0.0f,0.0f,0.0f,0.0f }'))
+        emit_cells("L%d_PTS_CELL"   % i, d["pts_off"])     # flat-grid cell index for the
+        emit_cells("L%d_RINGS_CELL" % i, d["rings_off"])   # numerous point-type arrays
+        emit_cells("L%d_RWYS_CELL"  % i, d["rwys_off"])
+        grid_nx.append(d["gnx"]); grid_ny.append(d["gny"]); grid_deg.append(d["gdeg"])
         L.append("")
 
     # pointer + count tables indexed by gMapLod
@@ -549,6 +590,17 @@ def write_header(lods, med_arrs, med_rows):
     table("ChartPoly", "POLYS")
     table("ChartFill", "OCEAN")
     table("ChartFill", "LAKE")
+
+    # flat per-LOD grid: cellOff pointer tables + grid params (chart_cull.h CHART_GRID)
+    L.append("")
+    for base in ("PTS", "RINGS", "RWYS"):
+        L.append("static const uint16_t* const LOD_%s_CELL[MAP_NLOD] = { %s };"
+                 % (base, ", ".join("L%d_%s_CELL" % (i, base) for i in range(NLOD))))
+    L.append("static const uint16_t LOD_GRID_NX[MAP_NLOD] = { %s };" % ", ".join(str(x) for x in grid_nx))
+    L.append("static const uint16_t LOD_GRID_NY[MAP_NLOD] = { %s };" % ", ".join(str(y) for y in grid_ny))
+    L.append("static const float    LOD_GRID_DEG[MAP_NLOD] = { %s };" % ", ".join(fnum(g) for g in grid_deg))
+    L.append("#define GRID_LA0 %sf" % repr(GRID_LA0))
+    L.append("#define GRID_LO0 %sf" % repr(GRID_LO0))
 
     # regional medium roads (single array, drawn only at <= 20 km — see instrument_drawer.ino)
     L.append("")

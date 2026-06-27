@@ -1167,8 +1167,8 @@ static void drawChart(MyCanvas8 *canvas, int cx, int cy, int rad,
   // NOT culled by the center bbox: a ring whose center is off the panel still draws
   // if its circle reaches into the radar view (center distance <= rad + ringRadius).
   const ChartRing *RINGS = LOD_RINGS[lod];
-  for (int i = chartLatLower(RINGS, LOD_NRINGS[lod], clat - dLatMax - 0.2f), n = LOD_NRINGS[lod];
-       i < n && RINGS[i].lat <= clat + dLatMax + 0.2f; i++) {
+  CHART_GRID_BEGIN(lod, 1)                          // +1 cell: a ring reaches past its center
+  CHART_GRID_ROWS(LOD_RINGS_CELL[lod], i) {
     const ChartRing &r = RINGS[i];
     int rr = (int)(r.rad_m * m.scale);
     if (rr < 2) continue;
@@ -1199,11 +1199,12 @@ static void drawChart(MyCanvas8 *canvas, int cx, int cy, int rad,
     }
 #endif
   }
+  CHART_GRID_END
 
   // ---- runways (short white lines at the true heading) ----------------------
   const ChartRwy *RWYS = LOD_RWYS[lod];
-  for (int i = chartLatLower(RWYS, LOD_NRWYS[lod], clat - dLatMax), n = LOD_NRWYS[lod];
-       i < n && RWYS[i].lat <= clat + dLatMax; i++) {
+  CHART_GRID_BEGIN(lod, 0)
+  CHART_GRID_ROWS(LOD_RWYS_CELL[lod], i) {
     const ChartRwy &r = RWYS[i];
     if (MAP_CULL(r.lat, r.lon)) continue;
     float hr = r.hdg * p / 180.0f, half = r.len_m / 2.0f;
@@ -1212,13 +1213,14 @@ static void drawChart(MyCanvas8 *canvas, int cx, int cy, int rad,
     mapXY(m, r.lat - dN / 111320.0f, r.lon - dE / (111320.0f * m.cosLat), ex, ey);
     mapLine(canvas, sx, sy, ex, ey, IWHITE, cx, cy, r2, false);
   }
+  CHART_GRID_END
 
   // ---- point symbols: airports, navaids, landmarks --------------------------
   canvas->setFont();
   canvas->setTextSize(1);
   const ChartPt *PTS = LOD_PTS[lod];
-  for (int i = chartLatLower(PTS, LOD_NPTS[lod], clat - dLatMax), n = LOD_NPTS[lod];
-       i < n && PTS[i].lat <= clat + dLatMax; i++) {
+  CHART_GRID_BEGIN(lod, 0)
+  CHART_GRID_ROWS(LOD_PTS_CELL[lod], i) {
     const ChartPt &pt = PTS[i];
     if (MAP_CULL(pt.lat, pt.lon)) continue;
     mapXY(m, pt.lat, pt.lon, sx, sy);
@@ -1242,6 +1244,7 @@ static void drawChart(MyCanvas8 *canvas, int cx, int cy, int rad,
       default:              canvas->fillRect(sx - sc, sy - sc, 2 * sc, 2 * sc, IYELLOW); break;  // PT_LANDMARK
     }
   }
+  CHART_GRID_END
 
   // NOTE: map text is NOT drawn here. drawChartLabels() runs as a separate pass
   // AFTER the compass rose/rings/overlays so labels always sit on top and stay
@@ -1283,8 +1286,9 @@ static void drawChartLabels(MyCanvas8 *canvas, int cx, int cy, int rad,
   canvas->textScale = 1; canvas->setTextSize(1);   // all map text is small (size 1)
 
   // 1) airports + navaids: id + grey frequency line --------------------------
-  const ChartPt *PTS = LOD_PTS[lod]; int nPts = LOD_NPTS[lod];
-  for (int i = chartLatLower(PTS, nPts, clat - dLatMax); i < nPts && PTS[i].lat <= clat + dLatMax; i++) {
+  const ChartPt *PTS = LOD_PTS[lod];
+  CHART_GRID_BEGIN(lod, 0)
+  CHART_GRID_ROWS(LOD_PTS_CELL[lod], i) {
     const ChartPt &pt = PTS[i];
     if (pt.type == PT_LANDMARK || pt.type == PT_CITY || MAP_CULL(pt.lat, pt.lon)) continue;
     mapXY(m, pt.lat, pt.lon, sx, sy);
@@ -1294,8 +1298,10 @@ static void drawChartLabels(MyCanvas8 *canvas, int cx, int cy, int rad,
                pt.type == PT_AIRPORT_CLOSED ? IGREY : pt.type == PT_AIRPORT_NTWR ? IMAGENTA : IBLUE,
                cx, cy, rl2);
   }
+  CHART_GRID_END
   // 2) cities / landmarks: id only -------------------------------------------
-  for (int i = chartLatLower(PTS, nPts, clat - dLatMax); i < nPts && PTS[i].lat <= clat + dLatMax; i++) {
+  CHART_GRID_BEGIN(lod, 0)
+  CHART_GRID_ROWS(LOD_PTS_CELL[lod], i) {
     const ChartPt &pt = PTS[i];
     if ((pt.type != PT_LANDMARK && pt.type != PT_CITY) || MAP_CULL(pt.lat, pt.lon)) continue;
     mapXY(m, pt.lat, pt.lon, sx, sy);
@@ -1303,6 +1309,7 @@ static void drawChartLabels(MyCanvas8 *canvas, int cx, int cy, int rad,
         !mapPtOnScreen(canvas, sx, sy)) continue;          // off-screen symbol -> no floating label
     mapLabelPt(canvas, pt.id, "", sx, sy, sc + 2, pt.type == PT_CITY ? IWHITE : IYELLOW, cx, cy, rl2);
   }
+  CHART_GRID_END
   // 3) road / highway names: best visible spot along the road ----------------
   // mapLabelRoad clips each segment to the circle, so a road that runs partly
   // off-screen is still named at its best on-screen position.

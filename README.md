@@ -126,6 +126,35 @@ names in white.
 
 ---
 
+## Setting the altimeter (local pressure)
+
+The altitude tape on the PFD shows **pressure altitude** — it reads the barometer against a
+reference sea-level pressure. That reference (the **Kollsman / QNH** setting) changes with the
+weather, so you set it to the local altimeter setting (from ATIS/AWOS or a nearby field) to make
+the tape read true field elevation. The current setting is shown **above the altitude tape**, in
+white, in inches of mercury — e.g. `29.92`. Just below the tape, the GPS altitude (`GPS / ALT`)
+is shown for comparison.
+
+Adjust it with the **`IO0` / `BOOT` button** on the side of the board — the same button on all
+three builds (BOARD_A / BOARD_C / BOARD_D):
+
+| Action | Effect |
+|---|---|
+| **Tap** | +0.01 inHg per press |
+| **Hold** (> ~0.45 s) | scrolls up continuously (~11 steps/sec) for quick changes |
+
+It's a single button, so it only counts **up**: the range is **28.00 – 31.00 inHg** and it
+**wraps** from 31.00 back to 28.00, so you can keep tapping past the top to reach a lower value.
+The default is **29.92 inHg** (standard pressure, 1013.25 hPa).
+
+Your setting is **saved to flash** about 1.5 s after you stop adjusting (the delay coalesces a
+long scroll into a single write), so it is **restored on the next power-up**.
+
+> The setting feeds the pressure-altitude calculation in [`ASI.ino`](ASI.ino) (`inHg × 33.8639` →
+> hPa); the range and default live in [`config.h`](config.h) (`BARO_MIN_INHG` / `BARO_MAX_INHG`).
+
+---
+
 ## Hardware
 
 NanoPFD builds for three display configurations — pick one in [`config.h`](config.h) (set
@@ -178,11 +207,19 @@ NanoPFD is a from-scratch renderer tuned to squeeze a smooth glass cockpit out o
   - *QSPI (BOARD_D)* — a self-contained RM690B0 driver pushes **RGB332** (1 byte/pixel) with a
     **per-line RLE codec** ([`RLE332.h`](RLE332.h), word-at-a-time run detection) so the frame
     compresses ~10× before the QSPI transfer.
-- **Auto-generated aeronautical map.** [`tools/build_chart_data.py`](tools/build_chart_data.py)
-  fetches OurAirports + Natural Earth data, simplifies it, assigns level-of-detail tiers, and
-  emits [`chart_data.h`](chart_data.h). The renderer projects it equirectangularly, rotates it
-  heading-up, and clips it to the compass circle — with range-driven LOD so a 30 km view is dense
-  and a national view stays clean.
+- **Auto-generated aeronautical map (per-LOD pyramid).**
+  [`tools/build_chart_data.py`](tools/build_chart_data.py) fetches OurAirports + Natural Earth +
+  OSM data and emits [`chart_data.h`](chart_data.h) as a **pyramid of independent datasets** — one
+  per zoom level (`gMapLod`), each with its own feature set *and* its own simplification, so the
+  national view stays clean while the close-in view is dense. Oceans and lakes are emitted as
+  closed rings and **scanline-filled** (with white coastlines); the renderer projects everything
+  **azimuthal-equidistant** (a tangent plane, so the distance rings stay true), rotates it
+  heading-up, and clips it to the compass circle.
+- **Log-cheap map culling (flat per-LOD grid).** Each LOD's points / rings / runways are sorted
+  into a 2-D grid whose cell width matches that level's view radius, with a cell→index offset
+  table ([`chart_cull.h`](chart_cull.h)). A frame addresses the handful of cells under the visible
+  circle directly — **O(on-screen features)** — instead of scanning a country-wide latitude strip,
+  so the frame rate tracks what's actually drawn, not the size of the dataset.
 - **Fresh sensor data.** The IMU FIFO is drained every loop, so attitude is always the latest
   sample — the sensors publish at **~380 Hz**, far above any display's frame rate.
 - **Remote ID traffic awareness.** The ESP32-S3's otherwise-idle WiFi + Bluetooth radios run a
@@ -247,7 +284,8 @@ Most knobs live in [`config.h`](config.h):
 
 - **Board select** — `BOARD_A` / `BOARD_C` / `BOARD_D` (exactly one = 1).
 - **Pins** — display, I²C, and GPS UART pins per board.
-- **`MAP_RANGE_M`** — moving-map range (center → radar edge); drives the LOD tier at compile time.
+- **`MAP_RANGE_M`** — the *default* moving-map range (center → radar edge) at boot; on the touch
+  boards you then **pinch / tap to zoom** through the LOD pyramid live (see [`map_zoom.cpp`](map_zoom.cpp)).
 - **`MAP_DEFAULT_LAT/LON`** — fallback map center when GPS is lost (and no saved fix exists).
 - SPI clocks, layout offsets, task priorities/cores.
 
@@ -262,9 +300,12 @@ instrument_drawer.ino   the PFD + ND renderers (drawHorizonDisplay / drawNavigat
 IMU.ino  GPS.ino  ASI.ino  ICM.ino    sensor drivers + fusion
 CombinedDisplay.ino       BOARD_C  — ST7701S RGB panel (LCD_CAM)
 CombinedDisplayAmoled.ino BOARD_D  — RM690B0 QSPI AMOLED (self-contained driver)
+Touch.cpp  Touch.h       touch drivers (GT911 / CST226) + tap/pinch zoom
+map_zoom.cpp  map_zoom.h  zoom ladder: range → LOD selection, field mode
 MyCanvas8.h  RLE332.h  layout.h  State.h    rendering primitives + helpers
-chart_data.h            generated aeronautical chart data
-tools/build_chart_data.py    map data generator (OurAirports + Natural Earth)
+chart_data.h            generated aeronautical chart data (per-LOD pyramid)
+chart_cull.h            flat per-LOD grid cull (cell → feature-index lookup)
+tools/build_chart_data.py    map data generator (OurAirports + Natural Earth + OSM)
 tools/svggen/           regenerates docs/*.svg by running the real renderer on the host
 tests/                  host unit tests (layout math, RLE codec)
 docs/                   the SVG illustrations in this README (generated, not hand-drawn)
