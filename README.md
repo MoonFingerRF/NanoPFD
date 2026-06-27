@@ -56,6 +56,52 @@ just pick the board in [`config.h`](config.h):
 
 ---
 
+## Reading the Primary Flight Display
+
+The PFD is the standard "six-pack-in-glass" attitude display. Everything is laid out the way a
+real EFIS is — speed on the left, altitude on the right, attitude in the middle:
+
+<div align="center">
+<img src="docs/pfd_legend.svg" alt="Annotated Primary Flight Display legend" width="100%"/>
+</div>
+
+**Attitude (centre)**
+
+| Element | Looks like | Meaning |
+|---|---|---|
+| Artificial horizon | blue sky over brown ground | pitch & roll attitude; the split is the horizon line |
+| Pitch ladder | white rungs every few degrees | climb / dive angle against the horizon |
+| Bank scale & roll pointer | ticks around the top arc + a sky pointer | bank angle (marks at 10/20/30/45/60°) |
+| Aircraft reference | fixed white "W" wings at the centre | your aircraft — the horizon moves behind it |
+| Turn coordinator & slip-skid ball | curved scale + ball at the bottom | rate of turn and whether the turn is coordinated (ball centred = balanced) |
+| Flight-mode annunciations | green text across the top | active autoflight modes (demo placeholder) |
+
+**Speed & altitude (the tapes)**
+
+| Element | Looks like | Meaning |
+|---|---|---|
+| Airspeed tape | rolling scale, left | indicated airspeed (kt), centred on the boxed readout |
+| Airspeed readout | boxed number on the tape | current IAS |
+| Mach number | small `.NNN` below the tape | indicated Mach |
+| Ground speed | `GS` + number below the tape | GPS ground speed (kt) |
+| Altitude tape | rolling scale, right | barometric (pressure) altitude (ft) |
+| Altitude readout | boxed number on the tape | current baro altitude |
+| Altimeter setting | white `NN.NN` above the tape | the Kollsman / QNH setting (inHg) — see [Setting the altimeter](#setting-the-altimeter-local-pressure) |
+| GPS altitude | `GPS / ALT` + number below the tape | GPS (geometric) altitude, for comparison with baro |
+
+**Rate & load (the edge bars)**
+
+| Element | Looks like | Meaning |
+|---|---|---|
+| Vertical-speed indicator | green pointer on the far-right bar | climb / descent rate (centre = level) |
+| G-meter | green pointer on the far-left bar | current load factor; a yellow (red if over-scale) marker holds the peak g |
+
+> On the single-screen boards the heading/compass lives on the ND directly below, so the PFD
+> drops its own bottom heading arc to make room. On the dual-display board the PFD keeps a
+> heading arc along its bottom edge.
+
+---
+
 ## Reading the Navigation Display
 
 The ND is a heading-up moving map. Every element is colour- and shape-coded the way a real
@@ -119,6 +165,7 @@ names in white.
 | Indicator | Meaning |
 |---|---|
 | `lat / lon` (bottom) | map-centre position — **green** with a GPS fix, **grey** when coasting on the last fix |
+| Range / zoom (top-left, grey) | the selected map range = the outer-ring radius (e.g. `16NM`); **pinch / tap to zoom**. Turns **orange** in field mode |
 | Battery voltage (top-right) | pack voltage — grey, turns **red** below 3.1 V |
 | `SAT n` (top-right, yellow) | shown only when fewer than 5 satellites are tracked |
 | `PROXIMITY` (top-left, **orange**) | at least one aircraft/drone broadcasting Remote ID is being tracked nearby — same colour as the traffic dots |

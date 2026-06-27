@@ -46,11 +46,11 @@ mkdir -p "$TMP/a"; board_config A > "$TMP/a/config.h"
 g++ "${COMMON[@]}" -I"$TMP/a" -I"$ROOT" -I"$GFX" "$HERE/svggen.cpp" "$TMP/gfx.o" -lz -o "$TMP/svggen_a"
 ( cd "$ROOT" && "$TMP/svggen_a" )
 
-# ---- annotated ND legend (single-panel ND + real NYC-area legend map) ----
-# Uses the committed legend_chart.h (regenerate it with legend_chart.py if needed).
+# ---- annotated ND + PFD legends (single-panel, real national chart centred on PHL) ----
+# Uses the real chart_data.h (per-LOD pyramid) so the legend map is the actual data.
 g++ "${COMMON[@]}" -I"$TMP/c" -I"$ROOT" -I"$GFX" -I"$HERE" \
-    -DLEGEND_BUILD -DCHART_DATA_HEADER='"legend_chart.h"' \
+    -DLEGEND_BUILD \
     "$HERE/svggen.cpp" "$TMP/gfx.o" -lz -o "$TMP/svggen_legend"
 ( cd "$ROOT" && "$TMP/svggen_legend" )
 
-echo "Regenerated $ROOT/docs/{pfd,nd,combined,nd_legend,dual}.svg"
+echo "Regenerated $ROOT/docs/{pfd,nd,combined,nd_legend,pfd_legend,dual}.svg"

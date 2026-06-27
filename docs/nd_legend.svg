@@ -3,130 +3,202 @@
 <rect x="0" y="0" width="1232" height="532" fill="#000000"/>
 <g clip-path="url(#ndframe)"><g transform="translate(292 46) scale(1.35)" opacity="0.7">
 <rect x="0" y="0" width="480" height="319" fill="#000000"/>
-<line x1="534.5" y1="10.5" x2="318.5" y2="150.5" stroke="#00AAFF" clip-path="url(#ndclip)"/>
-<line x1="-95.5" y1="509.5" x2="-4.5" y2="375.5" stroke="#D68608" clip-path="url(#ndclip)"/>
-<line x1="-4.5" y1="375.5" x2="281.5" y2="182.5" stroke="#D68608" clip-path="url(#ndclip)"/>
-<line x1="281.5" y1="182.5" x2="223.5" y2="290.5" stroke="#D68608" clip-path="url(#ndclip)"/>
-<line x1="223.5" y1="290.5" x2="26.5" y2="366.5" stroke="#D68608" clip-path="url(#ndclip)"/>
-<line x1="26.5" y1="366.5" x2="-48.5" y2="653.5" stroke="#D68608" clip-path="url(#ndclip)"/>
-<line x1="530.5" y1="18.5" x2="281.5" y2="182.5" stroke="#ADAAAD" stroke-dasharray="3 3" clip-path="url(#ndclip)"/>
-<line x1="27.5" y1="342.5" x2="-129.5" y2="319.5" stroke="#ADAAAD" stroke-dasharray="3 3" clip-path="url(#ndclip)"/>
-<line x1="463.5" y1="55.5" x2="532.5" y2="75.5" stroke="#424142" clip-path="url(#ndclip)"/>
-<line x1="132.5" y1="60.5" x2="260.5" y2="4.5" stroke="#424142" clip-path="url(#ndclip)"/>
-<line x1="260.5" y1="4.5" x2="463.5" y2="55.5" stroke="#424142" clip-path="url(#ndclip)"/>
-<line x1="25.5" y1="-248.5" x2="132.5" y2="60.5" stroke="#424142" clip-path="url(#ndclip)"/>
-<line x1="132.5" y1="60.5" x2="78.5" y2="132.5" stroke="#424142" clip-path="url(#ndclip)"/>
-<line x1="78.5" y1="132.5" x2="239.5" y2="260.5" stroke="#424142" clip-path="url(#ndclip)"/>
-<line x1="260.5" y1="288.5" x2="532.5" y2="75.5" stroke="#424142" clip-path="url(#ndclip)"/>
-<line x1="239.5" y1="260.5" x2="260.5" y2="288.5" stroke="#424142" clip-path="url(#ndclip)"/>
-<line x1="260.5" y1="288.5" x2="262.5" y2="303.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="26.5" y1="366.5" x2="-48.5" y2="546.5" stroke="#FFFFFF" clip-path="url(#ndclip)"/>
+<line x1="265.5" y1="322.5" x2="233.5" y2="471.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="233.5" y1="471.5" x2="290.5" y2="591.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="-24.5" y1="556.5" x2="115.5" y2="683.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="265.5" y1="322.5" x2="301.5" y2="395.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="301.5" y1="395.5" x2="663.5" y2="729.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="32.5" y1="470.5" x2="211.5" y2="553.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="211.5" y1="553.5" x2="277.5" y2="563.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="277.5" y1="563.5" x2="511.5" y2="693.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="361.5" y1="489.5" x2="547.5" y2="666.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="269.5" y1="243.5" x2="341.5" y2="341.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="341.5" y1="341.5" x2="420.5" y2="394.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="420.5" y1="394.5" x2="490.5" y2="503.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="490.5" y1="503.5" x2="535.5" y2="418.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="341.5" y1="463.5" x2="361.5" y2="489.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="-37.5" y1="473.5" x2="56.5" y2="451.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="56.5" y1="451.5" x2="99.5" y2="428.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="99.5" y1="428.5" x2="262.5" y2="303.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="-25.5" y1="471.5" x2="109.5" y2="353.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="109.5" y1="353.5" x2="157.5" y2="338.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="157.5" y1="338.5" x2="225.5" y2="299.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="225.5" y1="299.5" x2="261.5" y2="293.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="80.5" y1="354.5" x2="90.5" y2="385.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="90.5" y1="385.5" x2="257.5" y2="451.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="257.5" y1="451.5" x2="341.5" y2="463.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="-18.5" y1="360.5" x2="60.5" y2="304.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="60.5" y1="304.5" x2="203.5" y2="251.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="203.5" y1="251.5" x2="247.5" y2="193.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="247.5" y1="193.5" x2="405.5" y2="62.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="405.5" y1="62.5" x2="409.5" y2="18.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="-59.5" y1="433.5" x2="3.5" y2="358.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="3.5" y1="358.5" x2="2.5" y2="344.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="27.5" y1="342.5" x2="-38.5" y2="315.5" stroke="#ADAAAD" stroke-dasharray="3 3" clip-path="url(#ndclip)"/>
+<line x1="37.5" y1="371.5" x2="80.5" y2="354.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="80.5" y1="354.5" x2="108.5" y2="353.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="64.5" y1="330.5" x2="80.5" y2="354.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="63.5" y1="330.5" x2="53.5" y2="315.5" stroke="#424142" clip-path="url(#ndclip)"/>
 <line x1="262.5" y1="303.5" x2="265.5" y2="322.5" stroke="#424142" clip-path="url(#ndclip)"/>
-<line x1="-188.5" y1="87.5" x2="132.5" y2="60.5" stroke="#424142" clip-path="url(#ndclip)"/>
-<line x1="-37.5" y1="473.5" x2="262.5" y2="303.5" stroke="#424142" clip-path="url(#ndclip)"/>
-<line x1="-102.5" y1="450.5" x2="203.5" y2="251.5" stroke="#424142" clip-path="url(#ndclip)"/>
-<line x1="203.5" y1="251.5" x2="435.5" y2="-14.5" stroke="#424142" clip-path="url(#ndclip)"/>
-<line x1="74.5" y1="298.5" x2="78.5" y2="135.5" stroke="#424142" clip-path="url(#ndclip)"/>
-<line x1="-92.5" y1="438.5" x2="2.5" y2="344.5" stroke="#424142" clip-path="url(#ndclip)"/>
-<line x1="-25.5" y1="471.5" x2="261.5" y2="293.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="260.5" y1="288.5" x2="262.5" y2="303.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="-171.5" y1="302.5" x2="28.5" y2="248.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="225.5" y1="299.5" x2="258.5" y2="272.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="258.5" y1="272.5" x2="275.5" y2="229.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="74.5" y1="298.5" x2="70.5" y2="271.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="70.5" y1="271.5" x2="91.5" y2="188.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="91.5" y1="188.5" x2="78.5" y2="135.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="260.5" y1="288.5" x2="322.5" y2="284.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="322.5" y1="284.5" x2="532.5" y2="75.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="239.5" y1="260.5" x2="260.5" y2="288.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="388.5" y1="268.5" x2="616.5" y2="269.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="283.5" y1="229.5" x2="388.5" y2="268.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="208.5" y1="263.5" x2="235.5" y2="106.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="132.5" y1="60.5" x2="87.5" y2="102.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="87.5" y1="102.5" x2="78.5" y2="132.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="78.5" y1="132.5" x2="175.5" y2="201.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="175.5" y1="201.5" x2="199.5" y2="246.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="199.5" y1="246.5" x2="239.5" y2="260.5" stroke="#424142" clip-path="url(#ndclip)"/>
 <line x1="253.5" y1="259.5" x2="246.5" y2="213.5" stroke="#424142" clip-path="url(#ndclip)"/>
-<line x1="35.5" y1="79.5" x2="202.5" y2="209.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="28.5" y1="248.5" x2="67.5" y2="226.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="275.5" y1="229.5" x2="432.5" y2="99.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="432.5" y1="99.5" x2="554.5" y2="30.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="247.5" y1="215.5" x2="275.5" y2="229.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="67.5" y1="226.5" x2="100.5" y2="208.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="-90.5" y1="129.5" x2="46.5" y2="86.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="35.5" y1="79.5" x2="96.5" y2="105.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="96.5" y1="105.5" x2="126.5" y2="97.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="126.5" y1="97.5" x2="192.5" y2="162.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="192.5" y1="162.5" x2="184.5" y2="183.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="184.5" y1="183.5" x2="202.5" y2="209.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="100.5" y1="208.5" x2="137.5" y2="185.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="-108.5" y1="205.5" x2="32.5" y2="179.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="32.5" y1="179.5" x2="137.5" y2="200.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="192.5" y1="189.5" x2="200.5" y2="163.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="200.5" y1="163.5" x2="229.5" y2="147.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="137.5" y1="185.5" x2="184.5" y2="156.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="530.5" y1="18.5" x2="402.5" y2="90.5" stroke="#ADAAAD" stroke-dasharray="3 3" clip-path="url(#ndclip)"/>
+<line x1="402.5" y1="90.5" x2="281.5" y2="182.5" stroke="#ADAAAD" stroke-dasharray="3 3" clip-path="url(#ndclip)"/>
+<line x1="192.5" y1="162.5" x2="226.5" y2="147.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="525.5" y1="28.5" x2="393.5" y2="92.5" stroke="#00AAFF" clip-path="url(#ndclip)"/>
+<line x1="393.5" y1="92.5" x2="318.5" y2="150.5" stroke="#00AAFF" clip-path="url(#ndclip)"/>
+<line x1="226.5" y1="147.5" x2="272.5" y2="136.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="273.5" y1="135.5" x2="358.5" y2="42.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="-66.5" y1="88.5" x2="-11.5" y2="92.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="-11.5" y1="92.5" x2="132.5" y2="60.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="235.5" y1="106.5" x2="250.5" y2="27.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="8.5" y1="37.5" x2="2.5" y2="57.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="2.5" y1="57.5" x2="25.5" y2="56.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="25.5" y1="56.5" x2="36.5" y2="90.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="46.5" y1="86.5" x2="73.5" y2="74.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="73.5" y1="74.5" x2="91.5" y2="37.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="213.5" y1="80.5" x2="185.5" y2="50.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="463.5" y1="55.5" x2="532.5" y2="75.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="428.5" y1="72.5" x2="472.5" y2="24.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="132.5" y1="60.5" x2="260.5" y2="4.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="353.5" y1="38.5" x2="463.5" y2="55.5" stroke="#424142" clip-path="url(#ndclip)"/>
+<line x1="25.5" y1="-248.5" x2="132.5" y2="60.5" stroke="#424142" clip-path="url(#ndclip)"/>
 <line x1="-243.5" y1="500.5" x2="23.5" y2="442.5" stroke="#FFFF00" stroke-dasharray="3 3" clip-path="url(#ndclip)"/>
 <line x1="-212.5" y1="387.5" x2="-11.5" y2="563.5" stroke="#FFFF00" stroke-dasharray="3 3" clip-path="url(#ndclip)"/>
-<line x1="44.5" y1="313.5" x2="302.5" y2="247.5" stroke="#FFFF00" stroke-dasharray="3 3" clip-path="url(#ndclip)"/>
-<line x1="25.5" y1="322.5" x2="295.5" y2="253.5" stroke="#FFFF00" stroke-dasharray="3 3" clip-path="url(#ndclip)"/>
 <line x1="10.5" y1="329.5" x2="287.5" y2="261.5" stroke="#FFFF00" stroke-dasharray="3 3" clip-path="url(#ndclip)"/>
-<line x1="118.5" y1="156.5" x2="215.5" y2="409.5" stroke="#FFFF00" stroke-dasharray="3 3" clip-path="url(#ndclip)"/>
+<line x1="25.5" y1="322.5" x2="295.5" y2="253.5" stroke="#FFFF00" stroke-dasharray="3 3" clip-path="url(#ndclip)"/>
+<line x1="44.5" y1="313.5" x2="302.5" y2="247.5" stroke="#FFFF00" stroke-dasharray="3 3" clip-path="url(#ndclip)"/>
 <line x1="226.5" y1="176.5" x2="429.5" y2="-4.5" stroke="#FFFF00" stroke-dasharray="3 3" clip-path="url(#ndclip)"/>
+<line x1="118.5" y1="156.5" x2="215.5" y2="409.5" stroke="#FFFF00" stroke-dasharray="3 3" clip-path="url(#ndclip)"/>
 <line x1="243.5" y1="-13.5" x2="413.5" y2="194.5" stroke="#FFFF00" stroke-dasharray="3 3" clip-path="url(#ndclip)"/>
-<line x1="141.5" y1="-133.5" x2="312.5" y2="83.5" stroke="#FFFF00" stroke-dasharray="3 3" clip-path="url(#ndclip)"/>
+<circle cx="44.5" cy="418.5" r="43" fill="none" stroke="#FFFF00" stroke-dasharray="2 3" clip-path="url(#ndclip)"/>
+<circle cx="164.5" cy="551.5" r="43" fill="none" stroke="#FFFF00" stroke-dasharray="2 3" clip-path="url(#ndclip)"/>
+<circle cx="231.5" cy="460.5" r="43" fill="none" stroke="#FFFF00" stroke-dasharray="2 3" clip-path="url(#ndclip)"/>
+<circle cx="178.5" cy="575.5" r="43" fill="none" stroke="#FFFF00" stroke-dasharray="2 3" clip-path="url(#ndclip)"/>
+<circle cx="324.5" cy="494.5" r="43" fill="none" stroke="#FFFF00" stroke-dasharray="2 3" clip-path="url(#ndclip)"/>
+<circle cx="126.5" cy="499.5" r="43" fill="none" stroke="#FFFF00" stroke-dasharray="2 3" clip-path="url(#ndclip)"/>
+<circle cx="311.5" cy="447.5" r="43" fill="none" stroke="#FFFF00" stroke-dasharray="2 3" clip-path="url(#ndclip)"/>
+<circle cx="168.5" cy="366.5" r="43" fill="none" stroke="#FFFF00" stroke-dasharray="2 3" clip-path="url(#ndclip)"/>
+<circle cx="373.5" cy="377.5" r="43" fill="none" stroke="#FFFF00" stroke-dasharray="2 3" clip-path="url(#ndclip)"/>
+<circle cx="141.5" cy="34.5" r="43" fill="none" stroke="#FFFF00" stroke-dasharray="2 3" clip-path="url(#ndclip)"/>
 <circle cx="159.5" cy="289.5" r="129" fill="none" stroke="#00FFFF" stroke-dasharray="2 3" clip-path="url(#ndclip)"/>
 <circle cx="327.5" cy="87.5" r="77" fill="none" stroke="#00FF00" stroke-dasharray="2 3" clip-path="url(#ndclip)"/>
-<circle cx="168.5" cy="366.5" r="43" fill="none" stroke="#FFFF00" stroke-dasharray="2 3" clip-path="url(#ndclip)"/>
-<circle cx="141.5" cy="34.5" r="43" fill="none" stroke="#FFFF00" stroke-dasharray="2 3" clip-path="url(#ndclip)"/>
-<circle cx="231.5" cy="460.5" r="43" fill="none" stroke="#FFFF00" stroke-dasharray="2 3" clip-path="url(#ndclip)"/>
-<circle cx="373.5" cy="377.5" r="43" fill="none" stroke="#FFFF00" stroke-dasharray="2 3" clip-path="url(#ndclip)"/>
-<circle cx="311.5" cy="447.5" r="43" fill="none" stroke="#FFFF00" stroke-dasharray="2 3" clip-path="url(#ndclip)"/>
-<circle cx="448.5" cy="221.5" r="43" fill="none" stroke="#FFFF00" stroke-dasharray="2 3" clip-path="url(#ndclip)"/>
 <circle cx="451.5" cy="151.5" r="43" fill="none" stroke="#FFFF00" stroke-dasharray="2 3" clip-path="url(#ndclip)"/>
-<circle cx="324.5" cy="494.5" r="43" fill="none" stroke="#FFFF00" stroke-dasharray="2 3" clip-path="url(#ndclip)"/>
-<circle cx="44.5" cy="418.5" r="43" fill="none" stroke="#FFFF00" stroke-dasharray="2 3" clip-path="url(#ndclip)"/>
-<circle cx="126.5" cy="499.5" r="43" fill="none" stroke="#FFFF00" stroke-dasharray="2 3" clip-path="url(#ndclip)"/>
-<circle cx="477.5" cy="229.5" r="43" fill="none" stroke="#FFFF00" stroke-dasharray="2 3" clip-path="url(#ndclip)"/>
-<circle cx="164.5" cy="551.5" r="43" fill="none" stroke="#FFFF00" stroke-dasharray="2 3" clip-path="url(#ndclip)"/>
 <circle cx="504.5" cy="222.5" r="43" fill="none" stroke="#FFFF00" stroke-dasharray="2 3" clip-path="url(#ndclip)"/>
-<circle cx="178.5" cy="575.5" r="43" fill="none" stroke="#FFFF00" stroke-dasharray="2 3" clip-path="url(#ndclip)"/>
+<circle cx="477.5" cy="229.5" r="43" fill="none" stroke="#FFFF00" stroke-dasharray="2 3" clip-path="url(#ndclip)"/>
 <circle cx="519.5" cy="258.5" r="43" fill="none" stroke="#FFFF00" stroke-dasharray="2 3" clip-path="url(#ndclip)"/>
-<line x1="301.5" y1="621.5" x2="296.5" y2="620.5" stroke="#FFFFFF" clip-path="url(#ndclip)"/>
+<circle cx="448.5" cy="221.5" r="43" fill="none" stroke="#FFFF00" stroke-dasharray="2 3" clip-path="url(#ndclip)"/>
 <line x1="44.5" y1="418.5" x2="38.5" y2="421.5" stroke="#FFFFFF" clip-path="url(#ndclip)"/>
-<line x1="311.5" y1="447.5" x2="302.5" y2="449.5" stroke="#FFFFFF" clip-path="url(#ndclip)"/>
-<line x1="373.5" y1="377.5" x2="368.5" y2="383.5" stroke="#FFFFFF" clip-path="url(#ndclip)"/>
 <line x1="-106.5" y1="472.5" x2="-108.5" y2="491.5" stroke="#FFFFFF" clip-path="url(#ndclip)"/>
 <line x1="-109.5" y1="471.5" x2="-128.5" y2="475.5" stroke="#FFFFFF" clip-path="url(#ndclip)"/>
 <line x1="-112.5" y1="475.5" x2="-121.5" y2="467.5" stroke="#FFFFFF" clip-path="url(#ndclip)"/>
-<line x1="141.5" y1="34.5" x2="133.5" y2="40.5" stroke="#FFFFFF" clip-path="url(#ndclip)"/>
-<line x1="477.5" y1="230.5" x2="476.5" y2="239.5" stroke="#FFFFFF" clip-path="url(#ndclip)"/>
-<line x1="519.5" y1="258.5" x2="514.5" y2="264.5" stroke="#FFFFFF" clip-path="url(#ndclip)"/>
+<line x1="301.5" y1="621.5" x2="296.5" y2="620.5" stroke="#FFFFFF" clip-path="url(#ndclip)"/>
+<line x1="311.5" y1="447.5" x2="302.5" y2="449.5" stroke="#FFFFFF" clip-path="url(#ndclip)"/>
+<line x1="373.5" y1="377.5" x2="368.5" y2="383.5" stroke="#FFFFFF" clip-path="url(#ndclip)"/>
 <line x1="513.5" y1="483.5" x2="511.5" y2="492.5" stroke="#FFFFFF" clip-path="url(#ndclip)"/>
-<line x1="628.5" y1="-38.5" x2="617.5" y2="-39.5" stroke="#FFFFFF" clip-path="url(#ndclip)"/>
 <line x1="-91.5" y1="175.5" x2="-99.5" y2="177.5" stroke="#FFFFFF" clip-path="url(#ndclip)"/>
+<line x1="141.5" y1="34.5" x2="133.5" y2="40.5" stroke="#FFFFFF" clip-path="url(#ndclip)"/>
 <line x1="173.5" y1="281.5" x2="161.5" y2="284.5" stroke="#FFFFFF" clip-path="url(#ndclip)"/>
 <line x1="160.5" y1="288.5" x2="136.5" y2="295.5" stroke="#FFFFFF" clip-path="url(#ndclip)"/>
 <line x1="149.5" y1="295.5" x2="119.5" y2="303.5" stroke="#FFFFFF" clip-path="url(#ndclip)"/>
 <line x1="166.5" y1="283.5" x2="160.5" y2="267.5" stroke="#FFFFFF" clip-path="url(#ndclip)"/>
 <line x1="327.5" y1="86.5" x2="313.5" y2="98.5" stroke="#FFFFFF" clip-path="url(#ndclip)"/>
 <line x1="328.5" y1="90.5" x2="319.5" y2="80.5" stroke="#FFFFFF" clip-path="url(#ndclip)"/>
-<line x1="-72.5" y1="-62.5" x2="-81.5" y2="-62.5" stroke="#FFFFFF" clip-path="url(#ndclip)"/>
+<line x1="477.5" y1="230.5" x2="476.5" y2="239.5" stroke="#FFFFFF" clip-path="url(#ndclip)"/>
+<line x1="519.5" y1="258.5" x2="514.5" y2="264.5" stroke="#FFFFFF" clip-path="url(#ndclip)"/>
 <line x1="448.5" y1="221.5" x2="439.5" y2="224.5" stroke="#FFFFFF" clip-path="url(#ndclip)"/>
+<line x1="-72.5" y1="-62.5" x2="-81.5" y2="-62.5" stroke="#FFFFFF" clip-path="url(#ndclip)"/>
 <line x1="20.5" y1="-28.5" x2="12.5" y2="-27.5" stroke="#FFFFFF" clip-path="url(#ndclip)"/>
 <line x1="227.5" y1="-24.5" x2="214.5" y2="-41.5" stroke="#FFFFFF" clip-path="url(#ndclip)"/>
+<line x1="628.5" y1="-38.5" x2="617.5" y2="-39.5" stroke="#FFFFFF" clip-path="url(#ndclip)"/>
+<circle cx="44.5" cy="418.5" r="4" fill="none" stroke="#FF00FF"/>
+<rect x="44" y="418" width="1" height="1" fill="#FF00FF"/>
+<line x1="80.5" y1="356.5" x2="88.5" y2="364.5" stroke="#ADAAAD"/>
+<line x1="80.5" y1="364.5" x2="88.5" y2="356.5" stroke="#ADAAAD"/>
+<line x1="75.5" y1="366.5" x2="83.5" y2="374.5" stroke="#ADAAAD"/>
+<line x1="75.5" y1="374.5" x2="83.5" y2="366.5" stroke="#ADAAAD"/>
+<rect x="58" y="489" width="4" height="4" fill="#FFFF00"/>
+<circle cx="164.5" cy="551.5" r="4" fill="none" stroke="#FF00FF"/>
+<rect x="164" y="551" width="1" height="1" fill="#FF00FF"/>
+<circle cx="231.5" cy="460.5" r="4" fill="none" stroke="#FF00FF"/>
+<rect x="231" y="460" width="1" height="1" fill="#FF00FF"/>
+<circle cx="324.5" cy="494.5" r="4" fill="none" stroke="#FF00FF"/>
+<rect x="324" y="494" width="1" height="1" fill="#FF00FF"/>
+<circle cx="126.5" cy="499.5" r="4" fill="none" stroke="#FF00FF"/>
+<rect x="126" y="499" width="1" height="1" fill="#FF00FF"/>
+<circle cx="311.5" cy="447.5" r="4" fill="none" stroke="#FF00FF"/>
+<rect x="311" y="447" width="1" height="1" fill="#FF00FF"/>
+<circle cx="168.5" cy="366.5" r="4" fill="none" stroke="#FF00FF"/>
+<rect x="168" y="366" width="1" height="1" fill="#FF00FF"/>
+<line x1="108.5" y1="499.5" x2="116.5" y2="507.5" stroke="#ADAAAD"/>
+<line x1="108.5" y1="507.5" x2="116.5" y2="499.5" stroke="#ADAAAD"/>
+<line x1="147.5" y1="467.5" x2="155.5" y2="475.5" stroke="#ADAAAD"/>
+<line x1="147.5" y1="475.5" x2="155.5" y2="467.5" stroke="#ADAAAD"/>
+<line x1="272.5" y1="443.5" x2="280.5" y2="451.5" stroke="#ADAAAD"/>
+<line x1="272.5" y1="451.5" x2="280.5" y2="443.5" stroke="#ADAAAD"/>
+<line x1="129.5" y1="323.5" x2="137.5" y2="331.5" stroke="#ADAAAD"/>
+<line x1="129.5" y1="331.5" x2="137.5" y2="323.5" stroke="#ADAAAD"/>
+<line x1="113.5" y1="509.5" x2="117.5" y2="513.5" stroke="#0000FF"/>
+<line x1="117.5" y1="513.5" x2="113.5" y2="517.5" stroke="#0000FF"/>
+<line x1="113.5" y1="517.5" x2="109.5" y2="513.5" stroke="#0000FF"/>
+<line x1="109.5" y1="513.5" x2="113.5" y2="509.5" stroke="#0000FF"/>
+<rect x="344" y="351" width="4" height="4" fill="#FFFF00"/>
+<circle cx="373.5" cy="377.5" r="4" fill="none" stroke="#FF00FF"/>
+<rect x="373" y="377" width="1" height="1" fill="#FF00FF"/>
+<rect x="386" y="339" width="4" height="4" fill="#FFFF00"/>
+<line x1="27.5" y1="272.5" x2="35.5" y2="280.5" stroke="#ADAAAD"/>
+<line x1="27.5" y1="280.5" x2="35.5" y2="272.5" stroke="#ADAAAD"/>
+<line x1="360.5" y1="142.5" x2="368.5" y2="150.5" stroke="#ADAAAD"/>
+<line x1="360.5" y1="150.5" x2="368.5" y2="142.5" stroke="#ADAAAD"/>
 <circle cx="159.5" cy="289.5" r="4" fill="none" stroke="#0000FF"/>
 <rect x="159" y="289" width="1" height="1" fill="#0000FF"/>
 <circle cx="327.5" cy="87.5" r="4" fill="none" stroke="#FF00FF"/>
 <rect x="327" y="87" width="1" height="1" fill="#FF00FF"/>
-<circle cx="168.5" cy="366.5" r="4" fill="none" stroke="#FF00FF"/>
-<rect x="168" y="366" width="1" height="1" fill="#FF00FF"/>
-<circle cx="231.5" cy="460.5" r="4" fill="none" stroke="#FF00FF"/>
-<rect x="231" y="460" width="1" height="1" fill="#FF00FF"/>
-<circle cx="373.5" cy="377.5" r="4" fill="none" stroke="#FF00FF"/>
-<rect x="373" y="377" width="1" height="1" fill="#FF00FF"/>
-<circle cx="311.5" cy="447.5" r="4" fill="none" stroke="#FF00FF"/>
-<rect x="311" y="447" width="1" height="1" fill="#FF00FF"/>
-<circle cx="448.5" cy="221.5" r="4" fill="none" stroke="#FF00FF"/>
-<rect x="448" y="221" width="1" height="1" fill="#FF00FF"/>
-<circle cx="324.5" cy="494.5" r="4" fill="none" stroke="#FF00FF"/>
-<rect x="324" y="494" width="1" height="1" fill="#FF00FF"/>
-<circle cx="44.5" cy="418.5" r="4" fill="none" stroke="#FF00FF"/>
-<rect x="44" y="418" width="1" height="1" fill="#FF00FF"/>
-<circle cx="126.5" cy="499.5" r="4" fill="none" stroke="#FF00FF"/>
-<rect x="126" y="499" width="1" height="1" fill="#FF00FF"/>
-<circle cx="477.5" cy="229.5" r="4" fill="none" stroke="#FF00FF"/>
-<rect x="477" y="229" width="1" height="1" fill="#FF00FF"/>
-<circle cx="164.5" cy="551.5" r="4" fill="none" stroke="#FF00FF"/>
-<rect x="164" y="551" width="1" height="1" fill="#FF00FF"/>
-<line x1="360.5" y1="142.5" x2="368.5" y2="150.5" stroke="#ADAAAD"/>
-<line x1="360.5" y1="150.5" x2="368.5" y2="142.5" stroke="#ADAAAD"/>
 <line x1="213.5" y1="266.5" x2="221.5" y2="274.5" stroke="#ADAAAD"/>
 <line x1="213.5" y1="274.5" x2="221.5" y2="266.5" stroke="#ADAAAD"/>
-<line x1="108.5" y1="499.5" x2="116.5" y2="507.5" stroke="#ADAAAD"/>
-<line x1="108.5" y1="507.5" x2="116.5" y2="499.5" stroke="#ADAAAD"/>
-<line x1="390.5" y1="189.5" x2="398.5" y2="197.5" stroke="#ADAAAD"/>
-<line x1="390.5" y1="197.5" x2="398.5" y2="189.5" stroke="#ADAAAD"/>
-<line x1="80.5" y1="356.5" x2="88.5" y2="364.5" stroke="#ADAAAD"/>
-<line x1="80.5" y1="364.5" x2="88.5" y2="356.5" stroke="#ADAAAD"/>
-<line x1="147.5" y1="467.5" x2="155.5" y2="475.5" stroke="#ADAAAD"/>
-<line x1="147.5" y1="475.5" x2="155.5" y2="467.5" stroke="#ADAAAD"/>
 <line x1="219.5" y1="208.5" x2="227.5" y2="216.5" stroke="#ADAAAD"/>
 <line x1="219.5" y1="216.5" x2="227.5" y2="208.5" stroke="#ADAAAD"/>
 <line x1="331.5" y1="303.5" x2="339.5" y2="311.5" stroke="#ADAAAD"/>
 <line x1="331.5" y1="311.5" x2="339.5" y2="303.5" stroke="#ADAAAD"/>
-<line x1="75.5" y1="366.5" x2="83.5" y2="374.5" stroke="#ADAAAD"/>
-<line x1="75.5" y1="374.5" x2="83.5" y2="366.5" stroke="#ADAAAD"/>
 <line x1="259.5" y1="232.5" x2="267.5" y2="240.5" stroke="#ADAAAD"/>
 <line x1="259.5" y1="240.5" x2="267.5" y2="232.5" stroke="#ADAAAD"/>
 <line x1="307.5" y1="226.5" x2="315.5" y2="234.5" stroke="#ADAAAD"/>
 <line x1="307.5" y1="234.5" x2="315.5" y2="226.5" stroke="#ADAAAD"/>
-<line x1="272.5" y1="443.5" x2="280.5" y2="451.5" stroke="#ADAAAD"/>
-<line x1="272.5" y1="451.5" x2="280.5" y2="443.5" stroke="#ADAAAD"/>
 <line x1="335.5" y1="276.5" x2="343.5" y2="284.5" stroke="#ADAAAD"/>
 <line x1="335.5" y1="284.5" x2="343.5" y2="276.5" stroke="#ADAAAD"/>
 <line x1="155.5" y1="146.5" x2="163.5" y2="154.5" stroke="#ADAAAD"/>
@@ -135,25 +207,20 @@
 <line x1="136.5" y1="116.5" x2="144.5" y2="108.5" stroke="#ADAAAD"/>
 <line x1="331.5" y1="210.5" x2="339.5" y2="218.5" stroke="#ADAAAD"/>
 <line x1="331.5" y1="218.5" x2="339.5" y2="210.5" stroke="#ADAAAD"/>
-<line x1="27.5" y1="272.5" x2="35.5" y2="280.5" stroke="#ADAAAD"/>
-<line x1="27.5" y1="280.5" x2="35.5" y2="272.5" stroke="#ADAAAD"/>
-<line x1="457.5" y1="178.5" x2="465.5" y2="186.5" stroke="#ADAAAD"/>
-<line x1="457.5" y1="186.5" x2="465.5" y2="178.5" stroke="#ADAAAD"/>
-<line x1="129.5" y1="323.5" x2="137.5" y2="331.5" stroke="#ADAAAD"/>
-<line x1="129.5" y1="331.5" x2="137.5" y2="323.5" stroke="#ADAAAD"/>
-<line x1="113.5" y1="509.5" x2="117.5" y2="513.5" stroke="#0000FF"/>
-<line x1="117.5" y1="513.5" x2="113.5" y2="517.5" stroke="#0000FF"/>
-<line x1="113.5" y1="517.5" x2="109.5" y2="513.5" stroke="#0000FF"/>
-<line x1="109.5" y1="513.5" x2="113.5" y2="509.5" stroke="#0000FF"/>
 <line x1="328.5" y1="83.5" x2="332.5" y2="87.5" stroke="#0000FF"/>
 <line x1="332.5" y1="87.5" x2="328.5" y2="91.5" stroke="#0000FF"/>
 <line x1="328.5" y1="91.5" x2="324.5" y2="87.5" stroke="#0000FF"/>
 <line x1="324.5" y1="87.5" x2="328.5" y2="83.5" stroke="#0000FF"/>
-<rect x="202" y="216" width="4" height="4" fill="#FFFF00"/>
-<rect x="58" y="489" width="4" height="4" fill="#FFFF00"/>
+<circle cx="204.5" cy="218.5" r="2.5" fill="#FFFFFF" shape-rendering="crispEdges"/>
+<circle cx="477.5" cy="229.5" r="4" fill="none" stroke="#FF00FF"/>
+<rect x="477" y="229" width="1" height="1" fill="#FF00FF"/>
+<circle cx="448.5" cy="221.5" r="4" fill="none" stroke="#FF00FF"/>
+<rect x="448" y="221" width="1" height="1" fill="#FF00FF"/>
+<line x1="390.5" y1="189.5" x2="398.5" y2="197.5" stroke="#ADAAAD"/>
+<line x1="390.5" y1="197.5" x2="398.5" y2="189.5" stroke="#ADAAAD"/>
+<line x1="457.5" y1="178.5" x2="465.5" y2="186.5" stroke="#ADAAAD"/>
+<line x1="457.5" y1="186.5" x2="465.5" y2="178.5" stroke="#ADAAAD"/>
 <rect x="413" y="195" width="4" height="4" fill="#FFFF00"/>
-<rect x="386" y="339" width="4" height="4" fill="#FFFF00"/>
-<rect x="344" y="351" width="4" height="4" fill="#FFFF00"/>
 <line x1="240.5" y1="71.5" x2="240.5" y2="53.5" stroke="#FFFFFF"/>
 <text x="229" y="92" font-family="monospace" font-size="18" fill="#FFFFFF">0</text>
 <text x="241" y="92" font-family="monospace" font-size="18" fill="#FFFFFF">0</text>
@@ -275,10 +342,18 @@
 <line x1="192.5" y1="112.5" x2="179.5" y2="58.5" stroke="#00FF00"/>
 <rect x="201" y="153" width="4" height="4" fill="#00FF00"/>
 <line x1="240.5" y1="309.5" x2="302.5" y2="58.5" stroke="#FFFFFF"/>
-
+<circle cx="262.5" cy="285.5" r="6.5" fill="#FFA600" shape-rendering="crispEdges"/>
 <text x="274" y="291" font-family="monospace" font-size="18" fill="#FFA600">3</text>
 <text x="286" y="291" font-family="monospace" font-size="18" fill="#FFA600">5</text>
 <text x="298" y="291" font-family="monospace" font-size="18" fill="#FFA600">0</text>
+<text x="37" y="279" font-family="monospace" font-size="9" fill="#ADAAAD">U</text>
+<text x="43" y="279" font-family="monospace" font-size="9" fill="#ADAAAD">S</text>
+<text x="49" y="279" font-family="monospace" font-size="9" fill="#ADAAAD">-</text>
+<text x="55" y="279" font-family="monospace" font-size="9" fill="#ADAAAD">9</text>
+<text x="334" y="149" font-family="monospace" font-size="9" fill="#ADAAAD">8</text>
+<text x="340" y="149" font-family="monospace" font-size="9" fill="#ADAAAD">3</text>
+<text x="346" y="149" font-family="monospace" font-size="9" fill="#ADAAAD">N</text>
+<text x="352" y="149" font-family="monospace" font-size="9" fill="#ADAAAD">J</text>
 <text x="165" y="292" font-family="monospace" font-size="9" fill="#0000FF">P</text>
 <text x="171" y="292" font-family="monospace" font-size="9" fill="#0000FF">H</text>
 <text x="177" y="292" font-family="monospace" font-size="9" fill="#0000FF">L</text>
@@ -295,24 +370,10 @@
 <text x="324" y="80" font-family="monospace" font-size="9" fill="#ADAAAD">6</text>
 <text x="330" y="80" font-family="monospace" font-size="9" fill="#ADAAAD">.</text>
 <text x="336" y="80" font-family="monospace" font-size="9" fill="#ADAAAD">9</text>
-<text x="439" y="214" font-family="monospace" font-size="9" fill="#FF00FF">L</text>
-<text x="445" y="214" font-family="monospace" font-size="9" fill="#FF00FF">L</text>
-<text x="451" y="214" font-family="monospace" font-size="9" fill="#FF00FF">Y</text>
-<text x="462" y="222" font-family="monospace" font-size="9" fill="#FF00FF">N</text>
-<text x="468" y="222" font-family="monospace" font-size="9" fill="#FF00FF">1</text>
-<text x="474" y="222" font-family="monospace" font-size="9" fill="#FF00FF">4</text>
-<text x="334" y="149" font-family="monospace" font-size="9" fill="#ADAAAD">8</text>
-<text x="340" y="149" font-family="monospace" font-size="9" fill="#ADAAAD">3</text>
-<text x="346" y="149" font-family="monospace" font-size="9" fill="#ADAAAD">N</text>
-<text x="352" y="149" font-family="monospace" font-size="9" fill="#ADAAAD">J</text>
 <text x="223" y="273" font-family="monospace" font-size="9" fill="#ADAAAD">U</text>
 <text x="229" y="273" font-family="monospace" font-size="9" fill="#ADAAAD">S</text>
 <text x="235" y="273" font-family="monospace" font-size="9" fill="#ADAAAD">-</text>
 <text x="241" y="273" font-family="monospace" font-size="9" fill="#ADAAAD">0</text>
-<text x="364" y="196" font-family="monospace" font-size="9" fill="#ADAAAD">U</text>
-<text x="370" y="196" font-family="monospace" font-size="9" fill="#ADAAAD">S</text>
-<text x="376" y="196" font-family="monospace" font-size="9" fill="#ADAAAD">-</text>
-<text x="382" y="196" font-family="monospace" font-size="9" fill="#ADAAAD">1</text>
 <text x="229" y="215" font-family="monospace" font-size="9" fill="#ADAAAD">U</text>
 <text x="235" y="215" font-family="monospace" font-size="9" fill="#ADAAAD">S</text>
 <text x="241" y="215" font-family="monospace" font-size="9" fill="#ADAAAD">-</text>
@@ -341,14 +402,6 @@
 <text x="347" y="217" font-family="monospace" font-size="9" fill="#ADAAAD">S</text>
 <text x="353" y="217" font-family="monospace" font-size="9" fill="#ADAAAD">-</text>
 <text x="359" y="217" font-family="monospace" font-size="9" fill="#ADAAAD">9</text>
-<text x="37" y="279" font-family="monospace" font-size="9" fill="#ADAAAD">U</text>
-<text x="43" y="279" font-family="monospace" font-size="9" fill="#ADAAAD">S</text>
-<text x="49" y="279" font-family="monospace" font-size="9" fill="#ADAAAD">-</text>
-<text x="55" y="279" font-family="monospace" font-size="9" fill="#ADAAAD">9</text>
-<text x="449" y="175" font-family="monospace" font-size="9" fill="#ADAAAD">U</text>
-<text x="455" y="175" font-family="monospace" font-size="9" fill="#ADAAAD">S</text>
-<text x="461" y="175" font-family="monospace" font-size="9" fill="#ADAAAD">-</text>
-<text x="467" y="175" font-family="monospace" font-size="9" fill="#ADAAAD">9</text>
 <text x="310" y="71" font-family="monospace" font-size="9" fill="#0000FF">P</text>
 <text x="316" y="71" font-family="monospace" font-size="9" fill="#0000FF">N</text>
 <text x="322" y="71" font-family="monospace" font-size="9" fill="#0000FF">E</text>
@@ -358,10 +411,26 @@
 <text x="328" y="80" font-family="monospace" font-size="9" fill="#ADAAAD">.</text>
 <text x="334" y="80" font-family="monospace" font-size="9" fill="#ADAAAD">0</text>
 <text x="340" y="80" font-family="monospace" font-size="9" fill="#ADAAAD">0</text>
-<text x="176" y="221" font-family="monospace" font-size="9" fill="#FFFF00">P</text>
-<text x="182" y="221" font-family="monospace" font-size="9" fill="#FFFF00">H</text>
-<text x="188" y="221" font-family="monospace" font-size="9" fill="#FFFF00">I</text>
-<text x="194" y="221" font-family="monospace" font-size="9" fill="#FFFF00">L</text>
+<text x="462" y="222" font-family="monospace" font-size="9" fill="#FF00FF">N</text>
+<text x="468" y="222" font-family="monospace" font-size="9" fill="#FF00FF">1</text>
+<text x="474" y="222" font-family="monospace" font-size="9" fill="#FF00FF">4</text>
+<text x="439" y="214" font-family="monospace" font-size="9" fill="#FF00FF">L</text>
+<text x="445" y="214" font-family="monospace" font-size="9" fill="#FF00FF">L</text>
+<text x="451" y="214" font-family="monospace" font-size="9" fill="#FF00FF">Y</text>
+<text x="364" y="196" font-family="monospace" font-size="9" fill="#ADAAAD">U</text>
+<text x="370" y="196" font-family="monospace" font-size="9" fill="#ADAAAD">S</text>
+<text x="376" y="196" font-family="monospace" font-size="9" fill="#ADAAAD">-</text>
+<text x="382" y="196" font-family="monospace" font-size="9" fill="#ADAAAD">1</text>
+<text x="449" y="175" font-family="monospace" font-size="9" fill="#ADAAAD">U</text>
+<text x="455" y="175" font-family="monospace" font-size="9" fill="#ADAAAD">S</text>
+<text x="461" y="175" font-family="monospace" font-size="9" fill="#ADAAAD">-</text>
+<text x="467" y="175" font-family="monospace" font-size="9" fill="#ADAAAD">9</text>
+<text x="164" y="221" font-family="monospace" font-size="9" fill="#FFFFFF">P</text>
+<text x="170" y="221" font-family="monospace" font-size="9" fill="#FFFFFF">H</text>
+<text x="176" y="221" font-family="monospace" font-size="9" fill="#FFFFFF">I</text>
+<text x="182" y="221" font-family="monospace" font-size="9" fill="#FFFFFF">L</text>
+<text x="188" y="221" font-family="monospace" font-size="9" fill="#FFFFFF">A</text>
+<text x="194" y="221" font-family="monospace" font-size="9" fill="#FFFFFF">D</text>
 <text x="345" y="200" font-family="monospace" font-size="9" fill="#FFFF00">T</text>
 <text x="351" y="200" font-family="monospace" font-size="9" fill="#FFFF00">H</text>
 <text x="357" y="200" font-family="monospace" font-size="9" fill="#FFFF00">E</text>
@@ -372,25 +441,28 @@
 <text x="393" y="200" font-family="monospace" font-size="9" fill="#FFFF00">L</text>
 <text x="399" y="200" font-family="monospace" font-size="9" fill="#FFFF00">E</text>
 <text x="405" y="200" font-family="monospace" font-size="9" fill="#FFFF00">X</text>
-<text x="160" y="199" font-family="monospace" font-size="9" fill="#FFFFFF">7</text>
-<text x="166" y="199" font-family="monospace" font-size="9" fill="#FFFFFF">6</text>
-<text x="352" y="221" font-family="monospace" font-size="9" fill="#FFFFFF">2</text>
-<text x="358" y="221" font-family="monospace" font-size="9" fill="#FFFFFF">9</text>
-<text x="364" y="221" font-family="monospace" font-size="9" fill="#FFFFFF">5</text>
-<text x="251" y="277" font-family="monospace" font-size="9" fill="#FFFFFF">7</text>
-<text x="257" y="277" font-family="monospace" font-size="9" fill="#FFFFFF">6</text>
+<text x="245" y="299" font-family="monospace" font-size="9" fill="#FFFFFF">2</text>
+<text x="251" y="299" font-family="monospace" font-size="9" fill="#FFFFFF">9</text>
+<text x="257" y="299" font-family="monospace" font-size="9" fill="#FFFFFF">5</text>
+<text x="133" y="281" font-family="monospace" font-size="9" fill="#FFFFFF">9</text>
+<text x="139" y="281" font-family="monospace" font-size="9" fill="#FFFFFF">5</text>
 <text x="263" y="298" font-family="monospace" font-size="9" fill="#FFFFFF">7</text>
 <text x="269" y="298" font-family="monospace" font-size="9" fill="#FFFFFF">6</text>
-<text x="280" y="168" font-family="monospace" font-size="9" fill="#FFFFFF">9</text>
-<text x="286" y="168" font-family="monospace" font-size="9" fill="#FFFFFF">5</text>
-<text x="78" y="220" font-family="monospace" font-size="9" fill="#FFFFFF">4</text>
-<text x="84" y="220" font-family="monospace" font-size="9" fill="#FFFFFF">7</text>
-<text x="90" y="220" font-family="monospace" font-size="9" fill="#FFFFFF">6</text>
+<text x="74" y="288" font-family="monospace" font-size="9" fill="#FFFFFF">4</text>
+<text x="80" y="288" font-family="monospace" font-size="9" fill="#FFFFFF">7</text>
+<text x="86" y="288" font-family="monospace" font-size="9" fill="#FFFFFF">6</text>
+<text x="293" y="289" font-family="monospace" font-size="9" fill="#FFFFFF">2</text>
+<text x="299" y="289" font-family="monospace" font-size="9" fill="#FFFFFF">9</text>
+<text x="305" y="289" font-family="monospace" font-size="9" fill="#FFFFFF">5</text>
+<text x="251" y="277" font-family="monospace" font-size="9" fill="#FFFFFF">7</text>
+<text x="257" y="277" font-family="monospace" font-size="9" fill="#FFFFFF">6</text>
+<text x="128" y="169" font-family="monospace" font-size="9" fill="#FFFFFF">7</text>
+<text x="134" y="169" font-family="monospace" font-size="9" fill="#FFFFFF">6</text>
 <text x="252" y="239" font-family="monospace" font-size="9" fill="#FFFFFF">6</text>
 <text x="258" y="239" font-family="monospace" font-size="9" fill="#FFFFFF">7</text>
 <text x="264" y="239" font-family="monospace" font-size="9" fill="#FFFFFF">6</text>
-<text x="140" y="162" font-family="monospace" font-size="9" fill="#FFFFFF">7</text>
-<text x="146" y="162" font-family="monospace" font-size="9" fill="#FFFFFF">6</text>
+<text x="161" y="132" font-family="monospace" font-size="9" fill="#FFFFFF">7</text>
+<text x="167" y="132" font-family="monospace" font-size="9" fill="#FFFFFF">6</text>
 <text x="2" y="316" font-family="monospace" font-size="18" fill="#00FF00">3</text>
 <text x="14" y="316" font-family="monospace" font-size="18" fill="#00FF00">9</text>
 <text x="26" y="316" font-family="monospace" font-size="18" fill="#00FF00">.</text>
@@ -407,80 +479,66 @@
 <text x="442" y="316" font-family="monospace" font-size="18" fill="#00FF00">0</text>
 <text x="454" y="316" font-family="monospace" font-size="18" fill="#00FF00">0</text>
 <text x="466" y="316" font-family="monospace" font-size="18" fill="#00FF00">W</text>
-<text x="2" y="22" font-family="monospace" font-size="18" fill="#FFA600">P</text>
-<text x="14" y="22" font-family="monospace" font-size="18" fill="#FFA600">R</text>
-<text x="26" y="22" font-family="monospace" font-size="18" fill="#FFA600">O</text>
-<text x="38" y="22" font-family="monospace" font-size="18" fill="#FFA600">X</text>
-<text x="50" y="22" font-family="monospace" font-size="18" fill="#FFA600">I</text>
-<text x="62" y="22" font-family="monospace" font-size="18" fill="#FFA600">M</text>
-<text x="74" y="22" font-family="monospace" font-size="18" fill="#FFA600">I</text>
-<text x="86" y="22" font-family="monospace" font-size="18" fill="#FFA600">T</text>
-<text x="98" y="22" font-family="monospace" font-size="18" fill="#FFA600">Y</text>
-<text x="418" y="42" font-family="monospace" font-size="18" fill="#ADAAAD">4</text>
-<text x="430" y="42" font-family="monospace" font-size="18" fill="#ADAAAD">.</text>
-<text x="442" y="42" font-family="monospace" font-size="18" fill="#ADAAAD">1</text>
-<text x="454" y="42" font-family="monospace" font-size="18" fill="#ADAAAD">2</text>
-<text x="466" y="42" font-family="monospace" font-size="18" fill="#ADAAAD">V</text>
+<text x="2" y="58" font-family="monospace" font-size="18" fill="#FFA600">P</text>
+<text x="14" y="58" font-family="monospace" font-size="18" fill="#FFA600">R</text>
+<text x="26" y="58" font-family="monospace" font-size="18" fill="#FFA600">O</text>
+<text x="38" y="58" font-family="monospace" font-size="18" fill="#FFA600">X</text>
+<text x="50" y="58" font-family="monospace" font-size="18" fill="#FFA600">I</text>
+<text x="62" y="58" font-family="monospace" font-size="18" fill="#FFA600">M</text>
+<text x="74" y="58" font-family="monospace" font-size="18" fill="#FFA600">I</text>
+<text x="86" y="58" font-family="monospace" font-size="18" fill="#FFA600">T</text>
+<text x="98" y="58" font-family="monospace" font-size="18" fill="#FFA600">Y</text>
+<text x="2" y="76" font-family="monospace" font-size="18" fill="#ADAAAD">1</text>
+<text x="14" y="76" font-family="monospace" font-size="18" fill="#ADAAAD">6</text>
+<text x="26" y="76" font-family="monospace" font-size="18" fill="#ADAAAD">N</text>
+<text x="38" y="76" font-family="monospace" font-size="18" fill="#ADAAAD">M</text>
+<text x="418" y="78" font-family="monospace" font-size="18" fill="#ADAAAD">4</text>
+<text x="430" y="78" font-family="monospace" font-size="18" fill="#ADAAAD">.</text>
+<text x="442" y="78" font-family="monospace" font-size="18" fill="#ADAAAD">1</text>
+<text x="454" y="78" font-family="monospace" font-size="18" fill="#ADAAAD">2</text>
+<text x="466" y="78" font-family="monospace" font-size="18" fill="#ADAAAD">V</text>
 </g></g>
 <rect x="292" y="46" width="648" height="430" fill="none" stroke="#444" stroke-width="1"/>
 <polyline points="284,64 291,64 332.5,67.6" fill="none" stroke="#000" stroke-width="4"/><polyline points="284,64 291,64 332.5,67.6" fill="none" stroke="#FFA600" stroke-width="1.6"/>
-
 <text x="279" y="69" fill="#FFA600" font-size="14" font-weight="600" text-anchor="end" paint-order="stroke" stroke="#000" stroke-width="3.5">Proximity warning (Remote ID nearby)</text>
-<polyline points="284,112.667 291,112.667 533.65,124.3" fill="none" stroke="#000" stroke-width="4"/><polyline points="284,112.667 291,112.667 533.65,124.3" fill="none" stroke="#00FF00" stroke-width="1.6"/>
-
-<text x="279" y="117.667" fill="#00FF00" font-size="14" font-weight="600" text-anchor="end" paint-order="stroke" stroke="#000" stroke-width="3.5">Bearing &amp; distance to home</text>
-<polyline points="284,161.333 291,161.333 391.249,196.653" fill="none" stroke="#000" stroke-width="4"/><polyline points="284,161.333 291,161.333 391.249,196.653" fill="none" stroke="#FFFFFF" stroke-width="1.6"/>
-
-<text x="279" y="166.333" fill="#FFFFFF" font-size="14" font-weight="600" text-anchor="end" paint-order="stroke" stroke="#000" stroke-width="3.5">Compass card (rotates, heading-up)</text>
-<polyline points="284,210 291,210 397.3,224.2" fill="none" stroke="#000" stroke-width="4"/><polyline points="284,210 291,210 397.3,224.2" fill="none" stroke="#424142" stroke-width="1.6"/>
-
-<text x="279" y="215" fill="#424142" font-size="14" font-weight="600" text-anchor="end" paint-order="stroke" stroke="#000" stroke-width="3.5">Road / highway</text>
-<polyline points="284,258.667 291,258.667 614.65,272.192" fill="none" stroke="#000" stroke-width="4"/><polyline points="284,258.667 291,258.667 614.65,272.192" fill="none" stroke="#FF00FF" stroke-width="1.6"/>
-
-<text x="279" y="263.667" fill="#FF00FF" font-size="14" font-weight="600" text-anchor="end" paint-order="stroke" stroke="#000" stroke-width="3.5">Heading reference (track-up)</text>
-<polyline points="284,307.333 291,307.333 567.4,340.3" fill="none" stroke="#000" stroke-width="4"/><polyline points="284,307.333 291,307.333 567.4,340.3" fill="none" stroke="#FFFF00" stroke-width="1.6"/>
-
-<text x="279" y="312.333" fill="#FFFF00" font-size="14" font-weight="600" text-anchor="end" paint-order="stroke" stroke="#000" stroke-width="3.5">City / landmark</text>
-<polyline points="284,356 291,356 384.458,341.387" fill="none" stroke="#000" stroke-width="4"/><polyline points="284,356 291,356 384.458,341.387" fill="none" stroke="#ADAAAD" stroke-width="1.6"/>
-
-<text x="279" y="361" fill="#ADAAAD" font-size="14" font-weight="600" text-anchor="end" paint-order="stroke" stroke="#000" stroke-width="3.5">Range rings (¼ ½ ¾ of range)</text>
-<polyline points="284,404.667 291,404.667 506.65,436.15" fill="none" stroke="#000" stroke-width="4"/><polyline points="284,404.667 291,404.667 506.65,436.15" fill="none" stroke="#0000FF" stroke-width="1.6"/>
-
-<text x="279" y="409.667" fill="#0000FF" font-size="14" font-weight="600" text-anchor="end" paint-order="stroke" stroke="#000" stroke-width="3.5">Towered airport</text>
-<polyline points="284,453.333 291,453.333 506.65,436.15" fill="none" stroke="#000" stroke-width="4"/><polyline points="284,453.333 291,453.333 506.65,436.15" fill="none" stroke="#00FFFF" stroke-width="1.6"/>
-
-<text x="279" y="458.333" fill="#00FFFF" font-size="14" font-weight="600" text-anchor="end" paint-order="stroke" stroke="#000" stroke-width="3.5">Airport ring (size→colour)</text>
+<polyline points="284,107.8 291,107.8 533.65,124.3" fill="none" stroke="#000" stroke-width="4"/><polyline points="284,107.8 291,107.8 533.65,124.3" fill="none" stroke="#00FF00" stroke-width="1.6"/>
+<text x="279" y="112.8" fill="#00FF00" font-size="14" font-weight="600" text-anchor="end" paint-order="stroke" stroke="#000" stroke-width="3.5">Bearing &amp; distance to home</text>
+<polyline points="284,151.6 291,151.6 327.1,140.5" fill="none" stroke="#000" stroke-width="4"/><polyline points="284,151.6 291,151.6 327.1,140.5" fill="none" stroke="#ADAAAD" stroke-width="1.6"/>
+<text x="279" y="156.6" fill="#ADAAAD" font-size="14" font-weight="600" text-anchor="end" paint-order="stroke" stroke="#000" stroke-width="3.5">Map range / zoom level</text>
+<polyline points="284,195.4 291,195.4 391.249,196.653" fill="none" stroke="#000" stroke-width="4"/><polyline points="284,195.4 291,195.4 391.249,196.653" fill="none" stroke="#FFFFFF" stroke-width="1.6"/>
+<text x="279" y="200.4" fill="#FFFFFF" font-size="14" font-weight="600" text-anchor="end" paint-order="stroke" stroke="#000" stroke-width="3.5">Compass card (rotates, heading-up)</text>
+<polyline points="284,239.2 291,239.2 614.65,272.192" fill="none" stroke="#000" stroke-width="4"/><polyline points="284,239.2 291,239.2 614.65,272.192" fill="none" stroke="#FF00FF" stroke-width="1.6"/>
+<text x="279" y="244.2" fill="#FF00FF" font-size="14" font-weight="600" text-anchor="end" paint-order="stroke" stroke="#000" stroke-width="3.5">Heading reference (track-up)</text>
+<polyline points="284,283 291,283 567.4,340.3" fill="none" stroke="#000" stroke-width="4"/><polyline points="284,283 291,283 567.4,340.3" fill="none" stroke="#FFFF00" stroke-width="1.6"/>
+<text x="279" y="288" fill="#FFFF00" font-size="14" font-weight="600" text-anchor="end" paint-order="stroke" stroke="#000" stroke-width="3.5">City / landmark</text>
+<polyline points="284,326.8 291,326.8 384.458,341.387" fill="none" stroke="#000" stroke-width="4"/><polyline points="284,326.8 291,326.8 384.458,341.387" fill="none" stroke="#ADAAAD" stroke-width="1.6"/>
+<text x="279" y="331.8" fill="#ADAAAD" font-size="14" font-weight="600" text-anchor="end" paint-order="stroke" stroke="#000" stroke-width="3.5">Range rings (¼ ½ ¾ of range)</text>
+<polyline points="284,370.6 291,370.6 333.85,418.6" fill="none" stroke="#000" stroke-width="4"/><polyline points="284,370.6 291,370.6 333.85,418.6" fill="none" stroke="#ADAAAD" stroke-width="1.6"/>
+<text x="279" y="375.6" fill="#ADAAAD" font-size="14" font-weight="600" text-anchor="end" paint-order="stroke" stroke="#000" stroke-width="3.5">Closed airfield</text>
+<polyline points="284,414.4 291,414.4 506.65,436.15" fill="none" stroke="#000" stroke-width="4"/><polyline points="284,414.4 291,414.4 506.65,436.15" fill="none" stroke="#0000FF" stroke-width="1.6"/>
+<text x="279" y="419.4" fill="#0000FF" font-size="14" font-weight="600" text-anchor="end" paint-order="stroke" stroke="#000" stroke-width="3.5">Towered airport</text>
+<polyline points="284,458.2 291,458.2 506.65,436.15" fill="none" stroke="#000" stroke-width="4"/><polyline points="284,458.2 291,458.2 506.65,436.15" fill="none" stroke="#00FFFF" stroke-width="1.6"/>
+<text x="279" y="463.2" fill="#00FFFF" font-size="14" font-weight="600" text-anchor="end" paint-order="stroke" stroke="#000" stroke-width="3.5">Airport ring (size→colour)</text>
 <polyline points="284,502 291,502 366.25,464.5" fill="none" stroke="#000" stroke-width="4"/><polyline points="284,502 291,502 366.25,464.5" fill="none" stroke="#00FF00" stroke-width="1.6"/>
-
 <text x="279" y="507" fill="#00FF00" font-size="14" font-weight="600" text-anchor="end" paint-order="stroke" stroke="#000" stroke-width="3.5">GPS position (lat / lon)</text>
 <polyline points="948,64 941,64 616,87.31" fill="none" stroke="#000" stroke-width="4"/><polyline points="948,64 941,64 616,87.31" fill="none" stroke="#FFFFFF" stroke-width="1.6"/>
-
 <text x="953" y="69" fill="#FFFFFF" font-size="14" font-weight="600" text-anchor="start" paint-order="stroke" stroke="#000" stroke-width="3.5">Heading — digital readout</text>
-<polyline points="948,112.667 941,112.667 896.8,89.2" fill="none" stroke="#000" stroke-width="4"/><polyline points="948,112.667 941,112.667 896.8,89.2" fill="none" stroke="#ADAAAD" stroke-width="1.6"/>
-
-<text x="953" y="117.667" fill="#ADAAAD" font-size="14" font-weight="600" text-anchor="start" paint-order="stroke" stroke="#000" stroke-width="3.5">Battery voltage</text>
-<polyline points="948,161.333 941,161.333 699.7,124.3" fill="none" stroke="#000" stroke-width="4"/><polyline points="948,161.333 941,161.333 699.7,124.3" fill="none" stroke="#FFFFFF" stroke-width="1.6"/>
-
-<text x="953" y="166.333" fill="#FFFFFF" font-size="14" font-weight="600" text-anchor="start" paint-order="stroke" stroke="#000" stroke-width="3.5">Ground track (course made good)</text>
+<polyline points="948,112.667 941,112.667 699.7,124.3" fill="none" stroke="#000" stroke-width="4"/><polyline points="948,112.667 941,112.667 699.7,124.3" fill="none" stroke="#FFFFFF" stroke-width="1.6"/>
+<text x="953" y="117.667" fill="#FFFFFF" font-size="14" font-weight="600" text-anchor="start" paint-order="stroke" stroke="#000" stroke-width="3.5">Ground track (course made good)</text>
+<polyline points="948,161.333 941,161.333 896.8,137.8" fill="none" stroke="#000" stroke-width="4"/><polyline points="948,161.333 941,161.333 896.8,137.8" fill="none" stroke="#ADAAAD" stroke-width="1.6"/>
+<text x="953" y="166.333" fill="#ADAAAD" font-size="14" font-weight="600" text-anchor="start" paint-order="stroke" stroke="#000" stroke-width="3.5">Battery voltage</text>
 <polyline points="948,210 941,210 733.45,163.45" fill="none" stroke="#000" stroke-width="4"/><polyline points="948,210 941,210 733.45,163.45" fill="none" stroke="#FF00FF" stroke-width="1.6"/>
-
 <text x="953" y="215" fill="#FF00FF" font-size="14" font-weight="600" text-anchor="start" paint-order="stroke" stroke="#000" stroke-width="3.5">Non-towered airport</text>
 <polyline points="948,258.667 941,258.667 734.8,163.45" fill="none" stroke="#000" stroke-width="4"/><polyline points="948,258.667 941,258.667 734.8,163.45" fill="none" stroke="#0000FF" stroke-width="1.6"/>
-
 <text x="953" y="263.667" fill="#0000FF" font-size="14" font-weight="600" text-anchor="start" paint-order="stroke" stroke="#000" stroke-width="3.5">VOR / navaid</text>
-<polyline points="948,307.333 941,307.333 783.4,243.1" fill="none" stroke="#000" stroke-width="4"/><polyline points="948,307.333 941,307.333 783.4,243.1" fill="none" stroke="#ADAAAD" stroke-width="1.6"/>
-
-<text x="953" y="312.333" fill="#ADAAAD" font-size="14" font-weight="600" text-anchor="start" paint-order="stroke" stroke="#000" stroke-width="3.5">Closed airfield</text>
-<polyline points="948,356 941,356 721.3,248.5" fill="none" stroke="#000" stroke-width="4"/><polyline points="948,356 941,356 721.3,248.5" fill="none" stroke="#00AAFF" stroke-width="1.6"/>
-
-<text x="953" y="361" fill="#00AAFF" font-size="14" font-weight="600" text-anchor="start" paint-order="stroke" stroke="#000" stroke-width="3.5">River</text>
-<polyline points="948,404.667 941,404.667 671.35,291.7" fill="none" stroke="#000" stroke-width="4"/><polyline points="948,404.667 941,404.667 671.35,291.7" fill="none" stroke="#ADAAAD" stroke-width="1.6"/>
-
-<text x="953" y="409.667" fill="#ADAAAD" font-size="14" font-weight="600" text-anchor="start" paint-order="stroke" stroke="#000" stroke-width="3.5">State line</text>
+<polyline points="948,307.333 941,307.333 721.3,248.5" fill="none" stroke="#000" stroke-width="4"/><polyline points="948,307.333 941,307.333 721.3,248.5" fill="none" stroke="#00AAFF" stroke-width="1.6"/>
+<text x="953" y="312.333" fill="#00AAFF" font-size="14" font-weight="600" text-anchor="start" paint-order="stroke" stroke="#000" stroke-width="3.5">River</text>
+<polyline points="948,356 941,356 671.35,291.7" fill="none" stroke="#000" stroke-width="4"/><polyline points="948,356 941,356 671.35,291.7" fill="none" stroke="#ADAAAD" stroke-width="1.6"/>
+<text x="953" y="361" fill="#ADAAAD" font-size="14" font-weight="600" text-anchor="start" paint-order="stroke" stroke="#000" stroke-width="3.5">State line</text>
+<polyline points="948,404.667 941,404.667 683.5,413.2" fill="none" stroke="#000" stroke-width="4"/><polyline points="948,404.667 941,404.667 683.5,413.2" fill="none" stroke="#424142" stroke-width="1.6"/>
+<text x="953" y="409.667" fill="#424142" font-size="14" font-weight="600" text-anchor="start" paint-order="stroke" stroke="#000" stroke-width="3.5">Road / highway</text>
 <polyline points="948,453.333 941,453.333 645.7,430.75" fill="none" stroke="#000" stroke-width="4"/><polyline points="948,453.333 941,453.333 645.7,430.75" fill="none" stroke="#FFA600" stroke-width="1.6"/>
-
 <text x="953" y="458.333" fill="#FFA600" font-size="14" font-weight="600" text-anchor="start" paint-order="stroke" stroke="#000" stroke-width="3.5">Remote ID traffic — altitude (ft)</text>
 <polyline points="948,502 941,502 616,465.269" fill="none" stroke="#000" stroke-width="4"/><polyline points="948,502 941,502 616,465.269" fill="none" stroke="#FFFFFF" stroke-width="1.6"/>
-
 <text x="953" y="507" fill="#FFFFFF" font-size="14" font-weight="600" text-anchor="start" paint-order="stroke" stroke="#000" stroke-width="3.5">Own-aircraft symbol (fixed)</text>
 </svg>

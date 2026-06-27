@@ -1,0 +1,219 @@
+<svg viewBox="0 0 1232 588" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica,Arial,sans-serif">
+<defs><clipPath id="ndframe"><rect x="292" y="46" width="648" height="486"/></clipPath></defs>
+<rect x="0" y="0" width="1232" height="588" fill="#000000"/>
+<g clip-path="url(#ndframe)"><g transform="translate(292 46) scale(1.35)" opacity="0.7">
+<rect x="0" y="0" width="480" height="360" fill="#000000"/>
+<circle cx="240.5" cy="164.5" r="141.5" fill="#FFFFFF" shape-rendering="crispEdges"/>
+<circle cx="240.5" cy="164.5" r="119.5" fill="#000000" shape-rendering="crispEdges"/>
+<rect x="0" y="22" width="480" height="257" fill="#000000"/>
+<polygon points="271,279 277,303 788,279 " fill="#000000" shape-rendering="crispEdges"/>
+<polygon points="208,279 202,303 -308,279 " fill="#000000" shape-rendering="crispEdges"/>
+<circle cx="273.5" cy="290.5" r="11.5" fill="#FFFFFF" shape-rendering="crispEdges"/>
+<circle cx="206.5" cy="290.5" r="11.5" fill="#FFFFFF" shape-rendering="crispEdges"/>
+<circle cx="240.5" cy="295.5" r="10.5" fill="#000000" shape-rendering="crispEdges"/>
+<rect x="229" y="164" width="1" height="144" fill="#000000"/>
+<rect x="251" y="164" width="1" height="144" fill="#000000"/>
+<rect x="132" y="74" width="1" height="180" fill="#FFFFFF"/>
+<rect x="125" y="254" width="7" height="1" fill="#FFFFFF"/>
+<rect x="118" y="236" width="14" height="1" fill="#FFFFFF"/>
+<text x="90" y="242" font-family="monospace" font-size="18" fill="#FFFFFF">9</text>
+<text x="102" y="242" font-family="monospace" font-size="18" fill="#FFFFFF">0</text>
+<rect x="125" y="218" width="7" height="1" fill="#FFFFFF"/>
+<rect x="118" y="200" width="14" height="1" fill="#FFFFFF"/>
+<text x="78" y="206" font-family="monospace" font-size="18" fill="#FFFFFF">1</text>
+<text x="90" y="206" font-family="monospace" font-size="18" fill="#FFFFFF">0</text>
+<text x="102" y="206" font-family="monospace" font-size="18" fill="#FFFFFF">0</text>
+<rect x="125" y="182" width="7" height="1" fill="#FFFFFF"/>
+<rect x="118" y="164" width="14" height="1" fill="#FFFFFF"/>
+<text x="78" y="170" font-family="monospace" font-size="18" fill="#FFFFFF">1</text>
+<text x="90" y="170" font-family="monospace" font-size="18" fill="#FFFFFF">1</text>
+<text x="102" y="170" font-family="monospace" font-size="18" fill="#FFFFFF">0</text>
+<rect x="125" y="146" width="7" height="1" fill="#FFFFFF"/>
+<rect x="118" y="128" width="14" height="1" fill="#FFFFFF"/>
+<text x="78" y="134" font-family="monospace" font-size="18" fill="#FFFFFF">1</text>
+<text x="90" y="134" font-family="monospace" font-size="18" fill="#FFFFFF">2</text>
+<text x="102" y="134" font-family="monospace" font-size="18" fill="#FFFFFF">0</text>
+<rect x="125" y="110" width="7" height="1" fill="#FFFFFF"/>
+<rect x="118" y="92" width="14" height="1" fill="#FFFFFF"/>
+<text x="78" y="98" font-family="monospace" font-size="18" fill="#FFFFFF">1</text>
+<text x="90" y="98" font-family="monospace" font-size="18" fill="#FFFFFF">3</text>
+<text x="102" y="98" font-family="monospace" font-size="18" fill="#FFFFFF">0</text>
+<rect x="125" y="74" width="7" height="1" fill="#FFFFFF"/>
+<rect x="38" y="131" width="74" height="66" fill="#000000"/>
+<polygon points="112,180 112,148 130,164 " fill="#000000" shape-rendering="crispEdges"/>
+<line x1="38.5" y1="197.5" x2="112.5" y2="197.5" stroke="#ADAAAD"/>
+<line x1="38.5" y1="131.5" x2="112.5" y2="131.5" stroke="#ADAAAD"/>
+<line x1="38.5" y1="131.5" x2="38.5" y2="197.5" stroke="#ADAAAD"/>
+<line x1="112.5" y1="197.5" x2="112.5" y2="180.5" stroke="#ADAAAD"/>
+<line x1="112.5" y1="180.5" x2="130.5" y2="164.5" stroke="#ADAAAD"/>
+<line x1="112.5" y1="148.5" x2="130.5" y2="164.5" stroke="#ADAAAD"/>
+<line x1="112.5" y1="131.5" x2="112.5" y2="148.5" stroke="#ADAAAD"/>
+<text x="42" y="174" font-family="monospace" font-size="28" fill="#FFFFFF">1</text>
+<text x="64" y="174" font-family="monospace" font-size="28" fill="#FFFFFF">1</text>
+<text x="86" y="174" font-family="monospace" font-size="28" fill="#FFFFFF">0</text>
+<rect x="60" y="15" width="90" height="61" fill="#000000"/>
+<rect x="60" y="253" width="90" height="61" fill="#000000"/>
+<rect x="60" y="254" width="90" height="1" fill="#FFFFFF"/>
+<rect x="60" y="74" width="90" height="1" fill="#FFFFFF"/>
+<rect x="348" y="74" width="1" height="180" fill="#FFFFFF"/>
+<text x="372" y="247" font-family="monospace" font-size="18" fill="#FFFFFF">8</text>
+<text x="384" y="247" font-family="monospace" font-size="18" fill="#FFFFFF">2</text>
+<text x="396" y="247" font-family="monospace" font-size="18" fill="#FFFFFF">0</text>
+<rect x="348" y="241" width="15" height="1" fill="#FFFFFF"/>
+<rect x="348" y="228" width="4" height="1" fill="#FFFFFF"/>
+<rect x="348" y="215" width="8" height="1" fill="#FFFFFF"/>
+<rect x="348" y="202" width="4" height="1" fill="#FFFFFF"/>
+<text x="372" y="195" font-family="monospace" font-size="18" fill="#FFFFFF">8</text>
+<text x="384" y="195" font-family="monospace" font-size="18" fill="#FFFFFF">4</text>
+<text x="396" y="195" font-family="monospace" font-size="18" fill="#FFFFFF">0</text>
+<rect x="348" y="189" width="15" height="1" fill="#FFFFFF"/>
+<rect x="348" y="176" width="4" height="1" fill="#FFFFFF"/>
+<rect x="348" y="164" width="8" height="1" fill="#FFFFFF"/>
+<rect x="348" y="152" width="4" height="1" fill="#FFFFFF"/>
+<text x="372" y="145" font-family="monospace" font-size="18" fill="#FFFFFF">8</text>
+<text x="384" y="145" font-family="monospace" font-size="18" fill="#FFFFFF">6</text>
+<text x="396" y="145" font-family="monospace" font-size="18" fill="#FFFFFF">0</text>
+<rect x="348" y="139" width="15" height="1" fill="#FFFFFF"/>
+<rect x="348" y="126" width="4" height="1" fill="#FFFFFF"/>
+<rect x="348" y="113" width="8" height="1" fill="#FFFFFF"/>
+<rect x="348" y="100" width="4" height="1" fill="#FFFFFF"/>
+<text x="372" y="93" font-family="monospace" font-size="18" fill="#FFFFFF">8</text>
+<text x="384" y="93" font-family="monospace" font-size="18" fill="#FFFFFF">8</text>
+<text x="396" y="93" font-family="monospace" font-size="18" fill="#FFFFFF">0</text>
+<rect x="348" y="87" width="15" height="1" fill="#FFFFFF"/>
+<rect x="348" y="74" width="4" height="1" fill="#FFFFFF"/>
+<rect x="348" y="62" width="8" height="1" fill="#FFFFFF"/>
+<rect x="370" y="131" width="74" height="66" fill="#000000"/>
+<polygon points="370,180 370,148 352,164 " fill="#000000" shape-rendering="crispEdges"/>
+<line x1="370.5" y1="197.5" x2="444.5" y2="197.5" stroke="#ADAAAD"/>
+<line x1="370.5" y1="131.5" x2="444.5" y2="131.5" stroke="#ADAAAD"/>
+<line x1="444.5" y1="131.5" x2="444.5" y2="197.5" stroke="#ADAAAD"/>
+<line x1="370.5" y1="197.5" x2="370.5" y2="180.5" stroke="#ADAAAD"/>
+<line x1="370.5" y1="180.5" x2="352.5" y2="164.5" stroke="#ADAAAD"/>
+<line x1="370.5" y1="148.5" x2="352.5" y2="164.5" stroke="#ADAAAD"/>
+<line x1="370.5" y1="131.5" x2="370.5" y2="148.5" stroke="#ADAAAD"/>
+<text x="375" y="174" font-family="monospace" font-size="28" fill="#FFFFFF">8</text>
+<text x="397" y="174" font-family="monospace" font-size="28" fill="#FFFFFF">5</text>
+<text x="419" y="174" font-family="monospace" font-size="28" fill="#FFFFFF">0</text>
+<rect x="330" y="15" width="150" height="61" fill="#000000"/>
+<rect x="330" y="253" width="150" height="61" fill="#000000"/>
+<rect x="330" y="254" width="90" height="1" fill="#FFFFFF"/>
+<rect x="330" y="74" width="90" height="1" fill="#FFFFFF"/>
+<text x="352" y="66" font-family="monospace" font-size="18" fill="#FFFFFF">2</text>
+<text x="364" y="66" font-family="monospace" font-size="18" fill="#FFFFFF">9</text>
+<text x="376" y="66" font-family="monospace" font-size="18" fill="#FFFFFF">.</text>
+<text x="388" y="66" font-family="monospace" font-size="18" fill="#FFFFFF">9</text>
+<text x="400" y="66" font-family="monospace" font-size="18" fill="#FFFFFF">2</text>
+<text x="308" y="272" font-family="monospace" font-size="18" fill="#FFFFFF">G</text>
+<text x="320" y="272" font-family="monospace" font-size="18" fill="#FFFFFF">P</text>
+<text x="332" y="272" font-family="monospace" font-size="18" fill="#FFFFFF">S</text>
+<text x="308" y="292" font-family="monospace" font-size="18" fill="#FFFFFF">A</text>
+<text x="320" y="292" font-family="monospace" font-size="18" fill="#FFFFFF">L</text>
+<text x="332" y="292" font-family="monospace" font-size="18" fill="#FFFFFF">T</text>
+<rect x="348" y="257" width="1" height="38" fill="#ADAAAD"/>
+<text x="352" y="292" font-family="monospace" font-size="18" fill="#FFFFFF">8</text>
+<text x="364" y="292" font-family="monospace" font-size="18" fill="#FFFFFF">5</text>
+<text x="376" y="292" font-family="monospace" font-size="18" fill="#FFFFFF">1</text>
+<image x="150" y="57" width="181" height="215" preserveAspectRatio="none" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALUAAADXCAYAAABcbxD4AAAFU0lEQVR42u3da4obOxAGUP3MxrOZ7CfrcZgfA8F47FY/1PU4BR/ciwcSuo+VslTtGUPN1Z/HY3mUSosXdtUKMOiqDWLIQW4dBTLgCmTAFcxwK5ABh1nghlnghnlFngtumMsjvwW6gnkldLiBFrBhFrhhhhtoARtmgRtoARtoARvm2T1muIF2Sgg20KCDDbPhJriBtprXhA1Z7+GmcrBhklKw3RApBduNkFKwC/SdEIFdZoWGGuxyK/RW1OB3gN3s4OKnAq4K7GL7uFtfX4nam2Yl7IKHE0ded1KYHXbRE7erXoc8OuzCx8izr0dDBTbQU6AzoNaKQH3oQ2LqYSGoax9/z6zU3z/3Drlkgd1gLHPvXjbUGWE3GaT/CWbEnQ85Crv5EyKfwDpez4baBXr7YXB2lbZbcjdsF+byeQ8HKCthuyC3Pe8XHXreZx3h9XR4KdQggX7S3HkY/NCAfibqEP/KAAL5kc8Tn2bPoZZQ/XDagyg3XyrNnUMtNefO3TyBWoCenD2HWkrMnUMtoTCnnzt3I+PsLWcb0Q273QeXuY89fw+oJeyUYJTZc6glxdw51NL+WB5qEagFahGoRaAWgdpugEDtOBxq6fk1CFAL6FCLtgVqSTrcFCYukpTL39+/Hl/R00k51K8CupRDvQW6iyjpUVvNpTxq0KUFam2LtEDdfTX3Zm6Auit0rVkz1F1Xc8gboe68msPZCLX+XFqghlzKowYd6kfXgA415AI16AI16AI15AI16FCLSUWoxWoOtYAONejQQm01h1pAh1q0LVCL1RxqAR1q6d22uIlSbjV309YgAB1qyLUtUGcGoG2BWkCHWpq1LS6qlFvNXUQpB90Fk3Jti4sj1ZBDLeUC9YEVwbWA2kmhQF0BumsCtdVcoAZdoDbcBLUI1CJQizRFrecUqAXqKgcZ8MvIskJvgfqu3GyoU7Uer15fBdqbBuplqJ9fd0oIdTnUdyADHerdIH/6GaCgLrFKf/+3VRLqUqjf/b9AnQb1/z8HNdSp540//RzUUIdFvRcs1FCnOyY/aysPfKhT4J9dpe2YQJ2uXfF0ONSe90u4mnvzefKlHHSooQ41C77yz6vcUkFdZDU/groacKgLQZ85qKr8QRjqgNC7jehCLVBDDXW3uXOom4CemT2HWlLPnVcc04W6GeoOI7pQF9ktgRrqMnMfZ82eQy2hdg5mnhKCWsJNCV6FH2oxdw61ZN3bhloEahGoRaAWqEWgtr8sUDsOF6hBF6ghh9pFAL0Y6q9yIRxFlwINtZREDbaUAw22lAS9GrYPVbIE9NWon3+DFtiyBPWVsI/AhV52g76zv976tViAyzTou2Bv+cagVai9eQqCvroN2Yt6dUviX4hiqK+A/a6ViIga9GKgz4T9aedjBixQQIeAvfcXdfqwKJeAPgP2Waht8QEdBvbRX6n8/AETaqBvhb2nZej01bNyM+g9sLfULFiogQ7ZinyCfQZo8IG+fbtvSwtytD8HHejbB6CuAJkFerc34IhUFZ73i4i8078yI2J5Onzd7DnQYKeD/mlMoNJ04chQ3b/vY+Wfl332fGQrX2pzDaqtu0GRUY/MZYtq/y5GprnzNqDBvmZLMzPqUa1Ane+Xj8yeR+qrR+UC9/y9+FcrdyTUo0PBu37u/C7Uo1tBfM3ceYR+enQukI/1wRFRD3U/7iiHFbNz59F2PigOvnJHgH7G6eCKvzu1iVuSCHu9V86dA63fDn9IAzPcrfe6YYbbI1YKbpgV3DArEEGGW2DOCtx3fYDcBnhH6BQ0aVGqQ3e3IU//mwrcTZV6NXeX1KnYjXTGrX9qx4dmceKnOgAAAABJRU5ErkJggg=="/>
+<line x1="258.5" y1="57.5" x2="259.5" y2="52.5" stroke="#FFFFFF"/>
+<line x1="221.5" y1="57.5" x2="220.5" y2="52.5" stroke="#FFFFFF"/>
+<line x1="277.5" y1="62.5" x2="278.5" y2="57.5" stroke="#FFFFFF"/>
+<line x1="202.5" y1="62.5" x2="201.5" y2="57.5" stroke="#FFFFFF"/>
+<line x1="294.5" y1="70.5" x2="299.5" y2="61.5" stroke="#FFFFFF"/>
+<line x1="186.5" y1="70.5" x2="181.5" y2="61.5" stroke="#FFFFFF"/>
+<line x1="316.5" y1="87.5" x2="319.5" y2="84.5" stroke="#ADAAAD"/>
+<line x1="163.5" y1="87.5" x2="160.5" y2="84.5" stroke="#ADAAAD"/>
+<line x1="333.5" y1="110.5" x2="337.5" y2="107.5" stroke="#ADAAAD"/>
+<line x1="146.5" y1="110.5" x2="142.5" y2="107.5" stroke="#ADAAAD"/>
+<polygon points="240.5,56.5 233.5,42.5 247.5,42.5 " fill="none" stroke="#FFFFFF"/>
+<polygon points="262.5,59.5 266.5,76.5 251.5,73.5 " fill="none" stroke="#FFFFFF"/>
+<polygon points="240,164 204,167 213,173 " fill="#000000" shape-rendering="crispEdges"/>
+<polygon points="240,164 276,167 267,173 " fill="#000000" shape-rendering="crispEdges"/>
+<polygon points="240.5,164.5 204.5,167.5 213.5,173.5 " fill="none" stroke="#FFFFFF"/>
+<polygon points="240.5,164.5 276.5,167.5 267.5,173.5 " fill="none" stroke="#FFFFFF"/>
+<text x="36" y="19" font-family="monospace" font-size="18" fill="#00FF00">F</text>
+<text x="48" y="19" font-family="monospace" font-size="18" fill="#00FF00">M</text>
+<text x="60" y="19" font-family="monospace" font-size="18" fill="#00FF00">C</text>
+<text x="84" y="19" font-family="monospace" font-size="18" fill="#00FF00">S</text>
+<text x="96" y="19" font-family="monospace" font-size="18" fill="#00FF00">P</text>
+<text x="108" y="19" font-family="monospace" font-size="18" fill="#00FF00">D</text>
+<text x="156" y="19" font-family="monospace" font-size="18" fill="#00FF00">V</text>
+<text x="168" y="19" font-family="monospace" font-size="18" fill="#00FF00">N</text>
+<text x="180" y="19" font-family="monospace" font-size="18" fill="#00FF00">A</text>
+<text x="192" y="19" font-family="monospace" font-size="18" fill="#00FF00">V</text>
+<text x="216" y="19" font-family="monospace" font-size="18" fill="#00FF00">P</text>
+<text x="228" y="19" font-family="monospace" font-size="18" fill="#00FF00">T</text>
+<text x="240" y="19" font-family="monospace" font-size="18" fill="#00FF00">H</text>
+<text x="300" y="19" font-family="monospace" font-size="18" fill="#00FF00">L</text>
+<text x="312" y="19" font-family="monospace" font-size="18" fill="#00FF00">N</text>
+<text x="324" y="19" font-family="monospace" font-size="18" fill="#00FF00">A</text>
+<text x="336" y="19" font-family="monospace" font-size="18" fill="#00FF00">V</text>
+<text x="408" y="19" font-family="monospace" font-size="18" fill="#00FF00">C</text>
+<text x="420" y="19" font-family="monospace" font-size="18" fill="#00FF00">M</text>
+<text x="432" y="19" font-family="monospace" font-size="18" fill="#00FF00">D</text>
+<rect x="134" y="257" width="1" height="38" fill="#ADAAAD"/>
+<text x="138" y="272" font-family="monospace" font-size="18" fill="#FFFFFF">G</text>
+<text x="150" y="272" font-family="monospace" font-size="18" fill="#FFFFFF">S</text>
+<text x="138" y="292" font-family="monospace" font-size="18" fill="#FFFFFF">1</text>
+<text x="150" y="292" font-family="monospace" font-size="18" fill="#FFFFFF">4</text>
+<text x="162" y="292" font-family="monospace" font-size="18" fill="#FFFFFF">9</text>
+<text x="83" y="292" font-family="monospace" font-size="18" fill="#FFFFFF">.</text>
+<text x="95" y="292" font-family="monospace" font-size="18" fill="#FFFFFF">1</text>
+<text x="107" y="292" font-family="monospace" font-size="18" fill="#FFFFFF">4</text>
+<text x="119" y="292" font-family="monospace" font-size="18" fill="#FFFFFF">3</text>
+<rect x="472" y="74" width="1" height="180" fill="#FFFFFF"/>
+<rect x="464" y="254" width="8" height="1" fill="#FFFFFF"/>
+<rect x="468" y="209" width="4" height="1" fill="#FFFFFF"/>
+<rect x="464" y="164" width="8" height="1" fill="#FFFFFF"/>
+<rect x="468" y="119" width="4" height="1" fill="#FFFFFF"/>
+<rect x="464" y="74" width="8" height="1" fill="#FFFFFF"/>
+<polygon points="472,127 462,121 462,133 " fill="#00FF00" shape-rendering="crispEdges"/>
+<rect x="8" y="74" width="1" height="180" fill="#FFFFFF"/>
+<rect x="8" y="254" width="14" height="1" fill="#FFFFFF"/>
+<rect x="8" y="209" width="8" height="1" fill="#FFFFFF"/>
+<rect x="8" y="164" width="14" height="1" fill="#FFFFFF"/>
+<rect x="8" y="119" width="8" height="1" fill="#FFFFFF"/>
+<rect x="8" y="74" width="14" height="1" fill="#FFFFFF"/>
+<rect x="8" y="182" width="18" height="1" fill="#FFFF00"/>
+<polygon points="8,203 22,197 22,209 " fill="#00FF00" shape-rendering="crispEdges"/>
+<text x="8" y="68" font-family="monospace" font-size="18" fill="#FFFF00">1</text>
+<text x="20" y="68" font-family="monospace" font-size="18" fill="#FFFF00">.</text>
+<text x="32" y="68" font-family="monospace" font-size="18" fill="#FFFF00">6</text>
+<text x="8" y="271" font-family="monospace" font-size="18" fill="#FFFFFF">1</text>
+<text x="20" y="271" font-family="monospace" font-size="18" fill="#FFFFFF">.</text>
+<text x="32" y="271" font-family="monospace" font-size="18" fill="#FFFFFF">1</text>
+</g></g>
+<rect x="292" y="46" width="648" height="486" fill="none" stroke="#444" stroke-width="1"/>
+<polyline points="284,64 291,64 546.016,200.332" fill="none" stroke="#000" stroke-width="4"/><polyline points="284,64 291,64 546.016,200.332" fill="none" stroke="#FFFFFF" stroke-width="1.6"/>
+<text x="279" y="69" fill="#FFFFFF" font-size="14" font-weight="600" text-anchor="end" paint-order="stroke" stroke="#000" stroke-width="3.5">Artificial horizon (sky / ground)</text>
+<polyline points="284,146.333 291,146.333 464.8,206.65" fill="none" stroke="#000" stroke-width="4"/><polyline points="284,146.333 291,146.333 464.8,206.65" fill="none" stroke="#FFFFFF" stroke-width="1.6"/>
+<text x="279" y="151.333" fill="#FFFFFF" font-size="14" font-weight="600" text-anchor="end" paint-order="stroke" stroke="#000" stroke-width="3.5">Airspeed tape (kt, IAS)</text>
+<polyline points="284,228.667 291,228.667 445.9,267.4" fill="none" stroke="#000" stroke-width="4"/><polyline points="284,228.667 291,228.667 445.9,267.4" fill="none" stroke="#FFFFFF" stroke-width="1.6"/>
+<text x="279" y="233.667" fill="#FFFFFF" font-size="14" font-weight="600" text-anchor="end" paint-order="stroke" stroke="#000" stroke-width="3.5">Airspeed readout</text>
+<polyline points="284,311 291,311 308.2,267.4" fill="none" stroke="#000" stroke-width="4"/><polyline points="284,311 291,311 308.2,267.4" fill="none" stroke="#00FF00" stroke-width="1.6"/>
+<text x="279" y="316" fill="#00FF00" font-size="14" font-weight="600" text-anchor="end" paint-order="stroke" stroke="#000" stroke-width="3.5">G-meter (load factor)</text>
+<polyline points="284,393.333 291,393.333 451.3,410.5" fill="none" stroke="#000" stroke-width="4"/><polyline points="284,393.333 291,393.333 451.3,410.5" fill="none" stroke="#FFFFFF" stroke-width="1.6"/>
+<text x="279" y="398.333" fill="#FFFFFF" font-size="14" font-weight="600" text-anchor="end" paint-order="stroke" stroke="#000" stroke-width="3.5">Mach number</text>
+<polyline points="284,475.667 291,475.667 486.4,410.5" fill="none" stroke="#000" stroke-width="4"/><polyline points="284,475.667 291,475.667 486.4,410.5" fill="none" stroke="#FFFFFF" stroke-width="1.6"/>
+<text x="279" y="480.667" fill="#FFFFFF" font-size="14" font-weight="600" text-anchor="end" paint-order="stroke" stroke="#000" stroke-width="3.5">Ground speed (kt)</text>
+<polyline points="284,558 291,558 607.9,429.4" fill="none" stroke="#000" stroke-width="4"/><polyline points="284,558 291,558 607.9,429.4" fill="none" stroke="#FFFFFF" stroke-width="1.6"/>
+<text x="279" y="563" fill="#FFFFFF" font-size="14" font-weight="600" text-anchor="end" paint-order="stroke" stroke="#000" stroke-width="3.5">Turn coordinator / slip-skid ball</text>
+<polyline points="948,64 941,64 616,59.5" fill="none" stroke="#000" stroke-width="4"/><polyline points="948,64 941,64 616,59.5" fill="none" stroke="#00FF00" stroke-width="1.6"/>
+<text x="953" y="69" fill="#00FF00" font-size="14" font-weight="600" text-anchor="start" paint-order="stroke" stroke="#000" stroke-width="3.5">Flight-mode annunciations</text>
+<polyline points="948,125.75 941,125.75 621.4,116.2" fill="none" stroke="#000" stroke-width="4"/><polyline points="948,125.75 941,125.75 621.4,116.2" fill="none" stroke="#FFFFFF" stroke-width="1.6"/>
+<text x="953" y="130.75" fill="#FFFFFF" font-size="14" font-weight="600" text-anchor="start" paint-order="stroke" stroke="#000" stroke-width="3.5">Bank scale &amp; roll pointer</text>
+<polyline points="948,187.5 941,187.5 778,136.45" fill="none" stroke="#000" stroke-width="4"/><polyline points="948,187.5 941,187.5 778,136.45" fill="none" stroke="#FFFFFF" stroke-width="1.6"/>
+<text x="953" y="192.5" fill="#FFFFFF" font-size="14" font-weight="600" text-anchor="start" paint-order="stroke" stroke="#000" stroke-width="3.5">Altimeter setting (inHg)</text>
+<polyline points="948,249.25 941,249.25 767.2,206.65" fill="none" stroke="#000" stroke-width="4"/><polyline points="948,249.25 941,249.25 767.2,206.65" fill="none" stroke="#FFFFFF" stroke-width="1.6"/>
+<text x="953" y="254.25" fill="#FFFFFF" font-size="14" font-weight="600" text-anchor="start" paint-order="stroke" stroke="#000" stroke-width="3.5">Altitude tape (ft, baro)</text>
+<polyline points="948,311 941,311 786.1,267.4" fill="none" stroke="#000" stroke-width="4"/><polyline points="948,311 941,311 786.1,267.4" fill="none" stroke="#FFFFFF" stroke-width="1.6"/>
+<text x="953" y="316" fill="#FFFFFF" font-size="14" font-weight="600" text-anchor="start" paint-order="stroke" stroke="#000" stroke-width="3.5">Altitude readout</text>
+<polyline points="948,372.75 941,372.75 926.5,267.4" fill="none" stroke="#000" stroke-width="4"/><polyline points="948,372.75 941,372.75 926.5,267.4" fill="none" stroke="#00FF00" stroke-width="1.6"/>
+<text x="953" y="377.75" fill="#00FF00" font-size="14" font-weight="600" text-anchor="start" paint-order="stroke" stroke="#000" stroke-width="3.5">Vertical-speed indicator</text>
+<polyline points="948,434.5 941,434.5 637.87,274.69" fill="none" stroke="#000" stroke-width="4"/><polyline points="948,434.5 941,434.5 637.87,274.69" fill="none" stroke="#FFFFFF" stroke-width="1.6"/>
+<text x="953" y="439.5" fill="#FFFFFF" font-size="14" font-weight="600" text-anchor="start" paint-order="stroke" stroke="#000" stroke-width="3.5">Aircraft reference (fixed)</text>
+<polyline points="948,496.25 941,496.25 674.32,328.636" fill="none" stroke="#000" stroke-width="4"/><polyline points="948,496.25 941,496.25 674.32,328.636" fill="none" stroke="#FFFFFF" stroke-width="1.6"/>
+<text x="953" y="501.25" fill="#FFFFFF" font-size="14" font-weight="600" text-anchor="start" paint-order="stroke" stroke="#000" stroke-width="3.5">Pitch ladder</text>
+<polyline points="948,558 941,558 778,410.5" fill="none" stroke="#000" stroke-width="4"/><polyline points="948,558 941,558 778,410.5" fill="none" stroke="#FFFFFF" stroke-width="1.6"/>
+<text x="953" y="563" fill="#FFFFFF" font-size="14" font-weight="600" text-anchor="start" paint-order="stroke" stroke="#000" stroke-width="3.5">GPS altitude (ft)</text>
+</svg>

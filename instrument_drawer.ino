@@ -1602,6 +1602,12 @@ void drawNavigationDisplay(MyCanvas8 *canvas, state *s) {
     canvas->setTextColor(field ? IORANGE : IGREY);
     canvas->setCursor(2, satY + 9 * sc);
     canvas->print(rng);
+#ifdef SVG_RENDER
+    { extern void svgLandmark(const char *, int, int);
+      int16_t rbx, rby; uint16_t rbw, rbh;
+      canvas->getTextBounds(rng, 2, satY + 9 * sc, &rbx, &rby, &rbw, &rbh);
+      svgLandmark("range", 2 + rbw / 2, satY + 9 * sc + 4 * sc); }
+#endif
     canvas->setTextColor(IWHITE);
   }
 

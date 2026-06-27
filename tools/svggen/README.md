@@ -25,11 +25,15 @@ pixelated but not aliased. Adjacent same-colour rectangles are coalesced.
 so [`MyCanvas8.h`](../../MyCanvas8.h) re-declares them as virtual **only under `SVG_RENDER`**
 (plain non-virtual passthroughs on the device build) so the canvas can intercept them.
 
-It also emits `docs/nd_legend.svg` — the annotated ND. The drawers contain a handful of
-`SVG_RENDER`-guarded `svgLandmark()` calls that report a representative screen position for
-each map feature (towered/non-towered airport, navaid, city, distance ring, river, road,
-state line, ground-track / home lines, battery readout). `svggen` dims the rendered ND and
-draws leader lines + labels to those exact points, so every callout lands on a real feature.
+It also emits two **annotated legends** — `docs/nd_legend.svg` and `docs/pfd_legend.svg`. The
+drawers contain a handful of `SVG_RENDER`-guarded `svgLandmark()` calls that report a
+representative screen position for each dynamic feature (towered/non-towered airport, navaid,
+city, distance ring, river, road, state line, ground-track / home lines, range readout,
+battery). For fixed structural elements (compass card, tapes, VSI, g-meter, …) the legend
+recomputes the anchor from the same layout constants the drawer uses. `svggen` dims the
+rendered panel and draws leader lines + haloed labels to those exact points, so every callout
+lands on a real element. The legend map is the **real national `chart_data.h`** centred on
+Philadelphia (a dense, varied area), so it shows the actual data — no fabricated map.
 
 ## Regenerate
 
@@ -37,9 +41,9 @@ draws leader lines + labels to those exact points, so every callout lands on a r
 tools/svggen/build.sh [path-to-Adafruit_GFX_Library]
 ```
 
-Defaults to `~/Documents/Arduino/libraries/Adafruit_GFX_Library`. It compiles twice — the
-single-panel config (BOARD_C) for `docs/{pfd,nd,combined,nd_legend}.svg`, and the
-dual-display config (BOARD_A) for `docs/dual.svg` (two rounded-corner viewports).
+Defaults to `~/Documents/Arduino/libraries/Adafruit_GFX_Library`. It compiles the single-panel
+config (BOARD_C) for `docs/{pfd,nd,combined}.svg` and the annotated `docs/{nd_legend,pfd_legend}.svg`,
+and the dual-display config (BOARD_A) for `docs/dual.svg` (two rounded-corner viewports).
 
 The `shim/` directory is a minimal Arduino compatibility layer (just enough of
 `Arduino.h` / `Print.h` for `Adafruit_GFX` and the drawers to compile off-target);

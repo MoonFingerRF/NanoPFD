@@ -420,61 +420,15 @@ static LM findLM(const char *n) {
   return {};
 }
 
-static void genLegend(const char *path, const std::vector<Elem> &nd, int W, int H) {
-  // Mirror drawNavigationDisplay's compass geometry for this board.
-  const int sc = lyt::txtScale(W);
-  const int hbh = 17 * sc;
-  int ringTop = H / 8;
-  { int need = 3 * hbh / 2 + 4 * sc; if (ringTop < need) ringTop = need; }
-  int cyc = H * 11 / 12, rad = cyc - ringTop, triApex = cyc;
-#if COMBINED_DISPLAY
-  cyc = H - (int)(0.03 * H);
-  ringTop = 3 * hbh / 2;
-  rad = cyc - ringTop;
-  triApex = cyc - (int)(0.03 * H);
-#endif
-  auto ringPt = [&](double deg, double rr) {
-    double a = deg * M_PI / 180.0;
-    return std::make_pair(W / 2.0 + sin(a) * rr, cyc - cos(a) * rr);
-  };
+// One annotation: label text `t`, colour `col`, and the (ax,ay) point it points at
+// (in the source PFD/ND canvas coords). Shared by the ND and PFD legends.
+struct CO { std::string t; uint8_t col; double ax, ay; };
 
-  struct CO { std::string t; uint8_t col; double ax, ay; };
-  std::vector<CO> C;
-  auto add   = [&](std::string t, uint8_t c, double x, double y) { C.push_back({t, c, x, y}); };
-  auto addLM = [&](const char *n, std::string t, uint8_t c) { LM l = findLM(n); if (l.x >= 0) add(t, c, l.x, l.y); };
-
-  // structural / overlay elements (computed the same way the drawer does)
-  add("Heading — digital readout",        IWHITE,   W / 2.0, ringTop - hbh * 0.6);
-  { auto p = ringPt(-40, rad);      add("Compass card (rotates, heading-up)", IWHITE, p.first, p.second); }
-  { auto p = ringPt(-62, rad * 0.75); add("Range rings (¼ ½ ¾ of range)", IGREY, p.first, p.second); }
-  add("Own-aircraft symbol (fixed)",           IWHITE,   W / 2.0, triApex + 0.03 * H);
-  add("Heading reference (track-up)",          IMAGENTA, W / 2.0 - 1, cyc - rad * 0.55);
-  addLM("track", "Ground track (course made good)", IWHITE);
-  addLM("home",  "Bearing & distance to home",      IGREEN);
-  addLM("rid",   "Remote ID traffic — altitude (ft)", IORANGE);
-  add("Proximity warning (Remote ID nearby)", IORANGE, 30, lyt::scaled(4, W) + 4 * sc);
-  // map features (anchors recorded during the ND draw)
-  addLM("apt_twr",   "Towered airport",       IBLUE);
-  addLM("apt_ntwr",  "Non-towered airport",   IMAGENTA);
-  addLM("navaid",    "VOR / navaid",          IBLUE);
-  addLM("city",      "City / landmark",       IYELLOW);
-  addLM("apt_closed","Closed airfield",       IGREY);
-  { const char *rn[] = {"ring_lg","ring_md","ring_sm","ring_cl"};
-    uint8_t rc[] = {ICYAN, IGREEN, IYELLOW, IGREY};
-    for (int i = 0; i < 4; i++) { LM l = findLM(rn[i]); if (l.x >= 0) { add("Airport ring (size→colour)", rc[i], l.x, l.y); break; } } }
-  addLM("ring_rstr", "Restricted airspace",   IRED);
-  addLM("river",     "River",                 ISKY);
-  addLM("road",      "Road / highway",        IDGREY);
-  addLM("state",     "State line",            IGREY);
-  add("GPS position (lat / lon)",             IGREEN, 55, H - 9);
-  addLM("batt", "Battery voltage", IGREY);
-
-  // legend canvas: ND in the middle, label columns left & right.
-#if COMBINED_DISPLAY
-  const double f = 1.35;
-#else
-  const double f = 2.0;
-#endif
+// Assemble a callout legend: the rendered panel (`base` elems, source size W×H) in
+// the middle scaled by `f`, with leader lines + haloed labels fanned out into a
+// left and a right column (split by which half of the panel each anchor sits in).
+static void emitCalloutLegend(const char *path, const std::vector<Elem> &base,
+                              int W, int H, std::vector<CO> &C, double f) {
   const int ndW = (int)(W * f), ndH = (int)(H * f);
   const int colW = 292, ox = colW, oy = 46, LW = ndW + 2 * colW, LH = oy + ndH + 56;
   auto TX = [&](double x) { return ox + f * x; };
@@ -501,10 +455,10 @@ static void genLegend(const char *path, const std::vector<Elem> &nd, int W, int 
   o += "</defs>\n";
   snprintf(buf, sizeof buf, "<rect x=\"0\" y=\"0\" width=\"%d\" height=\"%d\" fill=\"#000000\"/>\n", LW, LH);
   o += buf;
-  // dim the busy map so the bright callouts/leaders/labels stand out on top
+  // dim the panel so the bright callouts/leaders/labels stand out on top
   snprintf(buf, sizeof buf, "<g clip-path=\"url(#ndframe)\"><g transform=\"translate(%d %d) scale(%g)\" opacity=\"0.7\">\n", ox, oy, f);
   o += buf;
-  emitElems(o, coalesce(nd));
+  emitElems(o, coalesce(base));
   o += "</g></g>\n";
   snprintf(buf, sizeof buf,
     "<rect x=\"%d\" y=\"%d\" width=\"%d\" height=\"%d\" fill=\"none\" stroke=\"#444\" stroke-width=\"1\"/>\n",
@@ -546,6 +500,98 @@ static void genLegend(const char *path, const std::vector<Elem> &nd, int W, int 
   fwrite(o.data(), 1, o.size(), fp); fclose(fp);
   fprintf(stderr, "wrote %s (%zu bytes, %zu callouts)\n", path, o.size(), C.size());
 }
+
+static void genLegend(const char *path, const std::vector<Elem> &nd, int W, int H) {
+  // Mirror drawNavigationDisplay's compass geometry for this board.
+  const int sc = lyt::txtScale(W);
+  const int hbh = 17 * sc;
+  int ringTop = H / 8;
+  { int need = 3 * hbh / 2 + 4 * sc; if (ringTop < need) ringTop = need; }
+  int cyc = H * 11 / 12, rad = cyc - ringTop, triApex = cyc;
+#if COMBINED_DISPLAY
+  cyc = H - (int)(0.03 * H);
+  ringTop = 3 * hbh / 2;
+  rad = cyc - ringTop;
+  triApex = cyc - (int)(0.03 * H);
+#endif
+  auto ringPt = [&](double deg, double rr) {
+    double a = deg * M_PI / 180.0;
+    return std::make_pair(W / 2.0 + sin(a) * rr, cyc - cos(a) * rr);
+  };
+
+  std::vector<CO> C;
+  auto add   = [&](std::string t, uint8_t c, double x, double y) { C.push_back({t, c, x, y}); };
+  auto addLM = [&](const char *n, std::string t, uint8_t c) { LM l = findLM(n); if (l.x >= 0) add(t, c, l.x, l.y); };
+
+  // structural / overlay elements (computed the same way the drawer does)
+  add("Heading — digital readout",        IWHITE,   W / 2.0, ringTop - hbh * 0.6);
+  { auto p = ringPt(-40, rad);      add("Compass card (rotates, heading-up)", IWHITE, p.first, p.second); }
+  { auto p = ringPt(-62, rad * 0.75); add("Range rings (¼ ½ ¾ of range)", IGREY, p.first, p.second); }
+  add("Own-aircraft symbol (fixed)",           IWHITE,   W / 2.0, triApex + 0.03 * H);
+  add("Heading reference (track-up)",          IMAGENTA, W / 2.0 - 1, cyc - rad * 0.55);
+  addLM("track", "Ground track (course made good)", IWHITE);
+  addLM("home",  "Bearing & distance to home",      IGREEN);
+  addLM("rid",   "Remote ID traffic — altitude (ft)", IORANGE);
+  add("Proximity warning (Remote ID nearby)", IORANGE, 30, lyt::scaled(4, W) + 4 * sc);
+  // map features (anchors recorded during the ND draw)
+  addLM("apt_twr",   "Towered airport",       IBLUE);
+  addLM("apt_ntwr",  "Non-towered airport",   IMAGENTA);
+  addLM("navaid",    "VOR / navaid",          IBLUE);
+  addLM("city",      "City / landmark",       IYELLOW);
+  addLM("apt_closed","Closed airfield",       IGREY);
+  { const char *rn[] = {"ring_lg","ring_md","ring_sm","ring_cl"};
+    uint8_t rc[] = {ICYAN, IGREEN, IYELLOW, IGREY};
+    for (int i = 0; i < 4; i++) { LM l = findLM(rn[i]); if (l.x >= 0) { add("Airport ring (size→colour)", rc[i], l.x, l.y); break; } } }
+  addLM("ring_rstr", "Restricted airspace",   IRED);
+  addLM("river",     "River",                 ISKY);
+  addLM("road",      "Road / highway",        IDGREY);
+  addLM("state",     "State line",            IGREY);
+  add("GPS position (lat / lon)",             IGREEN, 55, H - 9);
+  addLM("range", "Map range / zoom level",    IGREY);
+  addLM("batt", "Battery voltage", IGREY);
+
+  // ND in the middle, label columns left & right.
+#if COMBINED_DISPLAY
+  const double f = 1.35;
+#else
+  const double f = 2.0;
+#endif
+  emitCalloutLegend(path, nd, W, H, C, f);
+}
+
+#if COMBINED_DISPLAY
+// Annotated PFD legend. Anchors are computed from the same layout constants
+// drawHorizonDisplay() uses, so each leader lands on the right element.
+static void genPfdLegend(const char *path, const std::vector<Elem> &pfd, int W, int H) {
+  const int    midX  = W / 2;
+  const int    midY  = H / 2 - PFD_SHIFT;        // the PFD is raised in the combined panel
+  const double stdW1 = 0.30 * H;                 // attitude radius / tape reach
+  const double stdW2 = 0.25 * H;                 // tape half-height
+  const double std3  = 0.075 * H, std4 = 0.025 * H;
+
+  std::vector<CO> C;
+  auto add = [&](std::string t, uint8_t c, double x, double y) { C.push_back({t, c, x, y}); };
+
+  add("Flight-mode annunciations",         IGREEN,  midX,                10);
+  add("Bank scale & roll pointer",         IWHITE,  midX + 4,            midY - stdW1 - 4);
+  add("Artificial horizon (sky / ground)", IWHITE,  midX - stdW1 * 0.48, midY - stdW1 * 0.46);
+  add("Pitch ladder",                      IWHITE,  midX + stdW1 * 0.40, midY + stdW1 * 0.42);
+  add("Aircraft reference (fixed)",        IWHITE,  midX + std3 * 0.6,   midY + std4 * 0.6);
+  add("Airspeed tape (kt, IAS)",           IWHITE,  midX - stdW1 - 4,    midY - stdW2 * 0.5);
+  add("Airspeed readout",                  IWHITE,  midX - stdW1 - 18,   midY);
+  add("Mach number",                       IWHITE,  midX - stdW1 - 14,   midY + stdW2 + 16);
+  add("Ground speed (kt)",                 IWHITE,  midX - stdW1 + 12,   midY + stdW2 + 16);
+  add("Altitude tape (ft, baro)",          IWHITE,  midX + stdW1 + 4,    midY - stdW2 * 0.5);
+  add("Altitude readout",                  IWHITE,  midX + stdW1 + 18,   midY);
+  add("Altimeter setting (inHg)",          IWHITE,  midX + stdW1 + 12,   midY - stdW2 - 7);
+  add("GPS altitude (ft)",                 IWHITE,  midX + stdW1 + 12,   midY + stdW2 + 16);
+  add("Vertical-speed indicator",          IGREEN,  W - 10,              midY);
+  add("G-meter (load factor)",             IGREEN,  12,                  midY);
+  add("Turn coordinator / slip-skid ball", IWHITE,  midX - 6,            midY + stdW1 + 12);
+
+  emitCalloutLegend(path, pfd, W, H, C, 1.35);
+}
+#endif  // COMBINED_DISPLAY (PFD legend)
 #endif  // LEGEND_BUILD (legend)
 
 // ---------------------------------------------------------------------------
@@ -636,6 +682,17 @@ int main() {
   SvgCanvas nd(RGB_WIDTH, ND_CANVAS_H);
   drawNavigationDisplay(&nd, &s);
   genLegend("docs/nd_legend.svg", nd.elems, nd.width(), nd.height());
+
+  // ---- Annotated PFD legend: the single-panel PFD with everything labelled ----
+  gClipX = gClipY = gClipR = 0;                     // the PFD has no radar clip circle
+  s.gx = 0.21f; s.gy = -0.978f; s.gz = -0.05f;      // ~12 deg right bank, slight nose-up
+  s.vertical_speed = 500;                           // climbing -> VSI pointer off-centre
+  s.g = 1.15f; s.max_g = 1.6f;                       // g-meter pointer + max marker visible
+  s.air_speed = 110; s.alt = 850; s.gps_alt = 851;   // representative numbers on the tapes
+  static GFXcanvas8 incmapL = generate_inc_map(0.6 * PFD_REGION_H, lyt::txtScale(RGB_WIDTH));
+  SvgCanvas pfdL(RGB_WIDTH, PFD_REGION_H);
+  drawHorizonDisplay(&pfdL, &incmapL, &s, /*showCompass*/ false);
+  genPfdLegend("docs/pfd_legend.svg", pfdL.elems, pfdL.width(), pfdL.height());
 #elif COMBINED_DISPLAY
   // ---- Single-panel config (BOARD_C / BOARD_D): PFD over ND ----
   static GFXcanvas8 incmap = generate_inc_map(0.6 * PFD_REGION_H, lyt::txtScale(RGB_WIDTH));
