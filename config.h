@@ -41,8 +41,8 @@
 //
 //  Enable exactly ONE board.
 // ============================================================================
-#define BOARD_A 1
-#define BOARD_C 0
+#define BOARD_A 0
+#define BOARD_C 1
 #define BOARD_D 0
 
 #if (BOARD_A + BOARD_C + BOARD_D) != 1
