@@ -440,8 +440,6 @@ void setup(void) {
                            // ST7701/expander I2C traffic can't race the sensor task)
 #endif
 
-  remoteid_begin();        // start the FAA Remote ID (WiFi; BLE when re-enabled) receiver
-
   xTaskCreatePinnedToCore(sensorTask, "sensors", STACK_SENSORS, NULL, PRIO_SENSORS, NULL, CORE_SENSORS);
 #if COMBINED_DISPLAY
   xTaskCreatePinnedToCore(combinedTask, "combined", STACK_PFD, NULL, PRIO_PFD, NULL, CORE_PFD);
@@ -451,6 +449,14 @@ void setup(void) {
   xTaskCreatePinnedToCore(ndTask,     "nd",      STACK_ND,      NULL, PRIO_ND,      NULL, CORE_ND);
 #endif
 #endif
+
+  // Start Remote ID LAST, AFTER the render/sensor tasks have grabbed their stacks
+  // from contiguous internal SRAM. The BLE controller's ~70 KB of internal allocs
+  // otherwise fragments the heap so the (later) task stacks can't fit — even with
+  // the PFD canvas internal. The delay lets combinedTask spin up its ndDrawTask
+  // (created on first run) before the radios carve up what's left.
+  delay(150);
+  remoteid_begin();        // FAA Remote ID (BLE; WiFi optional) traffic receiver
 }
 
 // loop() runs in the Arduino loopTask (core 1, low priority). It only handles

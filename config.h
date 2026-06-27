@@ -382,9 +382,13 @@
 #define PRIO_BLIT       3      // BELOW sensors so IMU/I2C reads always preempt the blit (smooth data)
 #define PRIO_NDBLIT     PRIO_ND
 #define PRIO_ND         2      // BELOW the PFD blit (raising it cost the PFD on the OLD layout)
-#define STACK_PFD      20000   // bytes (canvases are heap-allocated, not stack)
+// The draw tasks measured only ~2.3 KB of stack use (high-water mark), so these
+// were trimmed from 20000/16000 to free internal SRAM for the Remote ID radios —
+// letting the PFD canvas stay in internal SRAM (full fps) with RID on. 6 KB is
+// still ~2.6x the measured peak. (sensorTask kept larger for the GPS/I2C parse.)
+#define STACK_PFD       6000   // bytes (canvases are heap-allocated, not stack)
 #define STACK_SENSORS   8000
-#define STACK_ND       16000
+#define STACK_ND        6000
 #define STACK_BLIT      4096
 
 // ---- Debug -----------------------------------------------------------------
@@ -416,7 +420,10 @@
                             //   standalone Remote ID modules). REQUIRES arduino-esp32
                             //   core <= 3.3.6 — 3.3.7..3.3.10 have a regression that
                             //   panics S3 BLE startup (issue #12357). See build.sh.
-#define RID_USE_WIFI  1     // WiFi beacons (channel-hopping)
+#define RID_USE_WIFI  0     // WiFi beacons (channel-hopping). OFF: the promiscuous
+                            //   per-packet callback steals significant CPU (drops
+                            //   render fps), and BLE covers most Remote ID. Enable
+                            //   for WiFi-broadcasting drones at an fps cost.
 #define RID_AGE_MS    12000 // drop a target not heard from within this long (ms)
 #define RID_HOP_MS    700   // WiFi channel dwell (ms) — long enough to reliably
                             //   catch a ~1 Hz Remote ID beacon on each visit.

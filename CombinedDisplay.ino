@@ -243,20 +243,20 @@ void combinedDisplayInit() {
 
   static MyCanvas8 pfd(RGB_WIDTH, PFD_REGION_H, false);
   static MyCanvas8 nd(RGB_WIDTH, ND_CANVAS_H, false);   // taller: extends ND_OVERLAP px up
-#if RID_ENABLE
-  // The Remote ID radios (WiFi, and BLE when enabled) claim a big chunk of
-  // internal RAM; keeping the ~170 KB PFD canvas internal too exhausts it and a
-  // display task fails to start. Put the PFD canvas in PSRAM whenever RID is on
-  // (costs fps). With RID off it stays in fast internal SRAM (full fps).
-  uint8_t *pfdBuf = (uint8_t *)heap_caps_malloc((size_t)RGB_WIDTH * PFD_REGION_H,
-                                                MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
-#else
+  // The PFD draw is MEMORY-bound, so the PFD canvas MUST be in fast internal SRAM
+  // for full fps (in PSRAM the draw ~doubles and fps halves). It's allocated here,
+  // first, while a 170 KB contiguous internal block is still free; the BLE
+  // controller (~71 KB internal) and the display task stacks then fit in what's
+  // left ONLY because the tasks are created before remoteid_begin() (see setup())
+  // and WiFi RID is off (RID_USE_WIFI) — together that keeps this internal.
+  const char *pfdWhere = "INTERNAL";
   uint8_t *pfdBuf = (uint8_t *)heap_caps_malloc((size_t)RGB_WIDTH * PFD_REGION_H,
                                                 MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
-  if (!pfdBuf)
+  if (!pfdBuf) { pfdWhere = "PSRAM (fallback)";
     pfdBuf = (uint8_t *)heap_caps_malloc((size_t)RGB_WIDTH * PFD_REGION_H,
-                                         MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
-#endif
+                                         MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT); }
+  USBSerial.printf("COMBINED: PFD canvas in %s; internal free=%u\n", pfdWhere,
+                   (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL));
   pfd.useBuffer(pfdBuf);
   nd.useBuffer((uint8_t *)heap_caps_malloc((size_t)RGB_WIDTH * ND_CANVAS_H,
                                            MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT));

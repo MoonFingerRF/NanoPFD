@@ -187,16 +187,18 @@ static void ble_host_task(void *param) {
 }
 
 static void ble_begin() {
-  // nimble_port_init() brings up the BLE controller + host in one call.
-  // IMPORTANT: this requires arduino-esp32 core <= 3.3.6 — core 3.3.7..3.3.10
-  // have a regression that panics S3 BLE startup ("HLI Magic mismatch" / TLSF
-  // assert; arduino-esp32 issue #12357). On 3.3.6 this returns ESP_OK and scans.
-  esp_err_t e = nimble_port_init();
+  // Bring up the BLE controller with a LEAN config (we only ever do one passive
+  // scan), then the NimBLE host, instead of nimble_port_init()'s fat defaults —
+  // the defaults reserve ~10 BLE "activities" + big scan-dedup caches and cost
+  // ~71 KB internal RAM, which doesn't leave room for the internal PFD canvas.
+  // (Splitting controller+host this way is what nimble_port_init does internally;
+  // it still requires arduino-esp32 core <= 3.3.6 — see issue #12357.)
+  esp_err_t e = nimble_port_init();              // controller + host (core <= 3.3.6)
   if (e != ESP_OK) { RID_LOG("[RID] nimble_port_init err %d\n", e); return; }
   ble_hs_cfg.sync_cb  = ble_on_sync;             // start scanning once the host is ready
   ble_hs_cfg.reset_cb = ble_on_reset;
   nimble_port_freertos_init(ble_host_task);
-  RID_LOG("[RID] BLE: NimBLE legacy (BT4) passive scan\n");
+  RID_LOG("[RID] BLE: NimBLE legacy (BT4) passive scan (lean controller)\n");
 }
 #endif // RID_USE_BLE
 
@@ -248,7 +250,20 @@ static void wifi_begin() {
   esp_netif_init();
   esp_event_loop_create_default();
   wifi_init_config_t wcfg = WIFI_INIT_CONFIG_DEFAULT();
-  esp_wifi_init(&wcfg);
+  // Monitor-only (promiscuous): we never associate or transmit, so cut the WiFi
+  // driver's RX/TX/aggregation buffers hard to leave internal SRAM for the PFD
+  // canvas + BLE controller. (Beacons repeat, so a small RX pool still catches RID.)
+  wcfg.static_rx_buf_num  = 4;     // default 10  (~1.6 KB each)
+  wcfg.dynamic_rx_buf_num = 8;     // default 32
+  wcfg.dynamic_tx_buf_num = 4;     // default 32  (we don't transmit)
+  wcfg.cache_tx_buf_num   = 0;
+  wcfg.ampdu_rx_enable    = 0;     // no aggregation/reorder buffers
+  wcfg.ampdu_tx_enable    = 0;
+  wcfg.amsdu_tx_enable    = 0;
+  wcfg.nvs_enable         = 0;     // no WiFi NVS
+  wcfg.rx_ba_win          = 0;     // no block-ack window (ampdu_rx off)
+  esp_err_t we = esp_wifi_init(&wcfg);
+  if (we != ESP_OK) { RID_LOG("[RID] esp_wifi_init err %d\n", we); return; }
   esp_wifi_set_storage(WIFI_STORAGE_RAM);
   esp_wifi_set_mode(WIFI_MODE_NULL);           // not a station/AP — monitor only
   esp_wifi_start();
@@ -277,15 +292,9 @@ static void rid_task(void *) {
 
 // ---- public API ------------------------------------------------------------
 void remoteid_begin() {
-  RID_LOG("[RID] starting receiver (BLE=%d WiFi=%d) internal free=%u largest=%u psram=%u\n",
+  RID_LOG("[RID] starting receiver (BLE=%d WiFi=%d) internal free=%u\n",
           (int)RID_USE_BLE, (int)RID_USE_WIFI,
-          (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL),
-          (unsigned)heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL),
-          (unsigned)heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
-  // BLE FIRST: the BT controller needs a sizeable *contiguous* internal-RAM
-  // block, and the combined-display canvases have already fragmented the heap.
-  // Claiming it before WiFi (which also allocates internal RAM) is what keeps
-  // nimble_port_init from crashing in its controller malloc.
+          (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL));
 #if RID_USE_BLE
   ble_begin();
 #endif
@@ -293,6 +302,8 @@ void remoteid_begin() {
   wifi_begin();
   xTaskCreatePinnedToCore(rid_task, "ridhop", 2048, nullptr, RID_TASK_PRIO, nullptr, RID_TASK_CORE);
 #endif
+  RID_LOG("[RID] receiver up; internal free=%u\n",
+          (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL));
 }
 
 void remoteid_fill(state *s) {
