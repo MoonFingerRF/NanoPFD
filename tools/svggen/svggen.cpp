@@ -443,7 +443,7 @@ static void genLegend(const char *path, const std::vector<Elem> &nd, int W, int 
   addLM("track", "Ground track (course made good)", IWHITE);
   addLM("home",  "Bearing & distance to home",      IGREEN);
   addLM("rid",   "Remote ID traffic — altitude (ft)", IORANGE);
-  add("Proximity warning (Remote ID nearby)", IRED, 30, lyt::scaled(4, W) + 4 * sc);
+  add("Proximity warning (Remote ID nearby)", IORANGE, 30, lyt::scaled(4, W) + 4 * sc);
   // map features (anchors recorded during the ND draw)
   addLM("apt_twr",   "Towered airport",       IBLUE);
   addLM("apt_ntwr",  "Non-towered airport",   IMAGENTA);

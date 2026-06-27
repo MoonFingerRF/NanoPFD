@@ -1379,13 +1379,14 @@ void drawNavigationDisplay(MyCanvas8 *canvas, state *s) {
     canvas->print(sg);
   }
 
-  // ---- Remote ID PROXIMITY warning: red, far left, at the SAT-count height,
-  //      shown whenever any Remote ID traffic is being tracked. -----------------
+  // ---- Remote ID PROXIMITY warning: same colour as the Remote ID markers,
+  //      far left, at the SAT-count height, shown whenever any Remote ID traffic
+  //      is being tracked. ---------------------------------------------------------
   if (s->n_rid_seen > 0) {
     canvas->setRotationMatrix();
     canvas->setFont();
     canvas->setTextSize(1);
-    canvas->setTextColor(IRED);
+    canvas->setTextColor(IORANGE);
     canvas->setCursor(2, satY);
     canvas->print("PROXIMITY");
     canvas->setTextColor(IWHITE);
