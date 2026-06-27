@@ -43,7 +43,8 @@ uint16_t color_index[NUM_COLORS] = {
   0x055F,  // ISKY
   0xD421,  // IGND
   0xAD55,  // IGREY
-  0x4208   // IDGREY (dark grey for roads)
+  0x4208,  // IDGREY (dark grey for roads)
+  0xFD20   // IORANGE (Remote ID traffic)
 };
 
 // ----------------------------------------------------------------------------

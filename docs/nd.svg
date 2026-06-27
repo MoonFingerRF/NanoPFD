@@ -283,7 +283,11 @@
 <line x1="240.5" y1="97.5" x2="240.5" y2="51.5" stroke="#ADAAAD"/>
 <line x1="152.5" y1="126.5" x2="128.5" y2="76.5" stroke="#00FF00"/>
 <rect x="212" y="254" width="4" height="4" fill="#00FF00"/>
-<line x1="266.5" y1="92.5" x2="271.5" y2="52.5" stroke="#FFFFFF"/>
+<line x1="240.5" y1="309.5" x2="311.5" y2="60.5" stroke="#FFFFFF"/>
+<circle cx="222.5" cy="282.5" r="6.5" fill="#FFA600" shape-rendering="crispEdges"/>
+<text x="234" y="288" font-family="monospace" font-size="18" fill="#FFA600">3</text>
+<text x="246" y="288" font-family="monospace" font-size="18" fill="#FFA600">5</text>
+<text x="258" y="288" font-family="monospace" font-size="18" fill="#FFA600">0</text>
 <text x="264" y="246" font-family="monospace" font-size="9" fill="#0000FF">L</text>
 <text x="270" y="246" font-family="monospace" font-size="9" fill="#0000FF">U</text>
 <text x="276" y="246" font-family="monospace" font-size="9" fill="#0000FF">K</text>

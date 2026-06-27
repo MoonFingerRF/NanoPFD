@@ -274,7 +274,11 @@
 <line x1="240.5" y1="97.5" x2="240.5" y2="51.5" stroke="#ADAAAD"/>
 <line x1="192.5" y1="112.5" x2="179.5" y2="58.5" stroke="#00FF00"/>
 <rect x="201" y="153" width="4" height="4" fill="#00FF00"/>
-<line x1="292.5" y1="97.5" x2="302.5" y2="58.5" stroke="#FFFFFF"/>
+<line x1="240.5" y1="309.5" x2="302.5" y2="58.5" stroke="#FFFFFF"/>
+<circle cx="262.5" cy="285.5" r="6.5" fill="#FFA600" shape-rendering="crispEdges"/>
+<text x="274" y="291" font-family="monospace" font-size="18" fill="#FFA600">3</text>
+<text x="286" y="291" font-family="monospace" font-size="18" fill="#FFA600">5</text>
+<text x="298" y="291" font-family="monospace" font-size="18" fill="#FFA600">0</text>
 <text x="165" y="292" font-family="monospace" font-size="9" fill="#0000FF">P</text>
 <text x="171" y="292" font-family="monospace" font-size="9" fill="#0000FF">H</text>
 <text x="177" y="292" font-family="monospace" font-size="9" fill="#0000FF">L</text>
@@ -440,27 +444,30 @@
 <polyline points="948,64 941,64 616,87.31" fill="none" stroke="#000" stroke-width="4"/><polyline points="948,64 941,64 616,87.31" fill="none" stroke="#FFFFFF" stroke-width="1.6"/>
 <circle cx="616" cy="87.31" r="6.5" fill="none" stroke="#000" stroke-width="3"/><circle cx="616" cy="87.31" r="6.5" fill="none" stroke="#FFFFFF" stroke-width="1.7"/>
 <text x="953" y="69" fill="#FFFFFF" font-size="14" font-weight="600" text-anchor="start" paint-order="stroke" stroke="#000" stroke-width="3.5">Heading — digital readout</text>
-<polyline points="948,118.75 941,118.75 896.8,89.2" fill="none" stroke="#000" stroke-width="4"/><polyline points="948,118.75 941,118.75 896.8,89.2" fill="none" stroke="#ADAAAD" stroke-width="1.6"/>
+<polyline points="948,112.667 941,112.667 896.8,89.2" fill="none" stroke="#000" stroke-width="4"/><polyline points="948,112.667 941,112.667 896.8,89.2" fill="none" stroke="#ADAAAD" stroke-width="1.6"/>
 <circle cx="896.8" cy="89.2" r="6.5" fill="none" stroke="#000" stroke-width="3"/><circle cx="896.8" cy="89.2" r="6.5" fill="none" stroke="#ADAAAD" stroke-width="1.7"/>
-<text x="953" y="123.75" fill="#ADAAAD" font-size="14" font-weight="600" text-anchor="start" paint-order="stroke" stroke="#000" stroke-width="3.5">Battery voltage</text>
-<polyline points="948,173.5 941,173.5 699.7,124.3" fill="none" stroke="#000" stroke-width="4"/><polyline points="948,173.5 941,173.5 699.7,124.3" fill="none" stroke="#FFFFFF" stroke-width="1.6"/>
+<text x="953" y="117.667" fill="#ADAAAD" font-size="14" font-weight="600" text-anchor="start" paint-order="stroke" stroke="#000" stroke-width="3.5">Battery voltage</text>
+<polyline points="948,161.333 941,161.333 699.7,124.3" fill="none" stroke="#000" stroke-width="4"/><polyline points="948,161.333 941,161.333 699.7,124.3" fill="none" stroke="#FFFFFF" stroke-width="1.6"/>
 <circle cx="699.7" cy="124.3" r="6.5" fill="none" stroke="#000" stroke-width="3"/><circle cx="699.7" cy="124.3" r="6.5" fill="none" stroke="#FFFFFF" stroke-width="1.7"/>
-<text x="953" y="178.5" fill="#FFFFFF" font-size="14" font-weight="600" text-anchor="start" paint-order="stroke" stroke="#000" stroke-width="3.5">Ground track (course made good)</text>
-<polyline points="948,228.25 941,228.25 733.45,163.45" fill="none" stroke="#000" stroke-width="4"/><polyline points="948,228.25 941,228.25 733.45,163.45" fill="none" stroke="#FF00FF" stroke-width="1.6"/>
+<text x="953" y="166.333" fill="#FFFFFF" font-size="14" font-weight="600" text-anchor="start" paint-order="stroke" stroke="#000" stroke-width="3.5">Ground track (course made good)</text>
+<polyline points="948,210 941,210 733.45,163.45" fill="none" stroke="#000" stroke-width="4"/><polyline points="948,210 941,210 733.45,163.45" fill="none" stroke="#FF00FF" stroke-width="1.6"/>
 <circle cx="733.45" cy="163.45" r="6.5" fill="none" stroke="#000" stroke-width="3"/><circle cx="733.45" cy="163.45" r="6.5" fill="none" stroke="#FF00FF" stroke-width="1.7"/>
-<text x="953" y="233.25" fill="#FF00FF" font-size="14" font-weight="600" text-anchor="start" paint-order="stroke" stroke="#000" stroke-width="3.5">Non-towered airport</text>
-<polyline points="948,283 941,283 734.8,163.45" fill="none" stroke="#000" stroke-width="4"/><polyline points="948,283 941,283 734.8,163.45" fill="none" stroke="#0000FF" stroke-width="1.6"/>
+<text x="953" y="215" fill="#FF00FF" font-size="14" font-weight="600" text-anchor="start" paint-order="stroke" stroke="#000" stroke-width="3.5">Non-towered airport</text>
+<polyline points="948,258.667 941,258.667 734.8,163.45" fill="none" stroke="#000" stroke-width="4"/><polyline points="948,258.667 941,258.667 734.8,163.45" fill="none" stroke="#0000FF" stroke-width="1.6"/>
 <circle cx="734.8" cy="163.45" r="6.5" fill="none" stroke="#000" stroke-width="3"/><circle cx="734.8" cy="163.45" r="6.5" fill="none" stroke="#0000FF" stroke-width="1.7"/>
-<text x="953" y="288" fill="#0000FF" font-size="14" font-weight="600" text-anchor="start" paint-order="stroke" stroke="#000" stroke-width="3.5">VOR / navaid</text>
-<polyline points="948,337.75 941,337.75 783.4,243.1" fill="none" stroke="#000" stroke-width="4"/><polyline points="948,337.75 941,337.75 783.4,243.1" fill="none" stroke="#ADAAAD" stroke-width="1.6"/>
+<text x="953" y="263.667" fill="#0000FF" font-size="14" font-weight="600" text-anchor="start" paint-order="stroke" stroke="#000" stroke-width="3.5">VOR / navaid</text>
+<polyline points="948,307.333 941,307.333 783.4,243.1" fill="none" stroke="#000" stroke-width="4"/><polyline points="948,307.333 941,307.333 783.4,243.1" fill="none" stroke="#ADAAAD" stroke-width="1.6"/>
 <circle cx="783.4" cy="243.1" r="6.5" fill="none" stroke="#000" stroke-width="3"/><circle cx="783.4" cy="243.1" r="6.5" fill="none" stroke="#ADAAAD" stroke-width="1.7"/>
-<text x="953" y="342.75" fill="#ADAAAD" font-size="14" font-weight="600" text-anchor="start" paint-order="stroke" stroke="#000" stroke-width="3.5">Closed airfield</text>
-<polyline points="948,392.5 941,392.5 721.3,248.5" fill="none" stroke="#000" stroke-width="4"/><polyline points="948,392.5 941,392.5 721.3,248.5" fill="none" stroke="#00AAFF" stroke-width="1.6"/>
+<text x="953" y="312.333" fill="#ADAAAD" font-size="14" font-weight="600" text-anchor="start" paint-order="stroke" stroke="#000" stroke-width="3.5">Closed airfield</text>
+<polyline points="948,356 941,356 721.3,248.5" fill="none" stroke="#000" stroke-width="4"/><polyline points="948,356 941,356 721.3,248.5" fill="none" stroke="#00AAFF" stroke-width="1.6"/>
 <circle cx="721.3" cy="248.5" r="6.5" fill="none" stroke="#000" stroke-width="3"/><circle cx="721.3" cy="248.5" r="6.5" fill="none" stroke="#00AAFF" stroke-width="1.7"/>
-<text x="953" y="397.5" fill="#00AAFF" font-size="14" font-weight="600" text-anchor="start" paint-order="stroke" stroke="#000" stroke-width="3.5">River</text>
-<polyline points="948,447.25 941,447.25 671.35,291.7" fill="none" stroke="#000" stroke-width="4"/><polyline points="948,447.25 941,447.25 671.35,291.7" fill="none" stroke="#ADAAAD" stroke-width="1.6"/>
+<text x="953" y="361" fill="#00AAFF" font-size="14" font-weight="600" text-anchor="start" paint-order="stroke" stroke="#000" stroke-width="3.5">River</text>
+<polyline points="948,404.667 941,404.667 671.35,291.7" fill="none" stroke="#000" stroke-width="4"/><polyline points="948,404.667 941,404.667 671.35,291.7" fill="none" stroke="#ADAAAD" stroke-width="1.6"/>
 <circle cx="671.35" cy="291.7" r="6.5" fill="none" stroke="#000" stroke-width="3"/><circle cx="671.35" cy="291.7" r="6.5" fill="none" stroke="#ADAAAD" stroke-width="1.7"/>
-<text x="953" y="452.25" fill="#ADAAAD" font-size="14" font-weight="600" text-anchor="start" paint-order="stroke" stroke="#000" stroke-width="3.5">State line</text>
+<text x="953" y="409.667" fill="#ADAAAD" font-size="14" font-weight="600" text-anchor="start" paint-order="stroke" stroke="#000" stroke-width="3.5">State line</text>
+<polyline points="948,453.333 941,453.333 645.7,430.75" fill="none" stroke="#000" stroke-width="4"/><polyline points="948,453.333 941,453.333 645.7,430.75" fill="none" stroke="#FFA600" stroke-width="1.6"/>
+<circle cx="645.7" cy="430.75" r="6.5" fill="none" stroke="#000" stroke-width="3"/><circle cx="645.7" cy="430.75" r="6.5" fill="none" stroke="#FFA600" stroke-width="1.7"/>
+<text x="953" y="458.333" fill="#FFA600" font-size="14" font-weight="600" text-anchor="start" paint-order="stroke" stroke="#000" stroke-width="3.5">Remote ID traffic — altitude (ft)</text>
 <polyline points="948,502 941,502 616,465.269" fill="none" stroke="#000" stroke-width="4"/><polyline points="948,502 941,502 616,465.269" fill="none" stroke="#FFFFFF" stroke-width="1.6"/>
 <circle cx="616" cy="465.269" r="6.5" fill="none" stroke="#000" stroke-width="3"/><circle cx="616" cy="465.269" r="6.5" fill="none" stroke="#FFFFFF" stroke-width="1.7"/>
 <text x="953" y="507" fill="#FFFFFF" font-size="14" font-weight="600" text-anchor="start" paint-order="stroke" stroke="#000" stroke-width="3.5">Own-aircraft symbol (fixed)</text>

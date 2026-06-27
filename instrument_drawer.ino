@@ -1276,16 +1276,43 @@ void drawNavigationDisplay(MyCanvas8 *canvas, state *s) {
   if (s->GPS && s->ground_speed > 2.0f) {
     float a = (s->ground_track - angle) * p / 180.0f;
     float ey = ndcy - cos(a) * ndr;
-    int   gl = lyt::scaled(20, width);
     if (ey < ndcy) {
-      canvas->drawLine(ndcx + sin(a) * (ndr - gl), ndcy - cos(a) * (ndr - gl),
-                       ndcx + sin(a) * ndr, ey, IWHITE);
+      // track vector runs from the own-aircraft symbol (ring centre) out to the rim
+      canvas->drawLine(ndcx, ndcy, ndcx + sin(a) * ndr, ey, IWHITE);
 #ifdef SVG_RENDER
       { extern void svgLandmark(const char *, int, int);
         svgLandmark("track", (int)(ndcx + sin(a) * ndr), (int)ey); }
 #endif
     }
   }
+
+#if MAP_ENABLE && RID_DEMO
+  // ---- Remote ID traffic (future): a uniquely-coloured (orange) dot with the
+  //      target's altitude in feet beside it. Remote ID aircraft are capped at
+  //      400 ft AGL. This is a placeholder demo target (~3.5 km NE of the map
+  //      centre); replace the list with real Remote ID broadcasts once received.
+  {
+    MapProj rm;
+    rm.clat = clat; rm.clon = clon; rm.cosLat = cosf(clat * p / 180.0f);
+    float hh = angle * p / 180.0f; rm.cosH = cosf(hh); rm.sinH = sinf(hh);
+    rm.scale = (float)rad / MAP_RANGE_M; rm.cx = width / 2; rm.cy = cyc;
+    struct RidTraffic { float lat, lon; int alt_ft; };
+    const RidTraffic rid[] = { { clat + 0.026f, clon + 0.030f, 350 } };
+    for (unsigned i = 0; i < sizeof(rid) / sizeof(rid[0]); i++) {
+      int rx, ry; mapXY(rm, rid[i].lat, rid[i].lon, rx, ry);
+      if (!mapInCirc(rx, ry, width / 2, cyc, (long)rad * rad)) continue;
+      int rs = lyt::scaled(3, width);
+      canvas->fillCircle(rx, ry, rs, IORANGE);
+      canvas->setFont(); canvas->setTextSize(1); canvas->setTextColor(IORANGE);
+      char rb[8]; sprintf(rb, "%d", rid[i].alt_ft);
+      drawText(canvas, rb, rx + rs + lyt::scaled(3, width), ry, lyt::HL, lyt::VC);
+      canvas->setTextColor(IWHITE);
+#ifdef SVG_RENDER
+      { extern void svgLandmark(const char *, int, int); svgLandmark("rid", rx, ry); }
+#endif
+    }
+  }
+#endif
 
 #if MAP_ENABLE && MAP_LABELS
   // ---- map text: drawn LAST so labels sit on top of the compass/rings/overlays

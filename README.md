@@ -74,9 +74,10 @@ real map of the Philadelphia area, where the Delaware River doubles as the PA/NJ
 | Compass card | white ring, ticks every 5°, numbers every 30° | rotates so your heading is always **up** (heading-up) |
 | Own-aircraft symbol | white triangle, fixed at the centre | you — the map moves underneath |
 | Heading reference | magenta line up the middle | where the nose points (always straight up) |
-| Ground track | white line | your actual course over the ground (differs from heading in a crosswind) |
+| Ground track | white line from the aircraft to the rim | your actual course over the ground (differs from heading in a crosswind) |
 | Bearing to home | green line + green dot | direction and range back to the saved home / takeoff point |
 | Range rings | grey dotted rings at ¼ ½ ¾ | distance scale; the outer white ring is the selected map range |
+| Remote ID traffic | orange dot + altitude in feet | a nearby aircraft/drone broadcasting FAA Remote ID — its position and altitude (Remote ID is capped at 400 ft AGL). *Currently a placeholder demo target until a Remote ID receiver is wired in (`RID_DEMO` in `config.h`).* |
 
 **Airports &amp; navaids**
 

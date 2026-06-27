@@ -21,7 +21,7 @@
 // Palette — must match color_index[] in InstrumentPanel.ino (RGB565 per index).
 uint16_t color_index[NUM_COLORS] = {
   0x0000, 0x001F, 0xF800, 0x07E0, 0x07FF, 0xF81F,
-  0xFFE0, 0xFFFF, 0x055F, 0xD421, 0xAD55, 0x4208
+  0xFFE0, 0xFFFF, 0x055F, 0xD421, 0xAD55, 0x4208, 0xFD20
 };
 
 // --- minimal PNG (RGBA) + base64, for embedding the attitude as a smooth raster ---
@@ -442,6 +442,7 @@ static void genLegend(const char *path, const std::vector<Elem> &nd, int W, int 
   add("Heading reference (track-up)",          IMAGENTA, W / 2.0 - 1, cyc - rad * 0.55);
   addLM("track", "Ground track (course made good)", IWHITE);
   addLM("home",  "Bearing & distance to home",      IGREEN);
+  addLM("rid",   "Remote ID traffic — altitude (ft)", IORANGE);
   // map features (anchors recorded during the ND draw)
   addLM("apt_twr",   "Towered airport",       IBLUE);
   addLM("apt_ntwr",  "Non-towered airport",   IMAGENTA);
@@ -608,7 +609,7 @@ int main() {
   s.ax = 0.0f; s.ay = -1.0f; s.az = 0.0f;          // slip ball centred
   s.air_speed = 110;
   s.alt = 850; s.home_alt = 480; s.vertical_speed = 0;   // 850 ft, level
-  s.heading = 75; s.ground_track = 82; s.ground_speed = 118;   // ~7 deg crab -> track distinct
+  s.heading = 75; s.ground_track = 91; s.ground_speed = 118;   // ~16 deg crab -> track clearly distinct
   s.lat = MAP_DEFAULT_LAT; s.lon = MAP_DEFAULT_LON;
   s.last_lat = MAP_DEFAULT_LAT; s.last_lon = MAP_DEFAULT_LON;   // ND centres on last_*
   s.home_lat = MAP_DEFAULT_LAT + 0.04f; s.home_lon = MAP_DEFAULT_LON + 0.06f;  // home NE -> green line visible

@@ -405,4 +405,9 @@
 #define IGND      9
 #define IGREY    10
 #define IDGREY   11    // darker grey: roads (distinct from the IGREY range rings)
-#define NUM_COLORS 12
+#define IORANGE  12    // Remote ID traffic dots (unique; not used by any other symbol)
+#define NUM_COLORS 13
+
+// Remote ID traffic: draw a placeholder demo target (orange dot + altitude in ft)
+// on the ND until a real Remote ID receiver feeds broadcasts. Set 0 to hide it.
+#define RID_DEMO 1

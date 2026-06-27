@@ -204,7 +204,7 @@
 <text x="95.5711" y="238.507" font-family="monospace" font-size="9" fill="#FFFFFF" transform="rotate(-15 95.5711 238.507)">0</text>
 <text x="101.367" y="236.955" font-family="monospace" font-size="9" fill="#FFFFFF" transform="rotate(-15 101.367 236.955)">6</text>
 <text x="177.667" y="236.696" font-family="monospace" font-size="9" fill="#FFFFFF" transform="rotate(15 177.667 236.696)">E</text>
-<line x1="159.5" y1="230.5" x2="161.5" y2="213.5" stroke="#FF00FF"/>
+<line x1="182.5" y1="235.5" x2="187.5" y2="218.5" stroke="#FF00FF"/>
 <line x1="72.5" y1="244.5" x2="67.5" y2="233.5" stroke="#0000FF"/>
 <circle cx="72.5" cy="244.5" r="2.5" fill="#0000FF" shape-rendering="crispEdges"/>
 <line x1="140.5" y1="217.5" x2="140.5" y2="239.5" stroke="#00FFFF"/>
@@ -491,7 +491,11 @@
 <line x1="120.5" y1="58.5" x2="120.5" y2="35.5" stroke="#ADAAAD"/>
 <line x1="36.5" y1="82.5" x2="24.5" y2="56.5" stroke="#00FF00"/>
 <rect x="96" y="208" width="4" height="4" fill="#00FF00"/>
-<line x1="144.5" y1="56.5" x2="146.5" y2="36.5" stroke="#FFFFFF"/>
+<line x1="120.5" y1="256.5" x2="180.5" y2="43.5" stroke="#FFFFFF"/>
+<circle cx="105.5" cy="233.5" r="3.5" fill="#FFA600" shape-rendering="crispEdges"/>
+<text x="111" y="236" font-family="monospace" font-size="9" fill="#FFA600">3</text>
+<text x="117" y="236" font-family="monospace" font-size="9" fill="#FFA600">5</text>
+<text x="123" y="236" font-family="monospace" font-size="9" fill="#FFA600">0</text>
 <text x="139" y="202" font-family="monospace" font-size="9" fill="#0000FF">L</text>
 <text x="145" y="202" font-family="monospace" font-size="9" fill="#0000FF">U</text>
 <text x="151" y="202" font-family="monospace" font-size="9" fill="#0000FF">K</text>
