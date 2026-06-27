@@ -243,11 +243,20 @@ void combinedDisplayInit() {
 
   static MyCanvas8 pfd(RGB_WIDTH, PFD_REGION_H, false);
   static MyCanvas8 nd(RGB_WIDTH, ND_CANVAS_H, false);   // taller: extends ND_OVERLAP px up
+#if RID_ENABLE
+  // The Remote ID radios (WiFi, and BLE when enabled) claim a big chunk of
+  // internal RAM; keeping the ~170 KB PFD canvas internal too exhausts it and a
+  // display task fails to start. Put the PFD canvas in PSRAM whenever RID is on
+  // (costs fps). With RID off it stays in fast internal SRAM (full fps).
+  uint8_t *pfdBuf = (uint8_t *)heap_caps_malloc((size_t)RGB_WIDTH * PFD_REGION_H,
+                                                MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+#else
   uint8_t *pfdBuf = (uint8_t *)heap_caps_malloc((size_t)RGB_WIDTH * PFD_REGION_H,
                                                 MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
   if (!pfdBuf)
     pfdBuf = (uint8_t *)heap_caps_malloc((size_t)RGB_WIDTH * PFD_REGION_H,
                                          MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+#endif
   pfd.useBuffer(pfdBuf);
   nd.useBuffer((uint8_t *)heap_caps_malloc((size_t)RGB_WIDTH * ND_CANVAS_H,
                                            MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT));

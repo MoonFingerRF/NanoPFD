@@ -38,6 +38,7 @@
 #include "esp_event.h"
 #include "esp_netif.h"
 #include "nvs_flash.h"
+#include "esp_heap_caps.h"
 #if RID_USE_BLE
 // The ESP32-S3 Arduino core ships the NimBLE host (Bluedroid's esp_gap_ble_api
 // is NOT built for this chip), so the BLE scanner is implemented on NimBLE.
@@ -53,10 +54,16 @@
 #endif
 
 // ---- diagnostics -----------------------------------------------------------
+// The firmware logs over its own USB-CDC instance (HWCDC USBSerial in
+// InstrumentPanel.ino), NOT the default Serial (which is never begin()'d here),
+// so RID_LOG must use USBSerial or the lines vanish. flush() forces the line out
+// before a blocking/maybe-crashing call (the USB-CDC buffer is otherwise lazy).
+#include "HWCDC.h"
+extern HWCDC USBSerial;
 #if RID_DEBUG
-  #define RID_LOG(...) Serial.printf(__VA_ARGS__)
+  #define RID_LOG(...)  do { USBSerial.printf(__VA_ARGS__); USBSerial.flush(); } while (0)
 #else
-  #define RID_LOG(...) do {} while (0)
+  #define RID_LOG(...)  do {} while (0)
 #endif
 // Cheap free-running counters so a one-line stats print shows which radio is
 // actually hearing traffic (set RID_DEBUG 0 to compile them out of the prints).
@@ -179,9 +186,27 @@ static void ble_host_task(void *param) {
   nimble_port_freertos_deinit();
 }
 
+// Run the controller bring-up on core 0 then self-delete. The Arduino loop task
+// (where setup() runs) is on core 1, but the BT controller is pinned to core 0;
+// initializing it from core 1 panics in btdm_controller_init.
+static void ble_begin();                        // defined below
+static void ble_init_task(void *) {
+  ble_begin();
+  vTaskDelete(nullptr);
+}
+
 static void ble_begin() {
-  esp_err_t e = nimble_port_init();              // brings up the BLE controller + host
-  if (e != ESP_OK) { RID_LOG("[RID] nimble_port_init err %d\n", e); return; }
+  RID_LOG("[RID] before BLE init: internal free=%u largest=%u\n",
+          (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL),
+          (unsigned)heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL));
+  // Bring the BLE controller up via the Arduino HAL (esp_bt_controller_init +
+  // enable, with the classic-BT memory released) — calling NimBLE's all-in-one
+  // nimble_port_init() here panics in the controller's init malloc, but btStart()
+  // is the path the core's own BLE library uses. Then init only the NimBLE *host*.
+  if (!btStart()) { RID_LOG("[RID] btStart() (BLE controller) FAILED\n"); return; }
+  RID_LOG("[RID] btStart() ok; esp_nimble_init...\n");
+  esp_err_t e = esp_nimble_init();               // NimBLE host stack (controller already up)
+  if (e != ESP_OK) { RID_LOG("[RID] esp_nimble_init err %d\n", e); return; }
   ble_hs_cfg.sync_cb  = ble_on_sync;             // start scanning once the host is ready
   ble_hs_cfg.reset_cb = ble_on_reset;
   nimble_port_freertos_init(ble_host_task);
@@ -251,7 +276,10 @@ static void wifi_begin() {
 // Cheap task: hop the WiFi channel so we sweep all of 2.4 GHz for drone beacons
 // (BLE needs no hopping — its controller scans the advertising channels itself).
 static void rid_task(void *) {
-  static const uint8_t chans[] = { 1, 6, 11, 3, 9, 2, 7, 12, 4, 8, 13, 5, 10 };
+  // Remote ID WiFi beacons live on the non-overlapping 2.4 GHz channels (almost
+  // always 6, sometimes 1/11). Dwell on those primarily so a ~1 Hz beacon is
+  // caught fast; sweep the rest occasionally in case a drone's AP is elsewhere.
+  static const uint8_t chans[] = { 6, 1, 11, 6, 1, 11, 6, 3, 9, 6, 4, 8, 6, 2, 13, 6, 5, 10, 6, 7, 12 };
   int ci = 0;
   for (;;) {
     esp_wifi_set_channel(chans[ci], WIFI_SECOND_CHAN_NONE);
@@ -263,15 +291,22 @@ static void rid_task(void *) {
 
 // ---- public API ------------------------------------------------------------
 void remoteid_begin() {
-  RID_LOG("[RID] starting receiver (BLE=%d WiFi=%d)\n",
-          (int)RID_USE_BLE, (int)RID_USE_WIFI);
-#if RID_USE_WIFI
-  wifi_begin();                                // bring up WiFi first, then BLE (coexistence)
-#endif
+  RID_LOG("[RID] starting receiver (BLE=%d WiFi=%d) internal free=%u largest=%u psram=%u\n",
+          (int)RID_USE_BLE, (int)RID_USE_WIFI,
+          (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL),
+          (unsigned)heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL),
+          (unsigned)heap_caps_get_free_size(MALLOC_CAP_SPIRAM));
+  // BLE FIRST: the BT controller needs a sizeable *contiguous* internal-RAM
+  // block, and the combined-display canvases have already fragmented the heap.
+  // Claiming it before WiFi (which also allocates internal RAM) is what keeps
+  // nimble_port_init from crashing in its controller malloc.
 #if RID_USE_BLE
-  ble_begin();
+  // Controller init MUST run on core 0 (see ble_init_task); big stack — the
+  // controller init is stack-hungry — and the task self-deletes afterward.
+  xTaskCreatePinnedToCore(ble_init_task, "bleinit", 16384, nullptr, 5, nullptr, 0);
 #endif
 #if RID_USE_WIFI
+  wifi_begin();
   xTaskCreatePinnedToCore(rid_task, "ridhop", 2048, nullptr, RID_TASK_PRIO, nullptr, RID_TASK_CORE);
 #endif
 }

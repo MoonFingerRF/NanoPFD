@@ -31,6 +31,12 @@
 
 HWCDC USBSerial;
 
+// The Remote ID BLE controller init wants more stack than the 8 KB loop-task
+// default. Only relevant when BLE is enabled (it's currently off — see config.h).
+#if RID_ENABLE && RID_USE_BLE
+SET_LOOP_TASK_STACK_SIZE(16 * 1024);
+#endif
+
 // RGB565 values for the 8-bit indexed canvas palette (indices defined in config.h)
 uint16_t color_index[NUM_COLORS] = {
   0x0000,  // IBLACK
@@ -439,7 +445,7 @@ void setup(void) {
                            // ST7701/expander I2C traffic can't race the sensor task)
 #endif
 
-  remoteid_begin();        // start the FAA Remote ID (BLE + WiFi) traffic receiver
+  remoteid_begin();        // start the FAA Remote ID (WiFi; BLE when re-enabled) receiver
 
   xTaskCreatePinnedToCore(sensorTask, "sensors", STACK_SENSORS, NULL, PRIO_SENSORS, NULL, CORE_SENSORS);
 #if COMBINED_DISPLAY
