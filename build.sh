@@ -59,8 +59,8 @@ for L in Adafruit_BMP3XX_Library Adafruit_BNO08x Adafruit_BusIO \
          Adafruit_GFX_Library Adafruit_GPS_Library Adafruit_Unified_Sensor; do
   ln -sfn "$USERLIB/$L" "$SKB/libraries/$L"
 done
-ln -sfn "$USERLIB/SparkFun_9DoF_IMU_Breakout_-_ICM_20948_-_Arduino_Library" \
-        "$SKB/libraries/SparkFun_ICM20948"
+# The ICM-20948 (GY-912) now uses a self-contained Wire register driver (ICM.ino),
+# so the SparkFun ICM-20948 library is no longer needed.
 # BOARD_D (LilyGO T4-S3 AMOLED) uses a SELF-CONTAINED RM690B0 QSPI driver
 # (CombinedDisplayAmoled.ino) — no LilyGo-AMOLED-Series / SensorLib / XPowersLib.
 

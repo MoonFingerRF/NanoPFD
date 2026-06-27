@@ -108,7 +108,9 @@ unsigned long vs_last_time = 0;     // millis() of the previous VS sample
 float         vs_last_alt  = 0;     // altitude (ft) at the previous VS sample
 
 void initBPS(state *s) {
-  s->BPS = bmp.begin_I2C();
+  // The Adafruit BMP390 breakout sits at 0x77; the GY-912's BMP388 is at 0x76.
+  // The BMP3xx driver handles both chips — try each address so either board works.
+  s->BPS = bmp.begin_I2C(0x77) || bmp.begin_I2C(0x76);
 
   if (s->BPS) {
     bmp.setPressureOversampling(BMP3_OVERSAMPLING_4X);

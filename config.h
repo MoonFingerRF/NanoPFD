@@ -8,10 +8,11 @@
 //    Display 2 (ND  - Navigation / compass)   : optional, see ENABLE_NAV_DISPLAY
 //
 //  Sensors (all I2C @ 400 kHz):
-//    BNO08x   IMU    0x4A  - attitude (gravity), accel (g/slip), magnetometer
-//    BMP390   baro   0x77  - pressure altitude + vertical speed
-//    MS4525DO pitot  0x28  - differential pressure -> indicated airspeed
-//    PA1010D  GPS    0x10  - lat/lon, GPS altitude, ground speed
+//    BNO08x   IMU    0x4A       - attitude (gravity), accel (g/slip), magnetometer
+//    ICM-20948 IMU  0x68/0x69   - alt. IMU, e.g. the GY-912 module (auto-detected)
+//    BMP390/388 baro 0x77/0x76  - pressure altitude + vertical speed (GY-912 = BMP388)
+//    MS4525DO pitot  0x28       - differential pressure -> indicated airspeed
+//    PA1010D  GPS    0x10       - lat/lon, GPS altitude, ground speed
 //
 //  Concurrency: a sensor task (core 0) writes a shared `state` snapshot under a
 //  mutex; the PFD task (core 1, high prio) and optional ND task (core 0) read it.
@@ -326,8 +327,11 @@
 #endif
 
 // ---- IMU options -----------------------------------------------------------
-// Optional ICM-20948 primary IMU via its on-chip DMP (see ICM.ino for bring-up;
-// requires the SparkFun library with ICM_20948_USE_DMP enabled). 0 = off.
+// Supported IMUs are auto-detected at runtime and share the I2C bus (IMU.ino
+// failover): BNO08x (0x4A) first, else an ICM-20948 (0x68/0x69, e.g. the GY-912
+// module), else the onboard QMI8658 (0x6B/0x6A). ENABLE_ICM20948 compiles the
+// self-contained ICM-20948 register driver (ICM.ino — no library/DMP needed:
+// accel+gyro Mahony attitude, real g, AK09916 tilt-compensated heading). 0 = off.
 #define ENABLE_ICM20948 1
 
 // BNO heading is taken from its fused ROTATION_VECTOR (the chip's internal
@@ -336,6 +340,12 @@
 // OFFSET rotates magnetic north into place (degrees).
 #define HEADING_SIGN   -1.0f
 #define HEADING_OFFSET  180.0f
+
+// ICM-20948 (GY-912) heading from its tilt-compensated AK09916 magnetometer.
+// Same idea as the BNO constants — TUNE to the mounting (forward = the ICM +X
+// axis): SIGN flips CW/CCW, OFFSET rotates magnetic north into place (degrees).
+#define ICM_HEADING_SIGN    1.0f
+#define ICM_HEADING_OFFSET  0.0f
 
 // ---- Navigation display (map) ----------------------------------------------
 // ND moving-map chart (airports, runways, navaids, airspace, glide paths, river).

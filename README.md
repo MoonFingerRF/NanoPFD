@@ -222,16 +222,25 @@ The **sensors are identical on every build** (all I²C / Qwiic, except the GPS, 
 |---|---|---|---|
 | [Adafruit BNO085](https://www.adafruit.com/product/4754) — 9-DOF fusion IMU | attitude (sky/ground), tilt-compensated heading, g-meter, turn coordinator | Adafruit #4754 | ~$25 |
 | [Adafruit BMP390](https://www.adafruit.com/product/4816) — barometer | pressure altitude tape + vertical-speed indicator | Adafruit #4816 | ~$11 |
+| *(or)* **GY-912** — ICM-20948 + BMP388 combo | a cheaper one-board substitute for **both** of the above (IMU + baro); auto-detected at runtime | generic / AliExpress | ~$8 |
 | [Matek ASPD-4525](https://www.mateksys.com/?portfolio=aspd-4525) — MS4525DO airspeed | airspeed tape — **kit includes the pitot tube, tubing &amp; cable** | MATEKSYS / FPV shops | ~$20 |
 | [Matek SAM-M10Q](https://www.getfpv.com/mateksys-gnss-sam-m10q-gps-module-gallileo-glonass-beidoub1c.html) — u-blox M10 GPS (**UART**) | ND map centre, ground speed, ground track, lat/lon | MATEKSYS / FPV shops — JST-GH **UART** (the firmware talks UBX over a serial port, not I²C); any FPV u-blox M10 UART module works | ~$25 |
 | Qwiic / STEMMA-QT cables + jumper wire | wiring the I²C bus + GPS UART | any | a few $ |
 
 **…plus exactly one display configuration from the table above.**
 
-> 💡 The Waveshare 1.69 and 2.8B boards already carry an onboard **QMI8658** 6-axis IMU, and
-> the firmware can fall back to it (or to an **ICM-20948**). But the QMI8658 has no
-> magnetometer, so the **BNO085 is strongly recommended** for a stable, tilt-compensated
-> heading and a usable moving map.
+> 💡 **The IMU is auto-detected at runtime** (`IMU.ino`), and every option shares the one I²C
+> bus: it uses a **BNO085** (0x4A) if present, else an **ICM-20948** (0x68/0x69 — e.g. the
+> **GY-912**, via a self-contained register driver in [`ICM.ino`](ICM.ino) with host-side
+> accel+gyro fusion and a tilt-compensated magnetometer heading), else the **QMI8658** (0x6B)
+> that the Waveshare 1.69 / 2.8B boards carry onboard. The QMI8658 has no magnetometer (heading
+> freezes), so for a full moving map use a BNO085 or a GY-912. The barometer is the same story —
+> a **BMP390** (0x77) or the GY-912's **BMP388** (0x76) both work.
+
+> ⚠️ The GY-912 axis/heading mapping in [`ICM.ino`](ICM.ino) is a sensible default but is
+> mounting-dependent — if the horizon, turn coordinator, or compass read inverted/rotated on
+> your build, flip the marked sign(s) there and tune `ICM_HEADING_SIGN` / `ICM_HEADING_OFFSET`
+> in [`config.h`](config.h).
 
 *Prices are rough ballparks and exclude shipping — check the vendor for current pricing and stock.*
 
