@@ -1290,7 +1290,7 @@ void drawNavigationDisplay(MyCanvas8 *canvas, state *s) {
   // ---- Remote ID traffic: one uniquely-coloured (orange) dot per drone/UAS that
   //      broadcast its position, with its altitude in feet beside it. Altitude is
   //      height AGL (Remote ID aircraft are capped at 400 ft). The targets are
-  //      received over BLE + WiFi by RemoteID.ino; here we project + plot them.
+  //      received over BLE + WiFi by RemoteID.cpp; here we project + plot them.
   if (s->n_rid > 0) {
     MapProj rm;
     rm.clat = clat; rm.clon = clon; rm.cosLat = cosf(clat * p / 180.0f);

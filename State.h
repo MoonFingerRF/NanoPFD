@@ -47,7 +47,7 @@ struct state {
 
   // --- Remote ID traffic (ASTM F3411 / OpenDroneID) -------------------------
   // Drones/aircraft broadcasting their position + altitude over BLE / WiFi,
-  // received by RemoteID.ino. alt_ft is height AGL (Remote ID is capped 400 ft).
+  // received by RemoteID.cpp. alt_ft is height AGL (Remote ID is capped 400 ft).
   rid_target rid[RID_MAX];
   int        n_rid;                // entries in rid[] that have a position (drawn as dots)
   int        n_rid_seen;           // total Remote ID targets being tracked (drives PROXIMITY)

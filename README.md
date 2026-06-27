@@ -187,12 +187,15 @@ NanoPFD is a from-scratch renderer tuned to squeeze a smooth glass cockpit out o
   sample — the sensors publish at **~380 Hz**, far above any display's frame rate.
 - **Remote ID traffic awareness.** The ESP32-S3's otherwise-idle WiFi + Bluetooth radios run a
   passive [**FAA Remote ID / OpenDroneID**](https://github.com/opendroneid/specs) receiver
-  ([`RemoteID.ino`](RemoteID.ino)): a continuous BLE advertisement scan plus a channel-hopping
+  ([`RemoteID.cpp`](RemoteID.cpp)): a continuous NimBLE advertisement scan plus a channel-hopping
   WiFi-beacon sniffer (promiscuous mode), both decoding the ASTM F3411 Location message. Nearby
-  drones broadcasting Remote ID show up on the ND as orange dots with their altitude. It's
-  unobtrusive — parsing happens in the radio callbacks and a tiny low-priority task hops WiFi
-  channels, so it doesn't steal time from rendering. (BT5 Long-Range and WiFi NaN aren't decoded
-  yet; most consumer drones also broadcast BLE legacy or a WiFi beacon, which are.)
+  drones broadcasting Remote ID show up on the ND as orange dots with their altitude, and the
+  orange `PROXIMITY` flag lights as soon as any target is heard. It's unobtrusive — parsing
+  happens in the radio callbacks and a tiny low-priority task hops WiFi channels, so it doesn't
+  steal time from rendering. (The ESP32-S3 Arduino core's NimBLE host is built **without** BLE 5
+  extended advertising, so the Bluetooth side is **BT4-legacy only** — drones that broadcast
+  *solely* over Bluetooth 5 Long-Range are caught over WiFi instead. WiFi NaN isn't decoded yet.
+  Set `RID_DEBUG 1` in `config.h` for a per-second serial line showing what each radio hears.)
 
 ---
 

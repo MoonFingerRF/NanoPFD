@@ -1,5 +1,8 @@
 // ============================================================================
-//  RemoteID.ino — passive FAA Remote ID (ASTM F3411 / OpenDroneID) receiver.
+//  RemoteID.cpp — passive FAA Remote ID (ASTM F3411 / OpenDroneID) receiver.
+//  (A .cpp, not .ino, so it is its own translation unit — its NimBLE + esp_wifi
+//   includes and static helpers stay out of the sketch's .ino concatenation,
+//   which otherwise hoists auto-prototypes above the types they reference.)
 //
 //  Drones/UAS that comply with the FAA Remote ID rule broadcast their ID,
 //  position and altitude over either Bluetooth or WiFi using the OpenDroneID
@@ -35,9 +38,32 @@
 #include "esp_event.h"
 #include "esp_netif.h"
 #include "nvs_flash.h"
-#include "esp_bt.h"
-#include "esp_bt_main.h"
-#include "esp_gap_ble_api.h"
+#if RID_USE_BLE
+// The ESP32-S3 Arduino core ships the NimBLE host (Bluedroid's esp_gap_ble_api
+// is NOT built for this chip), so the BLE scanner is implemented on NimBLE.
+// NOTE: this NimBLE build has extended advertising disabled
+// (MYNEWT_VAL_BLE_EXT_ADV = 0), so we can only receive *legacy* (BT4)
+// advertisements — Remote ID modules that broadcast solely over Bluetooth 5
+// Long-Range (coded PHY) won't be seen over BLE here (they're still caught over
+// WiFi if they also beacon). See README "Remote ID".
+#include "nimble/nimble_port.h"
+#include "nimble/nimble_port_freertos.h"
+#include "host/ble_hs.h"
+#include "host/ble_gap.h"
+#endif
+
+// ---- diagnostics -----------------------------------------------------------
+#if RID_DEBUG
+  #define RID_LOG(...) Serial.printf(__VA_ARGS__)
+#else
+  #define RID_LOG(...) do {} while (0)
+#endif
+// Cheap free-running counters so a one-line stats print shows which radio is
+// actually hearing traffic (set RID_DEBUG 0 to compile them out of the prints).
+static volatile uint32_t g_ble_adv = 0;    // BLE advertisements seen (any)
+static volatile uint32_t g_ble_hit = 0;    // BLE adverts carrying RID service data
+static volatile uint32_t g_wifi_mgmt = 0;  // WiFi mgmt frames seen (any)
+static volatile uint32_t g_wifi_hit = 0;   // WiFi frames carrying the RID vendor IE
 
 // ---- target table ----------------------------------------------------------
 struct RidEntry {
@@ -90,7 +116,10 @@ static void odid_parse(RidEntry *e, const uint8_t *m, int len) {
 
 // ---- Bluetooth LE ----------------------------------------------------------
 #if RID_USE_BLE
+// Walk the AD structures of one advertisement (legacy or extended) and pull out
+// any OpenDroneID service-data element.
 static void ble_parse_adv(const uint8_t *bda, const uint8_t *adv, int len) {
+  g_ble_adv++;
   int i = 0;
   while (i + 1 < len) {                       // walk the AD structures
     int adlen = adv[i];
@@ -100,6 +129,7 @@ static void ble_parse_adv(const uint8_t *bda, const uint8_t *adv, int len) {
     int dlen = adlen - 1;
     // Service Data - 16-bit UUID 0xFFFA, app code 0x0D, counter, then message
     if (adtype == 0x16 && dlen >= 4 && d[0] == 0xFA && d[1] == 0xFF && d[2] == 0x0D) {
+      g_ble_hit++;
       portENTER_CRITICAL(&g_mux);
       RidEntry *e = rid_lookup(bda);
       if (e) { e->last_ms = millis(); odid_parse(e, d + 4, dlen - 4); }
@@ -109,38 +139,53 @@ static void ble_parse_adv(const uint8_t *bda, const uint8_t *adv, int len) {
   }
 }
 
-static void ble_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param) {
-  switch (event) {
-    case ESP_GAP_BLE_SCAN_PARAM_SET_COMPLETE_EVT:
-      esp_ble_gap_start_scanning(0);          // 0 = scan continuously
+static int ble_gap_event_cb(struct ble_gap_event *event, void *arg);  // fwd decl
+
+// Kick off (or restart) a continuous passive legacy scan.
+static void ble_start_disc() {
+  uint8_t own_addr_type = 0;                     // BLE_OWN_ADDR_PUBLIC
+  ble_hs_id_infer_auto(0, &own_addr_type);       // use the chip's public address
+  struct ble_gap_disc_params dp = {0};
+  dp.itvl             = 0x50;                     // 0.625ms units -> ~50 ms
+  dp.window           = 0x50;                     // 100% duty cycle
+  dp.passive          = 1;                        // passive: just listen, never request
+  dp.filter_duplicates = 0;                       // report every advert (position updates)
+  dp.filter_policy    = 0;                        // accept all advertisers
+  dp.limited          = 0;
+  int rc = ble_gap_disc(own_addr_type, BLE_HS_FOREVER, &dp, ble_gap_event_cb, nullptr);
+  RID_LOG("[RID] BLE: ble_gap_disc rc=%d\n", rc);
+}
+
+// NimBLE GAP event: an advertisement arrived (or the scan ended -> restart).
+static int ble_gap_event_cb(struct ble_gap_event *event, void *arg) {
+  switch (event->type) {
+    case BLE_GAP_EVENT_DISC:
+      ble_parse_adv(event->disc.addr.val, event->disc.data, event->disc.length_data);
       break;
-    case ESP_GAP_BLE_SCAN_RESULT_EVT: {
-      auto *r = &param->scan_rst;
-      if (r->search_evt == ESP_GAP_SEARCH_INQ_RES_EVT)
-        ble_parse_adv(r->bda, r->ble_adv, r->adv_data_len + r->scan_rsp_len);
-      else if (r->search_evt == ESP_GAP_SEARCH_INQ_CMPL_EVT)
-        esp_ble_gap_start_scanning(0);        // restart if the scan ever ends
+    case BLE_GAP_EVENT_DISC_COMPLETE:
+      ble_start_disc();                            // never give up listening
       break;
-    }
     default: break;
   }
+  return 0;
+}
+
+static void ble_on_sync(void)        { ble_start_disc(); }
+static void ble_on_reset(int reason) { RID_LOG("[RID] BLE host reset (reason %d)\n", reason); }
+
+// The NimBLE host runs in its own task; nimble_port_run() returns only on stop.
+static void ble_host_task(void *param) {
+  nimble_port_run();
+  nimble_port_freertos_deinit();
 }
 
 static void ble_begin() {
-  esp_bt_controller_config_t cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
-  esp_bt_controller_init(&cfg);
-  esp_bt_controller_enable(ESP_BT_MODE_BLE);
-  esp_bluedroid_init();
-  esp_bluedroid_enable();
-  esp_ble_gap_register_callback(ble_gap_cb);
-  esp_ble_scan_params_t sp;
-  sp.scan_type          = BLE_SCAN_TYPE_PASSIVE;       // passive: just listen
-  sp.own_addr_type      = BLE_ADDR_TYPE_PUBLIC;
-  sp.scan_filter_policy = BLE_SCAN_FILTER_ALLOW_ALL;
-  sp.scan_interval      = 0x50;                         // 0x50 * 0.625ms = 50 ms
-  sp.scan_window        = 0x50;                         // 100% duty cycle
-  sp.scan_duplicate     = BLE_SCAN_DUPLICATE_DISABLE;   // report every advert (position updates)
-  esp_ble_gap_set_scan_params(&sp);                     // -> PARAM_SET_COMPLETE -> start scanning
+  esp_err_t e = nimble_port_init();              // brings up the BLE controller + host
+  if (e != ESP_OK) { RID_LOG("[RID] nimble_port_init err %d\n", e); return; }
+  ble_hs_cfg.sync_cb  = ble_on_sync;             // start scanning once the host is ready
+  ble_hs_cfg.reset_cb = ble_on_reset;
+  nimble_port_freertos_init(ble_host_task);
+  RID_LOG("[RID] BLE: NimBLE legacy (BT4) passive scan\n");
 }
 #endif // RID_USE_BLE
 
@@ -156,6 +201,7 @@ static void wifi_parse_beacon(const uint8_t *f, int len) {
     if (i + 2 + taglen > len) break;
     // vendor IE 0xDD, OUI FA 0B BC (ASD-STAN), type 0x0D, counter, message pack
     if (tag == 0xDD && taglen >= 6 && d[0] == 0xFA && d[1] == 0x0B && d[2] == 0xBC && d[3] == 0x0D) {
+      g_wifi_hit++;
       const uint8_t *pk = d + 5; int pklen = taglen - 5;   // d[4]=counter
       if (pklen >= 3 && ((pk[0] >> 4) & 0x0F) == 0x0F) {   // message pack (type 0xF)
         int msz = pk[1], n = pk[2];
@@ -177,6 +223,7 @@ static void wifi_parse_beacon(const uint8_t *f, int len) {
 
 static void wifi_promisc_cb(void *buf, wifi_promiscuous_pkt_type_t type) {
   if (type != WIFI_PKT_MGMT) return;
+  g_wifi_mgmt++;
   auto *pkt = (wifi_promiscuous_pkt_t *)buf;
   int len = (int)pkt->rx_ctrl.sig_len - 4;     // strip 4-byte FCS
   if (len > 0) wifi_parse_beacon(pkt->payload, len);
@@ -216,6 +263,8 @@ static void rid_task(void *) {
 
 // ---- public API ------------------------------------------------------------
 void remoteid_begin() {
+  RID_LOG("[RID] starting receiver (BLE=%d WiFi=%d)\n",
+          (int)RID_USE_BLE, (int)RID_USE_WIFI);
 #if RID_USE_WIFI
   wifi_begin();                                // bring up WiFi first, then BLE (coexistence)
 #endif
@@ -246,6 +295,20 @@ void remoteid_fill(state *s) {
   portEXIT_CRITICAL(&g_mux);
   s->n_rid = n;
   s->n_rid_seen = seen;
+
+#if RID_DEBUG
+  // One concise line per second so you can see which radio is hearing what:
+  //   ble_adv  climbing, ble_hit 0   -> BLE works, but no RID over BT4/BT5 here
+  //   ble_adv  stuck at 0            -> BLE controller/coexistence not scanning
+  //   wifi_mgmt climbing, wifi_hit 0 -> WiFi monitor works, no RID beacon heard
+  //   *_hit > 0                      -> RID frames decoded; tracked/pos should rise
+  static uint32_t lastLog = 0;
+  if (now - lastLog >= 1000) {
+    lastLog = now;
+    RID_LOG("[RID] ble_adv=%u ble_hit=%u | wifi_mgmt=%u wifi_hit=%u | tracked=%d pos=%d\n",
+            g_ble_adv, g_ble_hit, g_wifi_mgmt, g_wifi_hit, seen, n);
+  }
+#endif
 }
 
 #else  // !RID_ENABLE

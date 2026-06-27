@@ -4,7 +4,7 @@
 //
 //  Listens for drone/UAS Remote ID broadcasts on the ESP32's Bluetooth LE and
 //  WiFi radios and maintains a small table of nearby aircraft (position +
-//  altitude). The ND plots them as orange dots. See RemoteID.ino.
+//  altitude). The ND plots them as orange dots. See RemoteID.cpp.
 // ============================================================================
 #include "State.h"
 

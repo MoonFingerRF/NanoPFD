@@ -54,6 +54,8 @@ ln -sfn "$USERLIB/SparkFun_9DoF_IMU_Breakout_-_ICM_20948_-_Arduino_Library" \
 # (CombinedDisplayAmoled.ino) — no LilyGo-AMOLED-Series / SensorLib / XPowersLib.
 
 # --- 4. Compile + upload (PSRAM=opi is REQUIRED for the 8 MB octal PSRAM) ------
+#   PartitionScheme=huge_app (3 MB app, no OTA): the default 1.31 MB app
+#   partition overflowed once the Remote ID receiver pulled in NimBLE + WiFi.
 ARDUINO_DIRECTORIES_USER="$SKB" arduino-cli compile --upload \
-  --fqbn "esp32:esp32:esp32s3:PSRAM=opi,FlashSize=16M" \
+  --fqbn "esp32:esp32:esp32s3:PSRAM=opi,FlashSize=16M,PartitionScheme=huge_app" \
   --port "$PORT" "$SKETCH"

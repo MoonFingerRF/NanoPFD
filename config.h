@@ -410,7 +410,7 @@
 
 // ---- Remote ID receiver (ASTM F3411 / OpenDroneID) ------------------------
 // Listens for drone/UAS Remote ID broadcasts on the ESP32's BLE + WiFi radios
-// and plots them on the ND (orange dot + altitude in ft). See RemoteID.ino.
+// and plots them on the ND (orange dot + altitude in ft). See RemoteID.cpp.
 #define RID_ENABLE    1     // master enable for the receiver
 #define RID_USE_BLE   1     // Bluetooth LE advertisements (most consumer drones)
 #define RID_USE_WIFI  1     // WiFi beacons (channel-hopping)
@@ -418,4 +418,10 @@
 #define RID_HOP_MS    220   // WiFi channel dwell time (ms)
 #define RID_TASK_CORE 0     // core for the (low-priority) receiver task
 #define RID_TASK_PRIO 1     // low priority — yields to rendering + sensors
+// NOTE: the ESP32-S3 Arduino core's NimBLE host is built WITHOUT extended
+// advertising, so the BLE scan is BT4-legacy only — Remote ID modules that
+// broadcast solely over Bluetooth 5 Long-Range are caught over WiFi instead.
+#define RID_DEBUG     1     // print a per-second receiver stats line to Serial
+                            //   ([RID] ble_adv/ble_hit/wifi_mgmt/wifi_hit/...) so
+                            //   you can see which radio is hearing what. Set 0 later.
 // RID_MAX (max simultaneous targets) is defined in State.h.
