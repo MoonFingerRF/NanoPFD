@@ -77,7 +77,7 @@ real map of the Philadelphia area, where the Delaware River doubles as the PA/NJ
 | Ground track | white line from the aircraft to the rim | your actual course over the ground (differs from heading in a crosswind) |
 | Bearing to home | green line + green dot | direction and range back to the saved home / takeoff point |
 | Range rings | grey dotted rings at ¼ ½ ¾ | distance scale; the outer white ring is the selected map range |
-| Remote ID traffic | orange dot + altitude in feet | a nearby aircraft/drone broadcasting FAA Remote ID — its position and altitude (Remote ID is capped at 400 ft AGL). *Currently a placeholder demo target until a Remote ID receiver is wired in (`RID_DEMO` in `config.h`).* |
+| Remote ID traffic | orange dot + altitude in feet | a nearby aircraft/drone broadcasting FAA Remote ID — its position and altitude (Remote ID is capped at 400 ft AGL), **received live over Bluetooth + WiFi** (see below) |
 
 **Airports &amp; navaids**
 
@@ -184,6 +184,14 @@ NanoPFD is a from-scratch renderer tuned to squeeze a smooth glass cockpit out o
   and a national view stays clean.
 - **Fresh sensor data.** The IMU FIFO is drained every loop, so attitude is always the latest
   sample — the sensors publish at **~380 Hz**, far above any display's frame rate.
+- **Remote ID traffic awareness.** The ESP32-S3's otherwise-idle WiFi + Bluetooth radios run a
+  passive [**FAA Remote ID / OpenDroneID**](https://github.com/opendroneid/specs) receiver
+  ([`RemoteID.ino`](RemoteID.ino)): a continuous BLE advertisement scan plus a channel-hopping
+  WiFi-beacon sniffer (promiscuous mode), both decoding the ASTM F3411 Location message. Nearby
+  drones broadcasting Remote ID show up on the ND as orange dots with their altitude. It's
+  unobtrusive — parsing happens in the radio callbacks and a tiny low-priority task hops WiFi
+  channels, so it doesn't steal time from rendering. (BT5 Long-Range and WiFi NaN aren't decoded
+  yet; most consumer drones also broadcast BLE legacy or a WiFi beacon, which are.)
 
 ---
 

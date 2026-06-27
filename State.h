@@ -8,6 +8,11 @@
 //  (see getState()/setState() in the main sketch).
 // ============================================================================
 
+#ifndef RID_MAX
+#define RID_MAX 12                 // max simultaneously-tracked Remote ID targets
+#endif
+struct rid_target { float lat, lon; int alt_ft; };
+
 struct state {
   // --- sensor presence flags ------------------------------------------------
   bool  IMU, BPS, ASI, GPS;
@@ -39,6 +44,12 @@ struct state {
   float last_lat, last_lon;        // last position with a GPS lock; persists to NVS,
   bool  has_pos;                   //   used as the map center when GPS is lost
   int   sats;                      // GPS satellites in use (from GGA)
+
+  // --- Remote ID traffic (ASTM F3411 / OpenDroneID) -------------------------
+  // Drones/aircraft broadcasting their position + altitude over BLE / WiFi,
+  // received by RemoteID.ino. alt_ft is height AGL (Remote ID is capped 400 ft).
+  rid_target rid[RID_MAX];
+  int        n_rid;                // number of valid entries in rid[]
 };
 
 // Zero every field, then apply "level and stationary" defaults so the PFD draws

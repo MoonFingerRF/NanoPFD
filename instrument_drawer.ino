@@ -1286,25 +1286,23 @@ void drawNavigationDisplay(MyCanvas8 *canvas, state *s) {
     }
   }
 
-#if MAP_ENABLE && RID_DEMO
-  // ---- Remote ID traffic (future): a uniquely-coloured (orange) dot with the
-  //      target's altitude in feet beside it. Remote ID aircraft are capped at
-  //      400 ft AGL. This is a placeholder demo target (~3.5 km NE of the map
-  //      centre); replace the list with real Remote ID broadcasts once received.
-  {
+#if MAP_ENABLE
+  // ---- Remote ID traffic: one uniquely-coloured (orange) dot per drone/UAS that
+  //      broadcast its position, with its altitude in feet beside it. Altitude is
+  //      height AGL (Remote ID aircraft are capped at 400 ft). The targets are
+  //      received over BLE + WiFi by RemoteID.ino; here we project + plot them.
+  if (s->n_rid > 0) {
     MapProj rm;
     rm.clat = clat; rm.clon = clon; rm.cosLat = cosf(clat * p / 180.0f);
     float hh = angle * p / 180.0f; rm.cosH = cosf(hh); rm.sinH = sinf(hh);
     rm.scale = (float)rad / MAP_RANGE_M; rm.cx = width / 2; rm.cy = cyc;
-    struct RidTraffic { float lat, lon; int alt_ft; };
-    const RidTraffic rid[] = { { clat + 0.026f, clon + 0.030f, 350 } };
-    for (unsigned i = 0; i < sizeof(rid) / sizeof(rid[0]); i++) {
-      int rx, ry; mapXY(rm, rid[i].lat, rid[i].lon, rx, ry);
+    for (int i = 0; i < s->n_rid && i < RID_MAX; i++) {
+      int rx, ry; mapXY(rm, s->rid[i].lat, s->rid[i].lon, rx, ry);
       if (!mapInCirc(rx, ry, width / 2, cyc, (long)rad * rad)) continue;
       int rs = lyt::scaled(3, width);
       canvas->fillCircle(rx, ry, rs, IORANGE);
       canvas->setFont(); canvas->setTextSize(1); canvas->setTextColor(IORANGE);
-      char rb[8]; sprintf(rb, "%d", rid[i].alt_ft);
+      char rb[8]; sprintf(rb, "%d", s->rid[i].alt_ft);
       drawText(canvas, rb, rx + rs + lyt::scaled(3, width), ry, lyt::HL, lyt::VC);
       canvas->setTextColor(IWHITE);
 #ifdef SVG_RENDER

@@ -408,6 +408,14 @@
 #define IORANGE  12    // Remote ID traffic dots (unique; not used by any other symbol)
 #define NUM_COLORS 13
 
-// Remote ID traffic: draw a placeholder demo target (orange dot + altitude in ft)
-// on the ND until a real Remote ID receiver feeds broadcasts. Set 0 to hide it.
-#define RID_DEMO 1
+// ---- Remote ID receiver (ASTM F3411 / OpenDroneID) ------------------------
+// Listens for drone/UAS Remote ID broadcasts on the ESP32's BLE + WiFi radios
+// and plots them on the ND (orange dot + altitude in ft). See RemoteID.ino.
+#define RID_ENABLE    1     // master enable for the receiver
+#define RID_USE_BLE   1     // Bluetooth LE advertisements (most consumer drones)
+#define RID_USE_WIFI  1     // WiFi beacons (channel-hopping)
+#define RID_AGE_MS    12000 // drop a target not heard from within this long (ms)
+#define RID_HOP_MS    220   // WiFi channel dwell time (ms)
+#define RID_TASK_CORE 0     // core for the (low-priority) receiver task
+#define RID_TASK_PRIO 1     // low priority — yields to rendering + sensors
+// RID_MAX (max simultaneous targets) is defined in State.h.

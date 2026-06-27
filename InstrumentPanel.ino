@@ -24,6 +24,7 @@
 
 #include "config.h"      // pins, screen sizes, tunables, color indices
 #include "State.h"       // shared flight-state struct + init/copy helpers
+#include "RemoteID.h"    // FAA Remote ID (OpenDroneID) BLE + WiFi traffic receiver
 #include "MyCanvas8.h"   // GFXcanvas8 subclass with a rotation matrix (ND uses it)
 #include "layout.h"      // resolution-independent layout math (txtScale, etc.)
 #include "chart_data.h"  // ND moving-map data + MapProj (types needed before auto-prototypes)
@@ -192,6 +193,7 @@ void sensorTask(void *params) {
       updateGPS(&gLocal);
       updateBPS(&gLocal);
       updateASI(&gLocal);
+      remoteid_fill(&gLocal);     // pull in Remote ID traffic (cheap; ages out stale targets)
       lastSlow = now;
     }
     updateIMU(&gLocal);            // IMU as fast as it streams (FIFO drained each loop)
@@ -436,6 +438,8 @@ void setup(void) {
   combinedDisplayInit();   // bring up the RGB panel before the tasks start (so the
                            // ST7701/expander I2C traffic can't race the sensor task)
 #endif
+
+  remoteid_begin();        // start the FAA Remote ID (BLE + WiFi) traffic receiver
 
   xTaskCreatePinnedToCore(sensorTask, "sensors", STACK_SENSORS, NULL, PRIO_SENSORS, NULL, CORE_SENSORS);
 #if COMBINED_DISPLAY

@@ -614,6 +614,8 @@ int main() {
   s.last_lat = MAP_DEFAULT_LAT; s.last_lon = MAP_DEFAULT_LON;   // ND centres on last_*
   s.home_lat = MAP_DEFAULT_LAT + 0.04f; s.home_lon = MAP_DEFAULT_LON + 0.06f;  // home NE -> green line visible
   s.gps_alt = 850; s.has_pos = true; s.sats = 11;
+  // demo Remote ID target (~3.5 km NE of the map centre, 350 ft) for the figures
+  s.rid[0] = { s.last_lat + 0.026f, s.last_lon + 0.030f, 350 }; s.n_rid = 1;
 
 #if defined(LEGEND_BUILD)
   // ---- Annotated ND legend: the single-panel ND over a real NYC-area map ----
@@ -624,6 +626,7 @@ int main() {
   s.lat = 39.85f; s.lon = -75.13f;
   s.last_lat = 39.85f; s.last_lon = -75.13f;
   s.home_lat = 39.85f + 0.16f; s.home_lon = -75.13f - 0.05f; // NNW -> green bearing line shows
+  s.rid[0] = { s.last_lat + 0.026f, s.last_lon + 0.030f, 350 };  // re-centre the demo RID target on Philadelphia
   s.home_alt = 30;
   SvgCanvas nd(RGB_WIDTH, ND_CANVAS_H);
   drawNavigationDisplay(&nd, &s);
