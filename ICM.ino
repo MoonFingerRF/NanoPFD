@@ -80,12 +80,17 @@ bool icmUpdate(state *s) {
   float uy = 2 * (q0 * q1 + q2 * q3);
   float uz = q0 * q0 - q1 * q1 - q2 * q2 + q3 * q3;
 
-  // ---- sensor body frame -> display frame (TUNE for the mounting) ----------
-  // Display "up" must be (0, -1, 0) when level: sensor +Z -> display -Y. If pitch
-  // or roll come out swapped/inverted on hardware, swap/negate a pair here.
-  s->gx =  ux;
-  s->gy = -uz;
-  s->gz =  uy;
+  // ---- sensor body frame -> display frame (mounting knobs in config.h) ------
+  // Default: roll<-sensorX, pitch<-sensorY, vertical<-(-sensorZ) so level reads
+  // (0, -1, 0). The ICM_FLIP_* / ICM_SWAP_ROLL_PITCH defines flip whatever the
+  // physical mounting reads backwards.
+  float roll = ux, pitch = uy, vert = uz;        // bank / pitch / gravity-up (level: vert = +1)
+#if ICM_SWAP_ROLL_PITCH
+  { float t = roll; roll = pitch; pitch = t; }
+#endif
+  s->gx = (ICM_FLIP_ROLL)     ? -roll  :  roll;
+  s->gy = (ICM_FLIP_VERTICAL) ?  vert  : -vert;
+  s->gz = (ICM_FLIP_PITCH)    ? -pitch :  pitch;
   // The DMP gives a unit gravity direction (not specific force), so we can't read
   // true load factor / lateral slip from it. Hold g at 1 and point the slip-ball
   // accel at the same gravity vector (so the ball tracks bank). TODO: enable a raw

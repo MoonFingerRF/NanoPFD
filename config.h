@@ -352,11 +352,20 @@
 #define HEADING_SIGN   -1.0f
 #define HEADING_OFFSET  180.0f
 
-// ICM-20948 (GY-912) heading from the yaw of its DMP 9-axis (magnetometer-
-// referenced) quaternion. Same idea as the BNO constants — TUNE to the mounting:
-// SIGN flips CW/CCW, OFFSET rotates magnetic north into place (degrees).
-#define ICM_HEADING_SIGN    1.0f
-#define ICM_HEADING_OFFSET  0.0f
+// ---- ICM-20948 (GY-912) mounting / orientation -----------------------------
+// The DMP does all the fusion; these just map its body-frame output onto the
+// display + compass for however the board is physically mounted. Start at 0 and
+// flip whatever reads backwards on the hardware (each is independent).
+//
+//  Attitude — the DMP "up" vector drives the horizon:
+#define ICM_FLIP_VERTICAL    0    // 1 = sky/ground swapped (board mounted upside down)
+#define ICM_FLIP_ROLL        0    // 1 = bank goes the wrong way (left/right reversed)
+#define ICM_FLIP_PITCH       0    // 1 = pitch goes the wrong way (nose up/down reversed)
+#define ICM_SWAP_ROLL_PITCH  0    // 1 = board turned 90 deg: swap the roll & pitch axes
+//
+//  Heading — yaw of the DMP's magnetometer-referenced quaternion:
+#define ICM_HEADING_SIGN    -1.0f // compass spin direction (flip if it turns the wrong way)
+#define ICM_HEADING_OFFSET   0.0f // degrees added to heading (rotate magnetic north into place)
 
 // ---- Navigation display (map) ----------------------------------------------
 // ND moving-map chart (airports, runways, navaids, airspace, glide paths, river).
