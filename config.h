@@ -278,6 +278,10 @@
 #define IIC_SDA 6
 #define IIC_SCL 7
 
+// Battery: the T4-S3 has no divider-to-ADC pin — VBAT is read from the SY6970
+// PMIC (0x6A on the 6/7 bus) over I2C in the sensor task. See sy6970ReadVbat().
+#define BATT_VIA_PMIC 1
+
 // GPS UART on GPIO44 (GPS TX -> ESP RX; confirmed by pin scan: ~1300 B/s of UBX).
 // UBX is read-only for us, so no ESP TX.
 #define GPS_BAUD 230400
@@ -325,6 +329,11 @@
 #ifndef BATT_ADC_SCALE
 #define BATT_ADC_SCALE 0.0f
 #endif
+#ifndef BATT_VIA_PMIC                 // BOARD_D reads VBAT from the SY6970 PMIC, not an ADC pin
+#define BATT_VIA_PMIC 0
+#endif
+// True on any board that can report battery voltage (divider+ADC pin, or the PMIC).
+#define HAVE_BATTERY (BATT_ADC_PIN >= 0 || BATT_VIA_PMIC)
 
 // ---- IMU options -----------------------------------------------------------
 // Supported IMUs are auto-detected at runtime and share the I2C bus (IMU.ino

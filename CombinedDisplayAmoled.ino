@@ -146,6 +146,34 @@ static void sy6970DisableWatchdog() {   // @0x6A on the onboard 6/7 I2C; disable
   USBSerial.printf("AMOLED: SY6970 watchdog disabled (REG07=0x%02X)\n", v);
 }
 
+// Turn on the SY6970's battery-voltage ADC: continuous ~1 Hz conversions (REG02
+// CONV_RATE) so REG0E stays fresh, and drop SYS_MIN to 3.0 V (REG03) so the reading
+// stays valid down into the low-battery zone on battery-only power. Pair with
+// sy6970ReadVbat(). The T4-S3 has no battery divider pin — VBAT is PMIC-only.
+static void sy6970EnableBatteryADC() {
+  const uint8_t ADDR = 0x6A;
+  Wire.beginTransmission(ADDR); Wire.write(0x03);          // REG03: SYS_MIN bits[3:1] -> 3.0 V
+  if (Wire.endTransmission(false) == 0 && Wire.requestFrom(ADDR, (uint8_t)1) == 1) {
+    uint8_t v = Wire.read() & ~0x0E;
+    Wire.beginTransmission(ADDR); Wire.write(0x03); Wire.write(v); Wire.endTransmission();
+  }
+  Wire.beginTransmission(ADDR); Wire.write(0x02);          // REG02: CONV_RATE bit6 -> continuous ADC
+  if (Wire.endTransmission(false) == 0 && Wire.requestFrom(ADDR, (uint8_t)1) == 1) {
+    uint8_t v = Wire.read() | 0x40;
+    Wire.beginTransmission(ADDR); Wire.write(0x02); Wire.write(v); Wire.endTransmission();
+  }
+}
+
+// Read the SY6970 battery-voltage ADC (REG0E): VBAT = 2.304 V + 20 mV * N. Returns
+// 0 if the PMIC doesn't answer. Shares the sensor I2C bus -> call from the sensor task.
+float sy6970ReadVbat() {
+  const uint8_t ADDR = 0x6A;
+  Wire.beginTransmission(ADDR); Wire.write(0x0E);
+  if (Wire.endTransmission(false) != 0)         return 0.0f;
+  if (Wire.requestFrom(ADDR, (uint8_t)1) != 1)  return 0.0f;
+  return 2.304f + 0.020f * (Wire.read() & 0x7F);
+}
+
 // ---- combined render state -------------------------------------------------
 static MyCanvas8  *gCmbPfd    = nullptr;   // RGB_WIDTH x PFD_REGION_H (top)
 static MyCanvas8  *gCmbNd     = nullptr;   // RGB_WIDTH x ND_CANVAS_H  (bottom, overlaps up)
@@ -204,6 +232,7 @@ void combinedDisplayInit() {
   USBSerial.printf("AMOLED(T4-S3): RM690B0 QSPI init -> %s, %dx%d portrait RGB332, CPU %d MHz\n",
                    ok ? "OK" : "FAILED", RGB_WIDTH, RGB_HEIGHT, getCpuFrequencyMhz());
   sy6970DisableWatchdog();
+  sy6970EnableBatteryADC();                  // turn on the PMIC battery-voltage ADC (read in sensorTask)
 
   for (int i = 0; i < NUM_COLORS; i++) {     // index -> RGB332 (top 3R,3G,2B of the RGB565 palette)
     uint16_t c = color_index[i];

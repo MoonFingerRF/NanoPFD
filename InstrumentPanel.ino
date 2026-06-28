@@ -207,6 +207,9 @@ void sensorTask(void *params) {
       updateASI(&gLocal);
       remoteid_fill(&gLocal);     // pull in Remote ID traffic (cheap; ages out stale targets)
       touchPoll(&gLocal);         // capacitive tap -> map zoom in/out (top/bottom half)
+#if BATT_VIA_PMIC
+      updateBatteryPMIC();        // BOARD_D: sample VBAT from the SY6970 PMIC (owns the I2C bus here)
+#endif
       lastSlow = now;
     }
     updateIMU(&gLocal);            // IMU as fast as it streams (FIFO drained each loop)

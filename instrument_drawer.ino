@@ -219,10 +219,24 @@ void drawTurnCoordinator(MyCanvas8 *canvas, float x, float y, float r1, float r2
   canvas->drawFastVLine(x + (r2 - r1) * 0.5, y, r2 + 2, IBLACK);
 }
 
-// Read the battery ADC and update the smoothed cell voltage.
+#if BATT_VIA_PMIC
+// LilyGO (BOARD_D): sample the SY6970 PMIC battery ADC over I2C. This touches the
+// shared sensor bus, so it MUST run on the sensor task (sensorTask) — never from a
+// draw task. The draw path reads the cached value via readBatteryVoltage().
+void updateBatteryPMIC() {
+  float v = sy6970ReadVbat();
+  if (v > 0.0f) battery_voltage = battery_voltage * (1 - ALPHA_BATT) + ALPHA_BATT * v;
+}
+#endif
+
+// Latest smoothed cell voltage. On ADC boards the divider read is bus-free, so we
+// sample it here on demand; on BOARD_D the value is refreshed by the sensor task
+// (updateBatteryPMIC) and we just return the cached reading (no I2C from a draw task).
 float readBatteryVoltage() {
+#if !BATT_VIA_PMIC
   float v = analogRead(BATT_ADC_PIN) * BATT_ADC_SCALE;
   battery_voltage = battery_voltage * (1 - ALPHA_BATT) + ALPHA_BATT * v;
+#endif
   return battery_voltage;
 }
 
@@ -1611,10 +1625,10 @@ void drawNavigationDisplay(MyCanvas8 *canvas, state *s) {
     canvas->setTextColor(IWHITE);
   }
 
-#if BATT_ADC_PIN >= 0
+#if HAVE_BATTERY
   // ---- battery voltage: small text just UNDER the SAT-count slot (upper-right,
-  //      BOTH configs). Grey normally, red below 3.1 V. Each board reads its
-  //      built-in divider (BOARD_A: GPIO1, BOARD_C: GPIO4).
+  //      BOTH configs). Grey normally, red below 3.1 V. BOARD_A/C read a built-in
+  //      divider (GPIO1 / GPIO4); BOARD_D reads the SY6970 PMIC over I2C.
   {
     canvas->setRotationMatrix();          // identity for this static label
     canvas->setFont();
