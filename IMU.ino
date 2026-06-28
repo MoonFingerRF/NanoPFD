@@ -289,13 +289,22 @@ void updateIMU(state *s) {
     switch (sensorValue.sensorId) {
       case SH2_ACCELEROMETER:
         {
-          float ax = sensorValue.un.accelerometer.x;
-          float ay = sensorValue.un.accelerometer.z;
-          float az = sensorValue.un.accelerometer.y;
+          // roll/pitch/vertical sources, then the same config mounting flips as the
+          // gravity case so the slip ball stays consistent with the horizon.
+          float roll  = sensorValue.un.accelerometer.x;
+          float pitch = sensorValue.un.accelerometer.y;
+          float vert  = sensorValue.un.accelerometer.z;
+          float amag  = sqrt(roll * roll + pitch * pitch + vert * vert);
+#if BNO_SWAP_ROLL_PITCH
+          { float t = roll; roll = pitch; pitch = t; }
+#endif
+          float ax = BNO_FLIP_ROLL     ? -roll  :  roll;
+          float ay = BNO_FLIP_VERTICAL ? -vert  :  vert;
+          float az = BNO_FLIP_PITCH    ? -pitch :  pitch;
           s->ax = s->ax * (1 - ALPHA_ATTITUDE) + ALPHA_ATTITUDE * ax;
           s->ay = s->ay * (1 - ALPHA_ATTITUDE) + ALPHA_ATTITUDE * ay;
           s->az = s->az * (1 - ALPHA_ATTITUDE) + ALPHA_ATTITUDE * az;
-          s->g  = s->g  * (1 - ALPHA_GFORCE)   + ALPHA_GFORCE  * sqrt(ax * ax + ay * ay + az * az) / 9.8;
+          s->g  = s->g  * (1 - ALPHA_GFORCE)   + ALPHA_GFORCE  * amag / 9.8;
           if (s->g > s->max_g) s->max_g = s->g;   // track peak load factor
           break;
         }
@@ -322,9 +331,15 @@ void updateIMU(state *s) {
           float gy = sensorValue.un.gravity.y;
           float gz = sensorValue.un.gravity.z;
           float gmag = sqrt(gx * gx + gy * gy + gz * gz);
-          s->gx = -gx / gmag;
-          s->gy = -gz / gmag;
-          s->gz = -gy / gmag;
+          if (gmag <= 0) gmag = 1;
+          // up vector (roll/pitch/vertical sources), then config mounting flips
+          float roll = -gx / gmag, pitch = -gy / gmag, vert = -gz / gmag;
+#if BNO_SWAP_ROLL_PITCH
+          { float t = roll; roll = pitch; pitch = t; }
+#endif
+          s->gx = BNO_FLIP_ROLL     ? -roll  :  roll;
+          s->gy = BNO_FLIP_VERTICAL ? -vert  :  vert;
+          s->gz = BNO_FLIP_PITCH    ? -pitch :  pitch;
           break;
         }
       case SH2_ROTATION_VECTOR:
@@ -332,14 +347,14 @@ void updateIMU(state *s) {
           // Fused heading = yaw of the BNO's orientation quaternion about the
           // vertical (this board mounts the BNO Z-axis up, per the gravity map
           // above). The chip's internal Kalman makes this far smoother than the
-          // raw-magnetometer compass; tune HEADING_SIGN/OFFSET to the mounting.
+          // raw-magnetometer compass; tune BNO_HEADING_SIGN/OFFSET to the mounting.
           float qr = sensorValue.un.rotationVector.real;
           float qi = sensorValue.un.rotationVector.i;
           float qj = sensorValue.un.rotationVector.j;
           float qk = sensorValue.un.rotationVector.k;
           float yaw = atan2(2.0f * (qr * qk + qi * qj),
                             1.0f - 2.0f * (qj * qj + qk * qk)) * 180.0f / PI;
-          float h = HEADING_SIGN * yaw + HEADING_OFFSET;
+          float h = BNO_HEADING_SIGN * yaw + BNO_HEADING_OFFSET;
           while (h < 0)        h += 360.0f;
           while (h >= 360.0f)  h -= 360.0f;
           s->heading = h;
@@ -388,6 +403,24 @@ void updateIMU(state *s) {
       imu_source = IMU_SRC_ICM;
       s->IMU = true;
       return;
+    }
+  }
+  // Hot-plug recovery: if the ICM isn't streaming (unplugged, hung, or plugged in
+  // after boot), retry the DMP bring-up at ~1 Hz. icmBegin() returns fast when the
+  // chip doesn't ACK and reloads the DMP (then resumes) once it reappears — without
+  // this, an unplugged ICM never comes back.
+  {
+    static unsigned long icm_retry = 0;
+    if (millis() - icm_retry > 1000) {
+      icm_retry = millis();
+      if (icmBegin()) {              // chip present again -> DMP reloaded
+        icmUpdate(s);
+        if (millis() - icm_last_data < IMU_TIMEOUT_MS) {
+          imu_source = IMU_SRC_ICM;
+          s->IMU = true;
+          return;
+        }
+      }
     }
   }
 

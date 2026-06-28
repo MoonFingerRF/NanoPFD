@@ -345,12 +345,21 @@
 // enabled (#define ICM_20948_USE_DMP in its src/util/ICM_20948_C.h). 0 = off.
 #define ENABLE_ICM20948 1
 
-// BNO heading is taken from its fused ROTATION_VECTOR (the chip's internal
-// Kalman), not the noisy raw magnetometer. Tune these to the sensor mounting so
-// the compass reads true (check against a known direction): SIGN flips CW/CCW,
-// OFFSET rotates magnetic north into place (degrees).
-#define HEADING_SIGN   -1.0f
-#define HEADING_OFFSET  180.0f
+// ---- BNO08x mounting / orientation -----------------------------------------
+// The BNO does its own fusion; these map its output onto the display + compass for
+// however it's mounted. Defaults reproduce the current (tested) orientation — flip
+// a knob only if you remount the sensor. Same scheme as the ICM block below.
+//
+//  Attitude — the fused gravity vector drives the horizon:
+#define BNO_FLIP_VERTICAL    0    // 1 = sky/ground swapped (sensor mounted upside down)
+#define BNO_FLIP_ROLL        0    // 1 = bank goes the wrong way (left/right reversed)
+#define BNO_FLIP_PITCH       0    // 1 = pitch goes the wrong way (nose up/down reversed)
+#define BNO_SWAP_ROLL_PITCH  0    // 1 = sensor turned 90 deg: swap the roll & pitch axes
+//
+//  Heading — yaw of the BNO's fused ROTATION_VECTOR (its internal Kalman, not the
+//  noisy raw magnetometer):
+#define BNO_HEADING_SIGN    -1.0f // compass spin direction (flip if it turns the wrong way)
+#define BNO_HEADING_OFFSET 180.0f // degrees added to heading (rotate magnetic north into place)
 
 // ---- ICM-20948 (GY-912) mounting / orientation -----------------------------
 // The DMP does all the fusion; these just map its body-frame output onto the
@@ -365,7 +374,7 @@
 //
 //  Heading — yaw of the DMP's magnetometer-referenced quaternion:
 #define ICM_HEADING_SIGN    -1.0f // compass spin direction (flip if it turns the wrong way)
-#define ICM_HEADING_OFFSET   0.0f // degrees added to heading (rotate magnetic north into place)
+#define ICM_HEADING_OFFSET -90.0f // degrees added to heading (rotate magnetic north into place)
 
 // ---- Navigation display (map) ----------------------------------------------
 // ND moving-map chart (airports, runways, navaids, airspace, glide paths, river).
