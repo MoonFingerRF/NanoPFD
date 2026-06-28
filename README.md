@@ -218,9 +218,9 @@ exactly one of `BOARD_A` / `BOARD_C` / `BOARD_D` to `1`). All three use an ESP32
 
 | Build | Display / MCU | Interface | Layout | Typical FPS |
 |---|---|---|---|---|
-| **BOARD_D** *(recommended)* | [LilyGO T4-S3](https://lilygo.cc/products/t4-s3) — 2.41″ 450×600 AMOLED (RM690B0) | QSPI | PFD + ND on one panel | ≈20 |
-| **BOARD_A** *(recommended — small builds)* | [Waveshare ESP32-S3-LCD-1.69](https://www.waveshare.com/esp32-s3-lcd-1.69.htm) (MCU + PFD, 240×280 ST7789) **+** *(optional)* [Waveshare 1.69″ LCD Module](https://www.waveshare.com/1.69inch-lcd-module.htm) (ND, ST7789V2) | dual SPI | PFD + ND on two screens (or **PFD only** — drop the 2nd screen) | PFD ≈38 / ND ≈14 |
-| **BOARD_C** | [Waveshare ESP32-S3-Touch-LCD-2.8B](https://www.waveshare.com/esp32-s3-touch-lcd-2.8b.htm) — 480×640 IPS (ST7701S) | RGB-parallel (LCD_CAM) | PFD + ND on one panel | ≈13 |
+| **BOARD_D** *(recommended)* | [LilyGO T4-S3](https://www.amazon.com/dp/B0CRYJC3NW?tag=moonfingerrf-20) — 2.41″ 450×600 AMOLED (RM690B0) | QSPI | PFD + ND on one panel | ≈20 |
+| **BOARD_A** *(recommended — small builds)* | [Waveshare ESP32-S3-LCD-1.69](https://www.amazon.com/dp/B0D9PTZ5DY?tag=moonfingerrf-20) (MCU + PFD, 240×280 ST7789) **+** *(optional)* [Waveshare 1.69″ LCD Module](https://www.amazon.com/dp/B0C238JCLH?tag=moonfingerrf-20) (ND, ST7789V2) | dual SPI | PFD + ND on two screens (or **PFD only** — drop the 2nd screen) | PFD ≈38 / ND ≈14 |
+| **BOARD_C** | [Waveshare ESP32-S3-Touch-LCD-2.8B](https://www.amazon.com/dp/B0DT9QGR97?tag=moonfingerrf-20) — 480×640 IPS (ST7701S) | RGB-parallel (LCD_CAM) | PFD + ND on one panel | ≈13 |
 
 **Which to pick:**
 - **BOARD_D** *(recommended)* — the **bright AMOLED** + **QSPI** path give it the best contrast/visibility and the highest, smoothest frame rate. The default for most builds.
@@ -231,14 +231,14 @@ exactly one of `BOARD_A` / `BOARD_C` / `BOARD_D` to `1`). All three use an ESP32
 
 The **sensors are identical on every build** (all I²C / Qwiic, except the GPS, which is UART):
 
-| Part | Role on the display | Where to buy | Approx. (USD) |
+| Part | Role on the display | Buy on Amazon | Approx. (USD) |
 |---|---|---|---|
-| [Adafruit BNO085](https://www.adafruit.com/product/4754) — 9-DOF fusion IMU | attitude (sky/ground), tilt-compensated heading, g-meter, turn coordinator | Adafruit #4754 | ~$25 |
-| [Adafruit BMP390](https://www.adafruit.com/product/4816) — barometer | pressure altitude tape + vertical-speed indicator | Adafruit #4816 | ~$11 |
-| *(or)* **GY-912** — ICM-20948 + BMP388 combo | a cheaper one-board substitute for **both** of the above (IMU + baro); auto-detected at runtime | [Amazon](https://www.amazon.com/s?k=GY-912+ICM20948+BMP388) · [AliExpress](https://www.aliexpress.com/wholesale?SearchText=GY-912+ICM20948+BMP388) | ~$8 |
-| [Matek ASPD-4525](https://www.mateksys.com/?portfolio=aspd-4525) — MS4525DO airspeed | airspeed tape — **kit includes the pitot tube, tubing &amp; cable** | MATEKSYS / FPV shops | ~$20 |
-| [Matek SAM-M10Q](https://www.getfpv.com/mateksys-gnss-sam-m10q-gps-module-gallileo-glonass-beidoub1c.html) — u-blox M10 GPS (**UART**) | ND map centre, ground speed, ground track, lat/lon | MATEKSYS / FPV shops — JST-GH **UART** (the firmware talks UBX over a serial port, not I²C); any FPV u-blox M10 UART module works | ~$25 |
-| Qwiic / STEMMA-QT cables + jumper wire | wiring the I²C bus + GPS UART | any | a few $ |
+| **GY-912** — ICM-20948 + BMP388 combo | one board doing **both** the IMU *and* the barometer (recommended); auto-detected at runtime | [GY-912 10DOF](https://www.amazon.com/dp/B0CP78Z938?tag=moonfingerrf-20) | ~$8 |
+| *(or)* **BNO085** — 9-DOF fusion IMU | attitude (sky/ground), tilt-compensated heading, g-meter, turn coordinator | [BNO085 module](https://www.amazon.com/dp/B0CL26J81F?tag=moonfingerrf-20) | ~$25 |
+| *(+ if using the BNO085)* **BMP390** — barometer | pressure altitude tape + vertical-speed indicator | [BMP390 sensor](https://www.amazon.com/dp/B0CTHN691Y?tag=moonfingerrf-20) | ~$11 |
+| **MS4525DO** airspeed (Matek ASPD-4525-class) | airspeed tape — **kit includes the pitot tube, tubing &amp; cable** | [MS4525DO + pitot kit](https://www.amazon.com/dp/B0GW5K1D63?tag=moonfingerrf-20) | ~$20 |
+| **Matek SAM-M10Q** — u-blox M10 GPS (**UART**) | ND map centre, ground speed, ground track, lat/lon — JST-GH **UART** (the firmware talks UBX over a serial port, not I²C) | [Matek SAM-M10Q](https://www.amazon.com/dp/B0BZ7931G7?tag=moonfingerrf-20) | ~$25 |
+| Qwiic / STEMMA-QT cables + jumper wire | wiring the I²C bus + GPS UART | [STEMMA QT / Qwiic cable](https://www.amazon.com/dp/B09WLRBKWT?tag=moonfingerrf-20) | a few $ |
 
 **…plus exactly one display configuration from the table above.**
 
@@ -255,7 +255,12 @@ The **sensors are identical on every build** (all I²C / Qwiic, except the GPS, 
 > your build, flip the marked sign(s) there and tune `ICM_HEADING_SIGN` / `ICM_HEADING_OFFSET`
 > in [`config.h`](config.h).
 
-*Prices are rough ballparks and exclude shipping — check the vendor for current pricing and stock.*
+*Prices are rough ballparks and exclude shipping — check the listing for current pricing and stock.*
+
+> 🔗 **Affiliate disclosure:** some product links on this page are Amazon affiliate links. As an
+> Amazon Associate I earn from qualifying purchases — it costs you nothing extra and helps fund the
+> project. Generic-module listings (GY-912, BMP390, MS4525DO, BNO085) change sellers often, so
+> double-check the board matches before buying.
 
 ---
 
