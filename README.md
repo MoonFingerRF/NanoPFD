@@ -57,8 +57,8 @@ just pick the board in [`config.h`](config.h):
 <td align="center" width="66%"><img src="docs/dual.svg" width="460" alt="Dual display"/></td>
 </tr>
 <tr>
-<td align="center"><sub><b>Single panel</b> — BOARD_C / BOARD_D<br/>PFD over ND on one screen</sub></td>
-<td align="center"><sub><b>Dual display</b> — BOARD_A<br/>PFD and ND on two Waveshare 1.69″ screens</sub></td>
+<td align="center"><sub><b>Single panel</b> — BOARD_D <i>(recommended)</i> / BOARD_C<br/>PFD over ND on one screen</sub></td>
+<td align="center"><sub><b>Dual display</b> — BOARD_A<br/>PFD + ND on two 1.69″ screens (or PFD only)</sub></td>
 </tr>
 </table>
 
@@ -218,9 +218,14 @@ exactly one of `BOARD_A` / `BOARD_C` / `BOARD_D` to `1`). All three use an ESP32
 
 | Build | Display / MCU | Interface | Layout | Typical FPS |
 |---|---|---|---|---|
-| **BOARD_C** *(recommended)* | [Waveshare ESP32-S3-Touch-LCD-2.8B](https://www.waveshare.com/esp32-s3-touch-lcd-2.8b.htm) — 480×640 IPS (ST7701S) | RGB-parallel (LCD_CAM) | PFD + ND on one panel | ≈13 |
-| **BOARD_D** | [LilyGO T4-S3](https://lilygo.cc/products/t4-s3) — 2.41″ 450×600 AMOLED (RM690B0) | QSPI | PFD + ND on one panel | ≈20 |
-| **BOARD_A** | [Waveshare ESP32-S3-LCD-1.69](https://www.waveshare.com/esp32-s3-lcd-1.69.htm) (MCU + PFD, 240×280 ST7789) **+** [Waveshare 1.69″ LCD Module](https://www.waveshare.com/1.69inch-lcd-module.htm) (ND, ST7789V2) | dual SPI | PFD + ND on two screens | PFD ≈38 / ND ≈14 |
+| **BOARD_D** *(recommended)* | [LilyGO T4-S3](https://lilygo.cc/products/t4-s3) — 2.41″ 450×600 AMOLED (RM690B0) | QSPI | PFD + ND on one panel | ≈20 |
+| **BOARD_A** *(recommended — small builds)* | [Waveshare ESP32-S3-LCD-1.69](https://www.waveshare.com/esp32-s3-lcd-1.69.htm) (MCU + PFD, 240×280 ST7789) **+** *(optional)* [Waveshare 1.69″ LCD Module](https://www.waveshare.com/1.69inch-lcd-module.htm) (ND, ST7789V2) | dual SPI | PFD + ND on two screens (or **PFD only** — drop the 2nd screen) | PFD ≈38 / ND ≈14 |
+| **BOARD_C** | [Waveshare ESP32-S3-Touch-LCD-2.8B](https://www.waveshare.com/esp32-s3-touch-lcd-2.8b.htm) — 480×640 IPS (ST7701S) | RGB-parallel (LCD_CAM) | PFD + ND on one panel | ≈13 |
+
+**Which to pick:**
+- **BOARD_D** *(recommended)* — the **bright AMOLED** + **QSPI** path give it the best contrast/visibility and the highest, smoothest frame rate. The default for most builds.
+- **BOARD_A** *(equally recommended, smaller)* — a compact dual-1.69″ build with the fastest PFD. Great when size matters, and you can **leave off the ND screen** for a **PFD-only** instrument (set `ENABLE_NAV_DISPLAY 0` in [`config.h`](config.h) and just run the one onboard screen).
+- **BOARD_C** — a fine all-in-one touch panel, but the IPS LCD is the **dimmest** and its RGB-parallel pipeline runs at the **lowest fps**, so reach for D or A first.
 
 ### Bill of materials
 
