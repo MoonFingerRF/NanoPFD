@@ -6,6 +6,14 @@
 
 <img src="docs/combined.svg" width="280" alt="NanoPFD combined PFD + ND display"/>
 
+<p align="center">
+  <a href="https://www.paypal.com/donate/?business=D7CRFDQZ8LNKA&amp;no_recurring=0&amp;item_name=Pay+for+my+silly+projects&amp;currency_code=USD">
+    <img src="https://img.shields.io/badge/%E2%9D%A4%20Donate-Pay%20for%20my%20silly%20projects-0070BA?style=for-the-badge&amp;logo=paypal&amp;logoColor=white" alt="Donate with PayPal" height="42"/>
+  </a>
+</p>
+
+<sub>NanoPFD is free &amp; open source. If it's useful or fun, <a href="https://www.paypal.com/donate/?business=D7CRFDQZ8LNKA&amp;no_recurring=0&amp;item_name=Pay+for+my+silly+projects&amp;currency_code=USD"><b>chip in via PayPal</b></a> to help fund more open hardware. 🙏</sub>
+
 </div>
 
 NanoPFD turns a ~$15 ESP32-S3 dev display and a handful of I²C sensors into a self-contained
@@ -222,7 +230,7 @@ The **sensors are identical on every build** (all I²C / Qwiic, except the GPS, 
 |---|---|---|---|
 | [Adafruit BNO085](https://www.adafruit.com/product/4754) — 9-DOF fusion IMU | attitude (sky/ground), tilt-compensated heading, g-meter, turn coordinator | Adafruit #4754 | ~$25 |
 | [Adafruit BMP390](https://www.adafruit.com/product/4816) — barometer | pressure altitude tape + vertical-speed indicator | Adafruit #4816 | ~$11 |
-| *(or)* **GY-912** — ICM-20948 + BMP388 combo | a cheaper one-board substitute for **both** of the above (IMU + baro); auto-detected at runtime | generic / AliExpress | ~$8 |
+| *(or)* **GY-912** — ICM-20948 + BMP388 combo | a cheaper one-board substitute for **both** of the above (IMU + baro); auto-detected at runtime | [Amazon](https://www.amazon.com/s?k=GY-912+ICM20948+BMP388) · [AliExpress](https://www.aliexpress.com/wholesale?SearchText=GY-912+ICM20948+BMP388) | ~$8 |
 | [Matek ASPD-4525](https://www.mateksys.com/?portfolio=aspd-4525) — MS4525DO airspeed | airspeed tape — **kit includes the pitot tube, tubing &amp; cable** | MATEKSYS / FPV shops | ~$20 |
 | [Matek SAM-M10Q](https://www.getfpv.com/mateksys-gnss-sam-m10q-gps-module-gallileo-glonass-beidoub1c.html) — u-blox M10 GPS (**UART**) | ND map centre, ground speed, ground track, lat/lon | MATEKSYS / FPV shops — JST-GH **UART** (the firmware talks UBX over a serial port, not I²C); any FPV u-blox M10 UART module works | ~$25 |
 | Qwiic / STEMMA-QT cables + jumper wire | wiring the I²C bus + GPS UART | any | a few $ |
