@@ -16,7 +16,7 @@
 
 </div>
 
-NanoPFD turns a ~$15 ESP32-S3 dev display and a handful of I²C sensors into a self-contained
+NanoPFD turns an inexpensive ESP32-S3 dev display and a handful of I²C sensors into a self-contained
 **EFIS** (Electronic Flight Instrument System): a real attitude indicator with airspeed and
 altitude tapes on top, and a heading-up moving map of nearby airports, navaids and airspace
 below — all rendered from scratch on the microcontroller, no PC or phone required.
@@ -231,14 +231,14 @@ exactly one of `BOARD_A` / `BOARD_C` / `BOARD_D` to `1`). All three use an ESP32
 
 The **sensors are identical on every build** (all I²C / Qwiic, except the GPS, which is UART):
 
-| Part | Role on the display | Buy on Amazon | Approx. (USD) |
-|---|---|---|---|
-| **GY-912** — ICM-20948 + BMP388 combo | one board doing **both** the IMU *and* the barometer (recommended); auto-detected at runtime | [GY-912 10DOF](https://www.amazon.com/dp/B0CP78Z938?tag=moonfingerrf-20) | ~$8 |
-| *(or)* **BNO085** — 9-DOF fusion IMU | attitude (sky/ground), tilt-compensated heading, g-meter, turn coordinator | [BNO085 module](https://amzn.to/4gcoOTd) | ~$25 |
-| *(+ if using the BNO085)* **BMP390** — barometer | pressure altitude tape + vertical-speed indicator | [BMP390 sensor](https://amzn.to/4vulCHk) | ~$11 |
-| **MS4525DO** airspeed (Matek ASPD-4525-class) | airspeed tape — **kit includes the pitot tube, tubing &amp; cable** | [MS4525DO + pitot kit](https://amzn.to/4aYrErr) | ~$20 |
-| **Matek SAM-M10Q** — u-blox M10 GPS (**UART**) | ND map centre, ground speed, ground track, lat/lon — JST-GH **UART** (the firmware talks UBX over a serial port, not I²C) | [Matek SAM-M10Q](https://amzn.to/4vCDAHS) | ~$25 |
-| Qwiic / STEMMA-QT cables + jumper wire | wiring the I²C bus + GPS UART | [Qwiic cable kit](https://amzn.to/4oS9q0x) | a few $ |
+| Part | Role on the display | Buy on Amazon |
+|---|---|---|
+| **GY-912** — ICM-20948 + BMP388 combo | one board doing **both** the IMU *and* the barometer (recommended); auto-detected at runtime | [GY-912 10DOF](https://amzn.to/4wf9Ksz) |
+| *(or)* **BNO085** — 9-DOF fusion IMU | attitude (sky/ground), tilt-compensated heading, g-meter, turn coordinator | [BNO085 module](https://amzn.to/4gcoOTd) |
+| *(+ if using the BNO085)* **BMP390** — barometer | pressure altitude tape + vertical-speed indicator | [BMP390 sensor](https://amzn.to/4vulCHk) |
+| **MS4525DO** airspeed (Matek ASPD-4525-class) | airspeed tape — **kit includes the pitot tube, tubing &amp; cable** | [MS4525DO + pitot kit](https://amzn.to/4aYrErr) |
+| **Matek SAM-M10Q** — u-blox M10 GPS (**UART**) | ND map centre, ground speed, ground track, lat/lon — JST-GH **UART** (the firmware talks UBX over a serial port, not I²C) | [Matek SAM-M10Q](https://amzn.to/4vCDAHS) |
+| Qwiic / STEMMA-QT cables + jumper wire | wiring the I²C bus + GPS UART | [Qwiic cable kit](https://amzn.to/4oS9q0x) |
 
 **…plus exactly one display configuration from the table above.**
 
@@ -259,8 +259,6 @@ The **sensors are identical on every build** (all I²C / Qwiic, except the GPS, 
 > mounting-dependent — if the horizon, turn coordinator, or compass read inverted/rotated on
 > your build, flip the marked sign(s) there and tune `ICM_HEADING_SIGN` / `ICM_HEADING_OFFSET`
 > in [`config.h`](config.h).
-
-*Prices are rough ballparks and exclude shipping — check the listing for current pricing and stock.*
 
 ---
 
