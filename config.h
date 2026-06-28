@@ -382,7 +382,7 @@
 //
 //  Heading — yaw of the DMP's magnetometer-referenced quaternion:
 #define ICM_HEADING_SIGN    -1.0f // compass spin direction (flip if it turns the wrong way)
-#define ICM_HEADING_OFFSET -90.0f // degrees added to heading (rotate magnetic north into place)
+#define ICM_HEADING_OFFSET   0.0f // degrees added to heading (rotate magnetic north into place)
 
 // ---- Navigation display (map) ----------------------------------------------
 // ND moving-map chart (airports, runways, navaids, airspace, glide paths, river).
