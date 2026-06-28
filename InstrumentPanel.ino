@@ -411,7 +411,7 @@ void setup(void) {
   heap_caps_malloc_extmem_enable(256 * 1024);
 
   Wire.begin(IIC_SDA, IIC_SCL);   // explicit I2C pins for this board
-  Wire.setClock(400000);
+  Wire.setClock(I2C_CLOCK_HZ);
 
   pinMode(0, INPUT_PULLUP);        // IO0 (BOOT button) — adjusts the altimeter setting
   baroPrefs.begin("baro", false);  // recall the saved altimeter setting (default 29.92)

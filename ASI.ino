@@ -42,7 +42,13 @@ public:
     return i2c_dev->begin();
   }
   bool read() {
-    if (!i2c_dev->read(buf, 4))
+    // The MS4525DO drops reads at the full bus speed once the bus is loaded (long
+    // pitot harness + a second IMU like the GY-912), so read it slower, then
+    // restore the bus for the fast IMU/baro devices.
+    Wire.setClock(ASI_I2C_CLOCK_HZ);
+    bool ok = i2c_dev->read(buf, 4);
+    Wire.setClock(I2C_CLOCK_HZ);
+    if (!ok)
       return false;
     status = buf[0] >> 6;
     if (status != 0)
@@ -85,7 +91,9 @@ void initASI(state *s) {
 }
 
 void updateASI(state *s) {
+  static int asi_fail = 0;
   if (pitot.read()) {
+    asi_fail = 0;
     s->ASI = true;
     pitot_pressure = pitot_pressure * 0.9 + 0.1 * (pitot_offset - pitot.pressure);
     // Airspeed from dynamic pressure needs valid static air density (P, T) from
@@ -96,7 +104,9 @@ void updateASI(state *s) {
       float v = 2.23694f * sqrt(fabsf(pitot_pressure) * 2 * 287.05f * airTemp / bmp.pressure);
       s->air_speed = s->air_speed * (1 - ALPHA_ASPEED) + ALPHA_ASPEED * v;
     }
-  } else {
+  } else if (++asi_fail > 5) {
+    // tolerate brief dropouts (occasional stale/NAK read on a loaded bus) — keep
+    // showing the last airspeed; only blank to N/A after several misses in a row.
     s->ASI = false;
   }
 }

@@ -335,6 +335,14 @@
 // True on any board that can report battery voltage (divider+ADC pin, or the PMIC).
 #define HAVE_BATTERY (BATT_ADC_PIN >= 0 || BATT_VIA_PMIC)
 
+// ---- I2C bus speed ---------------------------------------------------------
+// The IMUs/baro run the bus fast. The MS4525DO airspeed sensor is the touchiest
+// device on it (long pitot harness + extra bus loading from a second IMU such as
+// the GY-912 makes its reads drop out at 400 kHz), so the pitot reads only — at
+// 25 Hz, so it costs nothing — drop to a slower, reliable speed (ASI.ino).
+#define I2C_CLOCK_HZ      400000
+#define ASI_I2C_CLOCK_HZ  100000
+
 // ---- IMU options -----------------------------------------------------------
 // Supported IMUs are auto-detected at runtime and share the I2C bus (IMU.ino
 // failover): BNO08x (0x4A) first, else an ICM-20948 (0x68/0x69, e.g. the GY-912
