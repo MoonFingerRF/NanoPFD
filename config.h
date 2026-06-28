@@ -339,8 +339,10 @@
 // Supported IMUs are auto-detected at runtime and share the I2C bus (IMU.ino
 // failover): BNO08x (0x4A) first, else an ICM-20948 (0x68/0x69, e.g. the GY-912
 // module), else the onboard QMI8658 (0x6B/0x6A). ENABLE_ICM20948 compiles the
-// self-contained ICM-20948 register driver (ICM.ino — no library/DMP needed:
-// accel+gyro Mahony attitude, real g, AK09916 tilt-compensated heading). 0 = off.
+// ICM-20948 driver (ICM.ino) which runs the chip's on-board DMP: all fusion
+// (accel+gyro+AK09916 magnetometer) happens on the IMU and the host just reads the
+// fused 9-axis quaternion. Needs the SparkFun ICM-20948 library with DMP support
+// enabled (#define ICM_20948_USE_DMP in its src/util/ICM_20948_C.h). 0 = off.
 #define ENABLE_ICM20948 1
 
 // BNO heading is taken from its fused ROTATION_VECTOR (the chip's internal
@@ -350,9 +352,9 @@
 #define HEADING_SIGN   -1.0f
 #define HEADING_OFFSET  180.0f
 
-// ICM-20948 (GY-912) heading from its tilt-compensated AK09916 magnetometer.
-// Same idea as the BNO constants — TUNE to the mounting (forward = the ICM +X
-// axis): SIGN flips CW/CCW, OFFSET rotates magnetic north into place (degrees).
+// ICM-20948 (GY-912) heading from the yaw of its DMP 9-axis (magnetometer-
+// referenced) quaternion. Same idea as the BNO constants — TUNE to the mounting:
+// SIGN flips CW/CCW, OFFSET rotates magnetic north into place (degrees).
 #define ICM_HEADING_SIGN    1.0f
 #define ICM_HEADING_OFFSET  0.0f
 
