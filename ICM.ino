@@ -47,20 +47,25 @@ static void icmSetBias(const int32_t b[9]) {
   icm20948.setBiasAccelX(b[3]); icm20948.setBiasAccelY(b[4]); icm20948.setBiasAccelZ(b[5]);
   icm20948.setBiasCPassX(b[6]); icm20948.setBiasCPassY(b[7]); icm20948.setBiasCPassZ(b[8]);
 }
-// Restore the saved bias into the DMP (call after initializeDMP, before enableDMP).
+// Mirror of what's in flash, so the periodic save only writes when the cal has
+// actually moved (and never re-writes a just-loaded cal at boot).
+int32_t icm_saved_bias[9] = {0};
+
+// Apply the saved cal to the DMP. Called ONLY at startup / reconnect (from
+// icmBegin), never mid-session — so a stale flash cal can never overwrite a good
+// live self-cal; it only ever seeds a freshly-(re)initialized DMP.
 static void icmLoadBias() {
   icmPrefs.begin("icmcal", true);
   if (icmPrefs.getBool("valid", false)) {
     int32_t b[9];
     for (int i = 0; i < 9; i++) b[i] = icmPrefs.getInt(ICM_BIAS_KEYS[i], 0);
     icmSetBias(b);
+    for (int i = 0; i < 9; i++) icm_saved_bias[i] = b[i];   // already in flash -> don't re-save it
   }
   icmPrefs.end();
 }
-// Persist the DMP's current bias if it has changed meaningfully (called throttled).
-static void icmSaveBias() {
-  int32_t b[9];
-  icmGetBias(b);
+// Write the given cal to flash.
+static void icmSaveBias(const int32_t b[9]) {
   icmPrefs.begin("icmcal", false);
   for (int i = 0; i < 9; i++) icmPrefs.putInt(ICM_BIAS_KEYS[i], b[i]);
   icmPrefs.putBool("valid", true);
@@ -168,15 +173,15 @@ bool icmUpdate(state *s) {
     if (s->g > s->max_g) s->max_g = s->g;
   }
 
-  // Persist the DMP's refined cal bias every 30 s, but only when it has actually
-  // drifted, so we don't wear the flash writing the same values.
+  // Save the latest DMP cal every 30 s (only when it has actually moved, to spare the
+  // flash). The cal is APPLIED only at startup/reconnect (icmLoadBias), so this save
+  // can never clobber a good live cal — it just keeps flash current for the next boot.
   static unsigned long lastSave = 0;
-  static int32_t savedB[9] = {0};
   if (millis() - lastSave > 30000) {
     lastSave = millis();
     int32_t b[9]; icmGetBias(b);
-    long diff = 0; for (int i = 0; i < 9; i++) diff += labs((long)b[i] - (long)savedB[i]);
-    if (diff > 200) { icmSaveBias(); for (int i = 0; i < 9; i++) savedB[i] = b[i]; }
+    long diff = 0; for (int i = 0; i < 9; i++) diff += labs((long)b[i] - (long)icm_saved_bias[i]);
+    if (diff > 200) { icmSaveBias(b); for (int i = 0; i < 9; i++) icm_saved_bias[i] = b[i]; }
   }
 
   icm_last_data = millis();
