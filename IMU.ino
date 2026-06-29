@@ -32,13 +32,11 @@ bool imu_ever_began = false;        // sh2 session has been opened at least once
 unsigned long imu_last_begin = 0;   // throttles re-init attempts (hot-plug)
 unsigned long imu_last_data  = 0;   // millis() of the last valid sensor event
 
-// Heading fusion: latest RAW (sensor-frame) gravity + gyro from the BNO reports,
-// used to derive the vertical-axis yaw rate. bno_dcd_saved gates the once-per-good-
-// calibration save of the BNO's Dynamic Calibration Data to its flash.
-float   bno_grav_raw[3] = {0, 0, 1};
-float   bno_gyro_raw[3] = {0, 0, 0};
-uint8_t bno_mag_acc     = 0;          // BNO magnetometer calibration accuracy (0..3)
-bool    bno_dcd_saved   = false;
+// bno_mag_acc = the BNO's fused-orientation accuracy (0..3) from its ROTATION_VECTOR
+// report; bno_dcd_saved gates the once-per-good-calibration save of the BNO's
+// Dynamic Calibration Data to its own flash (so the compass is good after a boot).
+uint8_t bno_mag_acc   = 0;
+bool    bno_dcd_saved = false;
 
 // How long without ANY event before we consider the IMU disconnected. The
 // BNO08x streams accel/gravity at ~500 Hz, so this only trips on a real fault.
@@ -53,18 +51,16 @@ bool    bno_dcd_saved   = false;
 // Heading now comes from the fused ROTATION_VECTOR (9-axis accel+gyro+mag, the
 // BNO's internal Kalman) instead of the raw magnetometer, which is far quieter.
 bool setIMUReports() {
-  // Make sure the BNO keeps calibrating accel/gyro/mag in the background (so the
-  // mag compass converges and we can persist a good cal to its flash).
+  // Make sure the BNO keeps calibrating accel/gyro/mag in the background, so its
+  // fused heading converges and we can persist a good cal to its flash (DCD).
   sh2_setCalConfig(SH2_CAL_ACCEL | SH2_CAL_GYRO | SH2_CAL_MAG);
-  bool a = bno08x.enableReport(SH2_ACCELEROMETER, 2000);              // g-meter / slip
-  bool g = bno08x.enableReport(SH2_GRAVITY, 2000);                    // horizon / attitude
-  bool y = bno08x.enableReport(SH2_GYROSCOPE_CALIBRATED, 5000);       // yaw rate -> heading fusion
-  // Heading comes from the CALIBRATED magnetometer (tilt-compensated, gyro-fused),
-  // NOT the fused rotation-vector yaw: that yaw was randomly drifting / flipping
-  // 180 deg. A direct mag compass can't flip — it just needs the chip's running
-  // hard/soft-iron cal (which the BNO applies to this report).
-  bool m = bno08x.enableReport(SH2_MAGNETIC_FIELD_CALIBRATED, 10000);
-  return a && g && y && m;
+  bool a = bno08x.enableReport(SH2_ACCELEROMETER, 2000);     // g-meter / slip
+  bool g = bno08x.enableReport(SH2_GRAVITY, 2000);           // horizon / attitude
+  // Heading = yaw of the fused 9-axis ROTATION_VECTOR (the BNO's on-chip Kalman
+  // over accel+gyro+mag). Its mag cal is persisted to the BNO's own flash (DCD),
+  // so it's good immediately after a power cycle and stays drift-free.
+  bool r = bno08x.enableReport(SH2_ROTATION_VECTOR, 10000);
+  return a && g && r;
 }
 
 // Bring the BNO08x up. Safe to call repeatedly; only enables reports once the
@@ -287,62 +283,6 @@ void initIMU(state *s) {
   s->IMU = imu_began || qmi_present || icm_present;
 }
 
-// Tilt-compensated magnetic heading (deg, 0..360). `up` = gravity-reaction vector
-// and `m` = magnetometer, BOTH in the same frame (any units — only direction
-// matters). Forward reference is that frame's +X axis; `offset`/`sign` rotate it to
-// true north and pick CW/CCW. Unlike a fused yaw this is deterministic, so it never
-// drifts or flips 180 deg. Returns `fallback` when the nose is ~vertical (the
-// forward axis degenerates) so the heading just holds. Shared by the BNO + ICM.
-float tiltCompassDeg(float ux, float uy, float uz, float mx, float my, float mz,
-                     float sign, float offset, float fallback) {
-  float un = sqrtf(ux * ux + uy * uy + uz * uz);
-  if (un <= 0) return fallback;
-  ux /= un; uy /= un; uz /= un;
-  float md = mx * ux + my * uy + mz * uz;                  // mag . up
-  float hx = mx - md * ux, hy = my - md * uy, hz = mz - md * uz;   // horizontal field
-  float fd = ux;                                           // (1,0,0) . up
-  float fx = 1.0f - fd * ux, fy = -fd * uy, fz = -fd * uz; // forward (+X) -> horizontal
-  float fn = sqrtf(fx * fx + fy * fy + fz * fz);
-  if (fn < 1e-4f) return fallback;                         // nose ~vertical -> hold
-  fx /= fn; fy /= fn; fz /= fn;
-  float rx = uy * fz - uz * fy, ry = uz * fx - ux * fz, rz = ux * fy - uy * fx; // up x fwd
-  float north = hx * fx + hy * fy + hz * fz;
-  float east  = hx * rx + hy * ry + hz * rz;
-  float h = sign * atan2f(east, north) * 180.0f / PI + offset;
-  while (h < 0)       h += 360.0f;
-  while (h >= 360.0f) h -= 360.0f;
-  return h;
-}
-
-// Complementary heading filter (shared by both IMUs). Integrates the gyro yaw rate
-// `yawRateDps` (about the vertical axis) for a smooth, responsive heading, then pulls
-// it slowly toward the absolute `magHeadingDeg` so it never drifts — the slow pull
-// also rejects the magnetometer's noise. dt is measured internally. Only one IMU is
-// active at a time, so a single filter state is fine.
-float fuseHeading(float magHeadingDeg, float yawRateDps) {
-#if !HEADING_FUSE
-  return magHeadingDeg;
-#else
-  static float hf = -1.0f;
-  static unsigned long lastUs = 0;
-  unsigned long now = micros();
-  float dt = lastUs ? (now - lastUs) * 1e-6f : 0.0f;
-  lastUs = now;
-  if (dt > 0.5f) dt = 0.0f;                 // long gap (source switch) -> don't integrate
-  if (hf < 0) { hf = magHeadingDeg; return hf; }
-  hf += yawRateDps * dt;                     // gyro predict (smooth)
-  float err = magHeadingDeg - hf;            // pull toward the mag (wrapped)
-  while (err < -180.0f) err += 360.0f;
-  while (err >  180.0f) err -= 360.0f;
-  float k = (HEADING_FUSE_TAU > 0.0f) ? dt / HEADING_FUSE_TAU : 1.0f;
-  if (k > 1.0f) k = 1.0f;
-  hf += k * err;
-  while (hf < 0)       hf += 360.0f;
-  while (hf >= 360.0f) hf -= 360.0f;
-  return hf;
-#endif
-}
-
 void updateIMU(state *s) {
   // --- service the BNO08x (primary), if it has ever initialized -------------
   if (imu_began) {
@@ -380,7 +320,7 @@ void updateIMU(state *s) {
           if (s->g > s->max_g) s->max_g = s->g;   // track peak load factor
           break;
         }
-      case SH2_MAGNETIC_FIELD_CALIBRATED:
+      case SH2_MAGNETIC_FIELD_CALIBRATED:   // not enabled now (heading is the RV); kept harmless
         {
           float mx = sensorValue.un.magneticField.x;
           float my = sensorValue.un.magneticField.z;
@@ -388,14 +328,6 @@ void updateIMU(state *s) {
           s->mx = s->mx * (1 - ALPHA_ATTITUDE) + ALPHA_ATTITUDE * mx;
           s->my = s->my * (1 - ALPHA_ATTITUDE) + ALPHA_ATTITUDE * my;
           s->mz = s->mz * (1 - ALPHA_ATTITUDE) + ALPHA_ATTITUDE * mz;
-          bno_mag_acc = sensorValue.status & 0x03;   // 0..3; drives the DCD save below
-          break;
-        }
-      case SH2_GYROSCOPE_CALIBRATED:
-        {
-          bno_gyro_raw[0] = sensorValue.un.gyroscope.x;   // rad/s, sensor frame
-          bno_gyro_raw[1] = sensorValue.un.gyroscope.y;
-          bno_gyro_raw[2] = sensorValue.un.gyroscope.z;
           break;
         }
       case SH2_LINEAR_ACCELERATION:
@@ -410,7 +342,6 @@ void updateIMU(state *s) {
           float gx = sensorValue.un.gravity.x;
           float gy = sensorValue.un.gravity.y;
           float gz = sensorValue.un.gravity.z;
-          bno_grav_raw[0] = gx; bno_grav_raw[1] = gy; bno_grav_raw[2] = gz;  // sensor-frame up (for yaw rate)
           float gmag = sqrt(gx * gx + gy * gy + gz * gz);
           if (gmag <= 0) gmag = 1;
           // up vector (roll/pitch/vertical sources), then config mounting flips
@@ -425,10 +356,8 @@ void updateIMU(state *s) {
         }
       case SH2_ROTATION_VECTOR:
         {
-          // Fused heading = yaw of the BNO's orientation quaternion about the
-          // vertical (this board mounts the BNO Z-axis up, per the gravity map
-          // above). The chip's internal Kalman makes this far smoother than the
-          // raw-magnetometer compass; tune BNO_HEADING_SIGN/OFFSET to the mounting.
+          // Heading = yaw of the BNO's fused 9-axis quaternion (its on-chip Kalman
+          // over accel+gyro+mag). Tune BNO_HEADING_SIGN/OFFSET to the mounting.
           float qr = sensorValue.un.rotationVector.real;
           float qi = sensorValue.un.rotationVector.i;
           float qj = sensorValue.un.rotationVector.j;
@@ -439,6 +368,7 @@ void updateIMU(state *s) {
           while (h < 0)        h += 360.0f;
           while (h >= 360.0f)  h -= 360.0f;
           s->heading = h;
+          bno_mag_acc = sensorValue.status & 0x03;   // 0..3 fusion accuracy -> drives the DCD save
           break;
         }
       case SH2_GEOMAGNETIC_ROTATION_VECTOR:
@@ -480,19 +410,7 @@ void updateIMU(state *s) {
   if (bno_ok) {
     imu_source = IMU_SRC_BNO;
     s->IMU = true;
-    // Heading: tilt-compensated CALIBRATED magnetometer, fused with the gyro yaw
-    // rate (gyro = smooth/responsive, mag = absolute/drift-free). Yaw rate = the
-    // angular velocity about the gravity axis, from the raw sensor-frame vectors.
-    float magH = tiltCompassDeg(s->gx, s->gy, s->gz, s->mx, s->my, s->mz,
-                                BNO_HEADING_SIGN, BNO_HEADING_OFFSET, s->heading);
-    float un = sqrtf(bno_grav_raw[0] * bno_grav_raw[0] + bno_grav_raw[1] * bno_grav_raw[1] +
-                     bno_grav_raw[2] * bno_grav_raw[2]);
-    float yawRate = 0.0f;
-    if (un > 0) yawRate = BNO_HEADING_GYRO_SIGN *
-        (bno_gyro_raw[0] * bno_grav_raw[0] + bno_gyro_raw[1] * bno_grav_raw[1] +
-         bno_gyro_raw[2] * bno_grav_raw[2]) / un * 180.0f / PI;   // deg/s about vertical
-    s->heading = fuseHeading(magH, yawRate);
-    return;                          // primary good — nothing else to do
+    return;                          // primary good (attitude/heading set from its reports)
   }
 
   // No BNO: try an ICM-20948 (DMP) primary — fully fused, gives heading too.

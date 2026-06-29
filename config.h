@@ -364,7 +364,8 @@
 #define BNO_FLIP_PITCH       0    // 1 = pitch goes the wrong way (nose up/down reversed)
 #define BNO_SWAP_ROLL_PITCH  0    // 1 = sensor turned 90 deg: swap the roll & pitch axes
 //
-//  Heading — tilt-compensated CALIBRATED magnetometer (see the fusion block below):
+//  Heading — yaw of the BNO's fused 9-axis ROTATION_VECTOR (its on-chip Kalman,
+//  accel+gyro+mag); its mag calibration is persisted to the BNO's flash:
 #define BNO_HEADING_SIGN    -1.0f // compass spin direction (flip if it turns the wrong way)
 #define BNO_HEADING_OFFSET 180.0f // degrees added to heading (rotate magnetic north into place)
 
@@ -379,21 +380,11 @@
 #define ICM_FLIP_PITCH       0    // 1 = pitch goes the wrong way (nose up/down reversed)
 #define ICM_SWAP_ROLL_PITCH  0    // 1 = board turned 90 deg: swap the roll & pitch axes
 //
-//  Heading — tilt-compensated CALIBRATED magnetometer (see the fusion block below):
+//  Heading — yaw of the DMP's fused 9-axis quaternion (RV: accel+gyro+mag); the
+//  DMP's compass/gyro/accel cal is persisted to flash (NVS) so RV stays stable and
+//  doesn't 180-flip after a power cycle:
 #define ICM_HEADING_SIGN    -1.0f // compass spin direction (flip if it turns the wrong way)
 #define ICM_HEADING_OFFSET 270.0f // degrees added to heading (rotate magnetic north into place)
-
-// ---- Heading fusion (gyro + magnetometer complementary filter) -------------
-// A bare magnetometer compass is noisy; a bare gyro drifts. Fuse them: integrate the
-// gyro yaw rate (smooth + responsive) and pull it slowly toward the absolute tilt-
-// compensated mag heading — gyro gives the smoothness, the mag kills long-term drift,
-// and the slow pull rejects the magnetometer's noise. (A 1-DOF complementary filter,
-// the lightweight cousin of a Kalman filter.) Both IMUs also persist their compass
-// calibration to flash, so the heading is good right after a power cycle.
-#define HEADING_FUSE             1     // 0 = raw mag compass only (no gyro fusion)
-#define HEADING_FUSE_TAU         1.5f  // s — mag-correction time constant (bigger = smoother/slower)
-#define ICM_HEADING_GYRO_SIGN   1.0f   // flip if the heading runs backwards / fights you in a turn
-#define BNO_HEADING_GYRO_SIGN  -1.0f   // flip if the heading runs backwards / fights you in a turn
 
 // ---- Navigation display (map) ----------------------------------------------
 // ND moving-map chart (airports, runways, navaids, airspace, glide paths, river).
