@@ -45,10 +45,14 @@ unsigned long imu_last_data  = 0;   // millis() of the last valid sensor event
 // Heading now comes from the fused ROTATION_VECTOR (9-axis accel+gyro+mag, the
 // BNO's internal Kalman) instead of the raw magnetometer, which is far quieter.
 bool setIMUReports() {
-  bool a = bno08x.enableReport(SH2_ACCELEROMETER, 2000);     // g-meter
-  bool g = bno08x.enableReport(SH2_GRAVITY, 2000);           // horizon / attitude
-  bool r = bno08x.enableReport(SH2_ROTATION_VECTOR, 10000);  // fused heading (yaw)
-  return a && g && r;
+  bool a = bno08x.enableReport(SH2_ACCELEROMETER, 2000);              // g-meter / slip
+  bool g = bno08x.enableReport(SH2_GRAVITY, 2000);                    // horizon / attitude
+  // Heading comes from the CALIBRATED magnetometer tilt-compensated by gravity, NOT
+  // the fused rotation-vector yaw: the fusion yaw was randomly drifting / flipping
+  // 180 deg. A direct mag compass can't flip — it just needs the chip's running
+  // hard/soft-iron cal (which the BNO applies to this report).
+  bool m = bno08x.enableReport(SH2_MAGNETIC_FIELD_CALIBRATED, 10000);
+  return a && g && m;
 }
 
 // Bring the BNO08x up. Safe to call repeatedly; only enables reports once the
@@ -271,6 +275,33 @@ void initIMU(state *s) {
   s->IMU = imu_began || qmi_present || icm_present;
 }
 
+// Tilt-compensated magnetic heading (deg, 0..360). `up` = gravity-reaction vector
+// and `m` = magnetometer, BOTH in the same frame (any units — only direction
+// matters). Forward reference is that frame's +X axis; `offset`/`sign` rotate it to
+// true north and pick CW/CCW. Unlike a fused yaw this is deterministic, so it never
+// drifts or flips 180 deg. Returns `fallback` when the nose is ~vertical (the
+// forward axis degenerates) so the heading just holds. Shared by the BNO + ICM.
+float tiltCompassDeg(float ux, float uy, float uz, float mx, float my, float mz,
+                     float sign, float offset, float fallback) {
+  float un = sqrtf(ux * ux + uy * uy + uz * uz);
+  if (un <= 0) return fallback;
+  ux /= un; uy /= un; uz /= un;
+  float md = mx * ux + my * uy + mz * uz;                  // mag . up
+  float hx = mx - md * ux, hy = my - md * uy, hz = mz - md * uz;   // horizontal field
+  float fd = ux;                                           // (1,0,0) . up
+  float fx = 1.0f - fd * ux, fy = -fd * uy, fz = -fd * uz; // forward (+X) -> horizontal
+  float fn = sqrtf(fx * fx + fy * fy + fz * fz);
+  if (fn < 1e-4f) return fallback;                         // nose ~vertical -> hold
+  fx /= fn; fy /= fn; fz /= fn;
+  float rx = uy * fz - uz * fy, ry = uz * fx - ux * fz, rz = ux * fy - uy * fx; // up x fwd
+  float north = hx * fx + hy * fy + hz * fz;
+  float east  = hx * rx + hy * ry + hz * rz;
+  float h = sign * atan2f(east, north) * 180.0f / PI + offset;
+  while (h < 0)       h += 360.0f;
+  while (h >= 360.0f) h -= 360.0f;
+  return h;
+}
+
 void updateIMU(state *s) {
   // --- service the BNO08x (primary), if it has ever initialized -------------
   if (imu_began) {
@@ -393,6 +424,11 @@ void updateIMU(state *s) {
   if (bno_ok) {
     imu_source = IMU_SRC_BNO;
     s->IMU = true;
+    // Heading = tilt-compensated CALIBRATED magnetometer (s->mx/my/mz) + gravity
+    // (s->gx/gy/gz). Deterministic -> no fusion-yaw drift / 180-deg flips.
+    float h = tiltCompassDeg(s->gx, s->gy, s->gz, s->mx, s->my, s->mz,
+                             BNO_HEADING_SIGN, BNO_HEADING_OFFSET, s->heading);
+    s->heading = h;
     return;                          // primary good — nothing else to do
   }
 
