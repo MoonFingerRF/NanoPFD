@@ -98,6 +98,7 @@ font-weight:700;letter-spacing:2px;cursor:pointer;margin-top:2px}button:active{f
 <div class=r><label>AP password</label><input type=text id=pw maxlength=63></div>
 <div class=u>8&ndash;63 chars for WPA2; shorter = open network</div></div>
 <button onclick=save()>SAVE TO FLASH</button><div class=st id=st></div>
+<div class=u style="text-align:center;margin-top:16px;line-height:1.6">This Wi-Fi AP and the Remote&nbsp;ID receiver can't run at once.<br>Hold the <b>BOOT</b> button ~3&nbsp;s to switch to flight mode (Remote&nbsp;ID).</div>
 </div><script>
 var $=function(i){return document.getElementById(i)};
 function load(){fetch('/api').then(function(r){return r.json()}).then(function(d){
