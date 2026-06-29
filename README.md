@@ -350,16 +350,33 @@ python3 tools/build_chart_data.py --lat 39.10 --lon -84.51 --radius-km 120
 
 ---
 
+## Config portal (Wi-Fi) & flight log
+
+NanoPFD serves a small **web settings page** over its own Wi-Fi AP, so you can configure it and
+review a flight log from your phone — **no reflashing**. Hold **BOOT** ~3 s to toggle between
+*config mode* (the AP) and *flight mode* (full-fps display); the AP network is **`NanoPFD`** at
+`http://192.168.4.1`.
+
+Tabs: **Attitude** (orientation, heading offset, *mount-at-any-angle* trim + Set level),
+**Display** (per-color palette pickers), **Nav** (map zoom), **Air** (local pressure),
+**Tune** (smoothing + instrument scales), **Log** (session peaks, zoomable plot, CSV download),
+**WiFi** (Remote ID BLE/WiFi toggles + AP password). The flight log records GPS speed, airspeed,
+altitude, and g at 10 Hz for the last 30 min and survives the mode switch.
+
+**→ Full walkthrough: [docs/CONFIG_PORTAL.md](docs/CONFIG_PORTAL.md)**
+
 ## Configuration
 
-Most knobs live in [`config.h`](config.h):
+Most settings are now editable at runtime in the [config portal](docs/CONFIG_PORTAL.md) (above).
+The remaining **build-time** knobs live in [`config.h`](config.h):
 
 - **Board select** — `BOARD_A` / `BOARD_C` / `BOARD_D` (exactly one = 1).
 - **Pins** — display, I²C, and GPS UART pins per board.
 - **`MAP_RANGE_M`** — the *default* moving-map range (center → radar edge) at boot; on the touch
   boards you then **pinch / tap to zoom** through the LOD pyramid live (see [`map_zoom.cpp`](map_zoom.cpp)).
 - **`MAP_DEFAULT_LAT/LON`** — fallback map center when GPS is lost (and no saved fix exists).
-- SPI clocks, layout offsets, task priorities/cores.
+- SPI clocks, layout offsets, task priorities/cores — and the power-on **defaults** for the
+  runtime settings.
 
 ---
 
