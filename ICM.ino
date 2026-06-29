@@ -24,10 +24,48 @@
 
 #if ENABLE_ICM20948
 #include <ICM_20948.h>
+#include <Preferences.h>      // NVS storage for the DMP bias (compass/gyro/accel cal)
 
 ICM_20948_I2C icm20948;
 bool          icm_present   = false;
 unsigned long icm_last_data = 0;
+
+// ---- DMP calibration persistence -------------------------------------------
+// The DMP auto-calibrates its compass/gyro/accel bias but forgets it on power-off
+// (no on-chip NVM). So save the bias to the ESP32's flash and restore it at boot,
+// so the compass is good immediately after a power cycle.
+Preferences   icmPrefs;
+const char   *ICM_BIAS_KEYS[9] = {"cgx","cgy","cgz","cax","cay","caz","cmx","cmy","cmz"};
+
+static void icmGetBias(int32_t b[9]) {
+  icm20948.getBiasGyroX(&b[0]);  icm20948.getBiasGyroY(&b[1]);  icm20948.getBiasGyroZ(&b[2]);
+  icm20948.getBiasAccelX(&b[3]); icm20948.getBiasAccelY(&b[4]); icm20948.getBiasAccelZ(&b[5]);
+  icm20948.getBiasCPassX(&b[6]); icm20948.getBiasCPassY(&b[7]); icm20948.getBiasCPassZ(&b[8]);
+}
+static void icmSetBias(const int32_t b[9]) {
+  icm20948.setBiasGyroX(b[0]);  icm20948.setBiasGyroY(b[1]);  icm20948.setBiasGyroZ(b[2]);
+  icm20948.setBiasAccelX(b[3]); icm20948.setBiasAccelY(b[4]); icm20948.setBiasAccelZ(b[5]);
+  icm20948.setBiasCPassX(b[6]); icm20948.setBiasCPassY(b[7]); icm20948.setBiasCPassZ(b[8]);
+}
+// Restore the saved bias into the DMP (call after initializeDMP, before enableDMP).
+static void icmLoadBias() {
+  icmPrefs.begin("icmcal", true);
+  if (icmPrefs.getBool("valid", false)) {
+    int32_t b[9];
+    for (int i = 0; i < 9; i++) b[i] = icmPrefs.getInt(ICM_BIAS_KEYS[i], 0);
+    icmSetBias(b);
+  }
+  icmPrefs.end();
+}
+// Persist the DMP's current bias if it has changed meaningfully (called throttled).
+static void icmSaveBias() {
+  int32_t b[9];
+  icmGetBias(b);
+  icmPrefs.begin("icmcal", false);
+  for (int i = 0; i < 9; i++) icmPrefs.putInt(ICM_BIAS_KEYS[i], b[i]);
+  icmPrefs.putBool("valid", true);
+  icmPrefs.end();
+}
 
 // Detect the ICM (I2C 0x69 with AD0 high, else 0x68) and start its DMP streaming
 // the 9-axis (magnetometer-referenced) orientation quaternion. True if found.
@@ -39,12 +77,15 @@ bool icmBegin() {
     // it at the max rate, and start the FIFO. The library wires the AK09916 into
     // the DMP for us, so the quaternion is fully fused on-chip.
     if (icm20948.initializeDMP() != ICM_20948_Stat_Ok) continue;
+    icmLoadBias();                          // restore saved compass/gyro/accel cal (if any)
     bool ok = true;
     ok &= (icm20948.enableDMPSensor(INV_ICM20948_SENSOR_ORIENTATION) == ICM_20948_Stat_Ok);         // attitude (Quat9)
     ok &= (icm20948.enableDMPSensor(INV_ICM20948_SENSOR_RAW_ACCELEROMETER) == ICM_20948_Stat_Ok);   // g-meter / slip ball
+    ok &= (icm20948.enableDMPSensor(INV_ICM20948_SENSOR_RAW_GYROSCOPE) == ICM_20948_Stat_Ok);       // yaw rate -> heading fusion
     ok &= (icm20948.enableDMPSensor(INV_ICM20948_SENSOR_GEOMAGNETIC_FIELD) == ICM_20948_Stat_Ok);   // calibrated compass -> heading
     ok &= (icm20948.setDMPODRrate(DMP_ODR_Reg_Quat9, 0) == ICM_20948_Stat_Ok);  // 0 = max rate
     ok &= (icm20948.setDMPODRrate(DMP_ODR_Reg_Accel, 0) == ICM_20948_Stat_Ok);
+    ok &= (icm20948.setDMPODRrate(DMP_ODR_Reg_Gyro,  0) == ICM_20948_Stat_Ok);
     ok &= (icm20948.setDMPODRrate(DMP_ODR_Reg_Cpass_Calibr, 0) == ICM_20948_Stat_Ok);
     ok &= (icm20948.enableFIFO()  == ICM_20948_Stat_Ok);
     ok &= (icm20948.enableDMP()   == ICM_20948_Stat_Ok);
@@ -62,7 +103,9 @@ bool icmBegin() {
 // and the CALIBRATED magnetometer -> tilt-compensated heading. Returns true when a
 // sample arrived. Call only when the ICM is the active source (IMU.ino).
 bool icmUpdate(state *s) {
-  static float up_x = 0, up_y = 0, up_z = 1;   // latest sensor-frame up vector (for the compass)
+  static float up_x = 0, up_y = 0, up_z = 1;   // latest sensor-frame up vector
+  static float magH = 0;                       // latest tilt-comp mag heading (compass)
+  static int16_t gxr = 0, gyr = 0, gzr = 0;    // latest raw gyro (sensor frame)
   icm_20948_DMP_data_t d;
   float   q1 = 0, q2 = 0, q3 = 0;
   int16_t rax = 0, ray = 0, raz = 0;
@@ -81,6 +124,9 @@ bool icmUpdate(state *s) {
       if (d.header & DMP_header_bitmap_Accel) {    // raw accel, same sensor body frame
         rax = d.Raw_Accel.Data.X; ray = d.Raw_Accel.Data.Y; raz = d.Raw_Accel.Data.Z;
         gotA = true;
+      }
+      if (d.header & DMP_header_bitmap_Gyro) {     // raw gyro (sensor frame), +/-2000 dps
+        gxr = d.Raw_Gyro.Data.X; gyr = d.Raw_Gyro.Data.Y; gzr = d.Raw_Gyro.Data.Z;
       }
       if (d.header & DMP_header_bitmap_Compass_Calibr) {   // calibrated mag (device frame)
         mcx = d.Compass_Calibr.Data.X; mcy = d.Compass_Calibr.Data.Y; mcz = d.Compass_Calibr.Data.Z;
@@ -109,12 +155,20 @@ bool icmUpdate(state *s) {
     s->gz = (ICM_FLIP_PITCH)    ? -pitch :  pitch;
   }
 
-  // ---- heading from the CALIBRATED magnetometer, tilt-compensated by the up
-  //      vector. Deterministic -> no fusion-yaw drift / 180-deg flips (unlike the
-  //      DMP's 9-axis yaw). The DMP still fuses the mag for the quaternion above.
+  // ---- heading: tilt-comp CALIBRATED magnetometer (absolute, can't flip 180),
+  //      fused with the gyro yaw rate (smooth/responsive). The DMP still fuses the
+  //      mag into the quaternion above; we just take heading from the cal'd mag. ---
   if (gotM) {
-    s->heading = tiltCompassDeg(up_x, up_y, up_z, (float)mcx, (float)mcy, (float)mcz,
-                                ICM_HEADING_SIGN, ICM_HEADING_OFFSET, s->heading);
+    magH = tiltCompassDeg(up_x, up_y, up_z, (float)mcx, (float)mcy, (float)mcz,
+                          ICM_HEADING_SIGN, ICM_HEADING_OFFSET, magH);
+  }
+  {
+    const float gs = 1.0f / 16.384f;                       // raw gyro -> deg/s (+/-2000 dps)
+    float un = sqrtf(up_x * up_x + up_y * up_y + up_z * up_z);
+    float yawRate = 0.0f;                                  // deg/s about the vertical axis
+    if (un > 0) yawRate = ICM_HEADING_GYRO_SIGN *
+        (gxr * gs * up_x + gyr * gs * up_y + gzr * gs * up_z) / un;
+    s->heading = fuseHeading(magH, yawRate);
   }
 
   // ---- live load factor + slip ball from the raw accelerometer --------------
@@ -135,6 +189,17 @@ bool icmUpdate(state *s) {
     s->az = s->az * (1 - ALPHA_ATTITUDE) + ALPHA_ATTITUDE * az;
     s->g  = s->g  * (1 - ALPHA_GFORCE)   + ALPHA_GFORCE  * amag;
     if (s->g > s->max_g) s->max_g = s->g;
+  }
+
+  // Persist the DMP's refined cal bias every 30 s, but only when it has actually
+  // drifted, so we don't wear the flash writing the same values.
+  static unsigned long lastSave = 0;
+  static int32_t savedB[9] = {0};
+  if (millis() - lastSave > 30000) {
+    lastSave = millis();
+    int32_t b[9]; icmGetBias(b);
+    long diff = 0; for (int i = 0; i < 9; i++) diff += labs((long)b[i] - (long)savedB[i]);
+    if (diff > 200) { icmSaveBias(); for (int i = 0; i < 9; i++) savedB[i] = b[i]; }
   }
 
   icm_last_data = millis();
