@@ -392,7 +392,7 @@
 // calibration to flash, so the heading is good right after a power cycle.
 #define HEADING_FUSE             1     // 0 = raw mag compass only (no gyro fusion)
 #define HEADING_FUSE_TAU         1.5f  // s — mag-correction time constant (bigger = smoother/slower)
-#define ICM_HEADING_GYRO_SIGN  -1.0f   // flip if the heading runs backwards / fights you in a turn
+#define ICM_HEADING_GYRO_SIGN   1.0f   // flip if the heading runs backwards / fights you in a turn
 #define BNO_HEADING_GYRO_SIGN  -1.0f   // flip if the heading runs backwards / fights you in a turn
 
 // ---- Navigation display (map) ----------------------------------------------
