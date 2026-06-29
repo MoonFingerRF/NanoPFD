@@ -1,4 +1,5 @@
 #pragma once
+#include <stdint.h>
 // ============================================================================
 //  config.h — project-wide configuration for the InstrumentPanel EFIS
 //
@@ -353,38 +354,25 @@
 // enabled (#define ICM_20948_USE_DMP in its src/util/ICM_20948_C.h). 0 = off.
 #define ENABLE_ICM20948 1
 
-// ---- BNO08x mounting / orientation -----------------------------------------
-// The BNO does its own fusion; these map its output onto the display + compass for
-// however it's mounted. Defaults reproduce the current (tested) orientation — flip
-// a knob only if you remount the sensor. Same scheme as the ICM block below.
-//
-//  Attitude — the fused gravity vector drives the horizon:
-#define BNO_FLIP_VERTICAL    0    // 1 = sky/ground swapped (sensor mounted upside down)
-#define BNO_FLIP_ROLL        0    // 1 = bank goes the wrong way (left/right reversed)
-#define BNO_FLIP_PITCH       0    // 1 = pitch goes the wrong way (nose up/down reversed)
-#define BNO_SWAP_ROLL_PITCH  0    // 1 = sensor turned 90 deg: swap the roll & pitch axes
-//
-//  Heading — yaw of the BNO's fused 9-axis ROTATION_VECTOR (its on-chip Kalman,
-//  accel+gyro+mag); the BNO stores/reloads its own calibration (we don't):
-#define BNO_HEADING_SIGN    -1.0f // compass spin direction (flip if it turns the wrong way)
-#define BNO_HEADING_OFFSET 180.0f // degrees added to heading (rotate magnetic north into place)
+// ---- IMU mounting / orientation (RUNTIME, set via the config portal) --------
+// One orientation shared by BOTH IMUs (you only run one at a time): it maps the
+// sensor's gravity/up vector onto the display horizon. Changed live + saved to NVS
+// from the config-mode web page (WebConfig.ino); these are just the power-on
+// defaults. Start at 0 and flip whatever reads backwards on the hardware.
+#define ORI_FLIP_VERTICAL_DEF    0   // 1 = sky/ground swapped (sensor mounted upside down)
+#define ORI_FLIP_ROLL_DEF        0   // 1 = bank goes the wrong way (left/right reversed)
+#define ORI_FLIP_PITCH_DEF       0   // 1 = pitch goes the wrong way (nose up/down reversed)
+#define ORI_SWAP_ROLL_PITCH_DEF  0   // 1 = sensor turned 90 deg: swap the roll & pitch axes
+extern volatile uint8_t gOriFlipV, gOriFlipR, gOriFlipP, gOriSwap;   // live, NVS-backed
 
-// ---- ICM-20948 (GY-912) mounting / orientation -----------------------------
-// The DMP does all the fusion; these just map its body-frame output onto the
-// display + compass for however the board is physically mounted. Start at 0 and
-// flip whatever reads backwards on the hardware (each is independent).
-//
-//  Attitude — the DMP "up" vector drives the horizon:
-#define ICM_FLIP_VERTICAL    0    // 1 = sky/ground swapped (board mounted upside down)
-#define ICM_FLIP_ROLL        0    // 1 = bank goes the wrong way (left/right reversed)
-#define ICM_FLIP_PITCH       0    // 1 = pitch goes the wrong way (nose up/down reversed)
-#define ICM_SWAP_ROLL_PITCH  0    // 1 = board turned 90 deg: swap the roll & pitch axes
-//
-//  Heading — yaw of the DMP's fused 9-axis quaternion (RV: accel+gyro+mag); the
-//  DMP's compass/gyro/accel cal is persisted to flash (NVS) so RV stays stable and
-//  doesn't 180-flip after a power cycle:
-#define ICM_HEADING_SIGN    -1.0f // compass spin direction (flip if it turns the wrong way)
-#define ICM_HEADING_OFFSET 180.0f // degrees added to heading (rotate magnetic north into place)
+// ---- Compass north alignment (per-IMU; not in the portal) ------------------
+//  Heading = yaw of each chip's fused 9-axis output (BNO ROTATION_VECTOR / ICM RV).
+//  Both chips store/reload their own mag calibration. Tune SIGN (CW/CCW) + OFFSET
+//  (rotate magnetic north into place, deg) to the mounting:
+#define BNO_HEADING_SIGN    -1.0f
+#define BNO_HEADING_OFFSET 180.0f
+#define ICM_HEADING_SIGN    -1.0f
+#define ICM_HEADING_OFFSET 180.0f
 
 // ---- Navigation display (map) ----------------------------------------------
 // ND moving-map chart (airports, runways, navaids, airspace, glide paths, river).

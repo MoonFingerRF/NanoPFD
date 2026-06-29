@@ -60,6 +60,10 @@ uint16_t color_index[NUM_COLORS] = {
 volatile float gBaroInHg = 29.92f;
 Preferences    baroPrefs;
 
+// True when IO0 was held at power-on: run the WiFi config-portal AP instead of the
+// Remote ID WiFi sniffer (they can't share the radio). See WebConfig.ino.
+bool gConfigMode = false;
+
 // ----------------------------------------------------------------------------
 //  Shared state + locking
 // ----------------------------------------------------------------------------
@@ -414,11 +418,13 @@ void setup(void) {
   Wire.setClock(I2C_CLOCK_HZ);
 
   pinMode(0, INPUT_PULLUP);        // IO0 (BOOT button) — adjusts the altimeter setting
+  gConfigMode = (digitalRead(0) == LOW);   // held at power-on -> enter the config-portal AP
   baroPrefs.begin("baro", false);  // recall the saved altimeter setting (default 29.92)
   gBaroInHg = baroPrefs.getFloat("inHg", 29.92f);
   if (gBaroInHg < BARO_MIN_INHG || gBaroInHg > BARO_MAX_INHG) gBaroInHg = 29.92f;
 
   mapZoomInit();                  // set the boot map zoom level (range/tier)
+  webConfigLoadSettings();        // apply saved IMU orientation + default map zoom (NVS)
 
   init_state(&State);
   init_state(&gLocal);
@@ -480,7 +486,8 @@ void setup(void) {
   // the PFD canvas internal. The delay lets combinedTask spin up its ndDrawTask
   // (created on first run) before the radios carve up what's left.
   delay(150);
-  remoteid_begin();        // FAA Remote ID (BLE; WiFi optional) traffic receiver
+  if (gConfigMode) webConfigBegin();   // config mode: WiFi AP + captive settings portal
+  else             remoteid_begin();   // flight mode: FAA Remote ID (BLE + WiFi sniffer)
 }
 
 // loop() runs in the Arduino loopTask (core 1, low priority). It only handles

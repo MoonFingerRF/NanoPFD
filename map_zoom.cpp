@@ -52,6 +52,18 @@ void mapZoomInit() {
   apply();
 }
 
+// Jump straight to a zoom level (config portal / saved default). Clamps the index.
+void mapZoomSet(int idx) {
+  if (idx < 0) idx = 0;
+  if (idx >= NLEV) idx = NLEV - 1;
+  gIdx = idx;
+  gMapFieldActive = false;
+  apply();
+}
+int mapZoomIdx()          { return gIdx; }
+int mapZoomCount()        { return NLEV; }
+int mapZoomRangeM(int i)  { return (i >= 0 && i < NLEV) ? LEVELS[i].range_m : 0; }
+
 void mapZoom(int dir, float curLat, float curLon) {
   int ni = gIdx + (dir < 0 ? -1 : +1);
   if (ni < 0) ni = 0;

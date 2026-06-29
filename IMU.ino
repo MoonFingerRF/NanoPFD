@@ -301,12 +301,10 @@ void updateIMU(state *s) {
           float pitch = sensorValue.un.accelerometer.y;
           float vert  = sensorValue.un.accelerometer.z;
           float amag  = sqrt(roll * roll + pitch * pitch + vert * vert);
-#if BNO_SWAP_ROLL_PITCH
-          { float t = roll; roll = pitch; pitch = t; }
-#endif
-          float ax = BNO_FLIP_ROLL     ? -roll  :  roll;
-          float ay = BNO_FLIP_VERTICAL ? -vert  :  vert;
-          float az = BNO_FLIP_PITCH    ? -pitch :  pitch;
+          if (gOriSwap) { float t = roll; roll = pitch; pitch = t; }
+          float ax = gOriFlipR ? -roll  :  roll;
+          float ay = gOriFlipV ? -vert  :  vert;
+          float az = gOriFlipP ? -pitch :  pitch;
           s->ax = s->ax * (1 - ALPHA_ATTITUDE) + ALPHA_ATTITUDE * ax;
           s->ay = s->ay * (1 - ALPHA_ATTITUDE) + ALPHA_ATTITUDE * ay;
           s->az = s->az * (1 - ALPHA_ATTITUDE) + ALPHA_ATTITUDE * az;
@@ -340,12 +338,10 @@ void updateIMU(state *s) {
           if (gmag <= 0) gmag = 1;
           // up vector (roll/pitch/vertical sources), then config mounting flips
           float roll = -gx / gmag, pitch = -gy / gmag, vert = -gz / gmag;
-#if BNO_SWAP_ROLL_PITCH
-          { float t = roll; roll = pitch; pitch = t; }
-#endif
-          s->gx = BNO_FLIP_ROLL     ? -roll  :  roll;
-          s->gy = BNO_FLIP_VERTICAL ? -vert  :  vert;
-          s->gz = BNO_FLIP_PITCH    ? -pitch :  pitch;
+          if (gOriSwap) { float t = roll; roll = pitch; pitch = t; }
+          s->gx = gOriFlipR ? -roll  :  roll;
+          s->gy = gOriFlipV ? -vert  :  vert;
+          s->gz = gOriFlipP ? -pitch :  pitch;
           break;
         }
       case SH2_ROTATION_VECTOR:

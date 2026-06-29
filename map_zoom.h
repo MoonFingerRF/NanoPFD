@@ -39,3 +39,9 @@ void mapZoomInit();                  // set the boot zoom level (call once in se
 // One zoom step: dir < 0 = zoom in (top-half tap), dir > 0 = zoom out (bottom-half).
 // curLat/curLon = the live map centre, frozen as P when crossing into field mode.
 void mapZoom(int dir, float curLat, float curLon);
+
+// Config-portal helpers: jump to a level + query the ladder.
+void mapZoomSet(int idx);
+int  mapZoomIdx();
+int  mapZoomCount();
+int  mapZoomRangeM(int idx);
