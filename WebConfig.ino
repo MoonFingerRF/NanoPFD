@@ -1,14 +1,17 @@
 // ============================================================================
-//  WebConfig.ino — config-mode WiFi access point + captive-portal settings page.
+//  WebConfig.ino — always-on WiFi access point + captive-portal settings page.
 //
-//  Hold IO0 (BOOT) while powering on to enter CONFIG MODE: NanoPFD brings up a WiFi
-//  AP ("NanoPFD"), a captive portal pops the settings page on any phone that joins,
-//  and changes (IMU orientation, map zoom, local pressure, AP password) save to
-//  flash. Normal boot (IO0 not held) = flight mode as usual (Remote ID WiFi active).
+//  NanoPFD brings up a WiFi AP ("NanoPFD") at boot. Join it from a phone and a
+//  captive portal pops the settings page automatically; changes (IMU orientation,
+//  map zoom, local pressure, AP password) save to flash and apply live on the
+//  display. Runs the whole time, so you can tweak settings in flight.
 //
-//  Why a mode and not always-on: the Remote ID receiver runs the WiFi radio in
-//  promiscuous channel-hopping monitor mode, which can't coexist with a softAP. So
-//  the AP is a ground/config mode; we skip Remote ID while it's up.
+//  Coexistence: the AP shares the radio with the Remote ID BLE scanner via the
+//  ESP32-S3's built-in WiFi/BLE coexistence. This works because the Remote ID
+//  *WiFi* sniffer is off (config.h RID_USE_WIFI 0) — that promiscuous monitor mode
+//  is what can't share the radio with a softAP; BLE can. The AP is brought up AFTER
+//  the BLE controller (InstrumentPanel.ino) so BLE gets internal SRAM first, and it
+//  is leaned (1 client, fixed channel) to leave room for the PFD canvas.
 //
 //  The page is one self-contained HTML string in flash (no filesystem); the JSON
 //  API is hand-built (no JSON library) to keep flash + RAM tiny.
@@ -160,12 +163,18 @@ static void cfgTask(void *) {
   }
 }
 
-// Bring up the AP + captive portal + web server. Call only in config mode.
+// Bring up the AP + captive portal + web server. Called every boot, after the BLE
+// controller, so BLE gets internal SRAM first. Leaned (channel 1, 1 client) to share
+// the radio + SRAM with the Remote ID BLE scanner and the PFD canvas.
 void webConfigBegin() {
   WiFi.mode(WIFI_AP);
   String pass = cfgGetPass();
-  if (pass.length() >= 8) WiFi.softAP(AP_SSID, pass.c_str());   // WPA2
-  else                    WiFi.softAP(AP_SSID);                 // open (default 7-char pass)
+  // softAP(ssid, pass, channel, hidden, max_connection): fix the channel and cap the
+  // AP at one client to keep its buffer footprint small alongside BLE + the canvas.
+  bool ok;
+  if (pass.length() >= 8) ok = WiFi.softAP(AP_SSID, pass.c_str(), 1, 0, 1);   // WPA2
+  else                    ok = WiFi.softAP(AP_SSID, nullptr,      1, 0, 1);   // open (default <8-char pass)
+  WiFi.setTxPower(WIFI_POWER_11dBm);                            // plenty for cockpit range; eases WiFi/BLE coex
   IPAddress ip = WiFi.softAPIP();
   cfgDns.start(53, "*", ip);                                    // all DNS -> us (captive)
   cfgServer.on("/", cfgHandleRoot);
@@ -173,7 +182,8 @@ void webConfigBegin() {
   cfgServer.on("/api", HTTP_POST, cfgHandleApiSet);
   cfgServer.onNotFound(cfgHandleNotFound);
   cfgServer.begin();
-  USBSerial.printf("CONFIG MODE: AP '%s' (%s) at http://%s/\n",
-                   AP_SSID, pass.length() >= 8 ? "WPA2" : "OPEN", ip.toString().c_str());
+  USBSerial.printf("WiFi AP '%s' (%s) %s at http://%s/\n", AP_SSID,
+                   pass.length() >= 8 ? "WPA2" : "OPEN",
+                   ok ? "up" : "FAILED (low internal RAM?)", ip.toString().c_str());
   xTaskCreatePinnedToCore(cfgTask, "cfgweb", 4096, NULL, 1, NULL, CORE_SENSORS);
 }
