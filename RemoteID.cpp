@@ -39,20 +39,21 @@
 #include "esp_netif.h"
 #include "nvs_flash.h"
 #include "esp_heap_caps.h"
-#if RID_USE_BLE
-// The ESP32-S3 Arduino core ships the NimBLE host (Bluedroid's esp_gap_ble_api
-// is NOT built for this chip), so the BLE scanner is implemented on NimBLE.
-// NOTE: this NimBLE build has extended advertising disabled
-// (MYNEWT_VAL_BLE_EXT_ADV = 0), so we can only receive *legacy* (BT4)
-// advertisements — Remote ID modules that broadcast solely over Bluetooth 5
-// Long-Range (coded PHY) won't be seen over BLE here (they're still caught over
-// WiFi if they also beacon). See README "Remote ID".
+// BLE + WiFi RID are now RUNTIME toggles (gRidBle / gRidWifi, NVS-backed via the config
+// portal), so both code paths compile unconditionally; the headers below are always pulled in.
+// The ESP32-S3 Arduino core ships the NimBLE host (Bluedroid's esp_gap_ble_api is NOT built
+// for this chip), so the BLE scanner is implemented on NimBLE. NOTE: this NimBLE build has
+// extended advertising disabled (MYNEWT_VAL_BLE_EXT_ADV = 0), so we can only receive *legacy*
+// (BT4) advertisements — BT5 Long-Range-only Remote ID is caught over WiFi instead.
 #include "nimble/nimble_port.h"
 #include "nimble/nimble_port_freertos.h"
 #include "host/ble_hs.h"
 #include "host/ble_gap.h"
 #include "esp_bt.h"            // esp_bt_controller_* + BT_CONTROLLER_INIT_CONFIG_DEFAULT (lean cfg)
-#endif
+
+// Runtime RID enables (defaults from config.h RID_USE_*). Live, set via the config portal.
+volatile bool gRidBle  = RID_USE_BLE;
+volatile bool gRidWifi = RID_USE_WIFI;
 
 // ---- diagnostics -----------------------------------------------------------
 // The firmware logs over its own USB-CDC instance (HWCDC USBSerial in
@@ -123,7 +124,6 @@ static void odid_parse(RidEntry *e, const uint8_t *m, int len) {
 }
 
 // ---- Bluetooth LE ----------------------------------------------------------
-#if RID_USE_BLE
 // Walk the AD structures of one advertisement (legacy or extended) and pull out
 // any OpenDroneID service-data element.
 static void ble_parse_adv(const uint8_t *bda, const uint8_t *adv, int len) {
@@ -225,10 +225,8 @@ static void ble_begin() {
   nimble_port_freertos_init(ble_host_task);
   RID_LOG("[RID] BLE: NimBLE legacy (BT4) passive scan (lean controller)\n");
 }
-#endif // RID_USE_BLE
 
 // ---- WiFi ------------------------------------------------------------------
-#if RID_USE_WIFI
 static void wifi_parse_beacon(const uint8_t *f, int len) {
   if (len < 38 || f[0] != 0x80) return;       // 0x80 = management / beacon
   const uint8_t *sa = f + 10;                  // Addr2 = transmitter MAC
@@ -267,6 +265,16 @@ static void wifi_promisc_cb(void *buf, wifi_promiscuous_pkt_type_t type) {
   if (len > 0) wifi_parse_beacon(pkt->payload, len);
 }
 
+// Turn on promiscuous MGMT capture on whatever WiFi driver is already running.
+static void wifi_promisc_on() {
+  wifi_promiscuous_filter_t filt; filt.filter_mask = WIFI_PROMIS_FILTER_MASK_MGMT;
+  esp_wifi_set_promiscuous_filter(&filt);
+  esp_wifi_set_promiscuous_rx_cb(wifi_promisc_cb);
+  esp_wifi_set_promiscuous(true);
+}
+
+// FLIGHT mode: stand up the WiFi driver in monitor-only (NULL) mode just for RID, then
+// the hop task (rid_task) sweeps the 2.4 GHz channels. No AP here.
 static void wifi_begin() {
   esp_err_t r = nvs_flash_init();
   if (r == ESP_ERR_NVS_NO_FREE_PAGES || r == ESP_ERR_NVS_NEW_VERSION_FOUND) {
@@ -276,8 +284,7 @@ static void wifi_begin() {
   esp_event_loop_create_default();
   wifi_init_config_t wcfg = WIFI_INIT_CONFIG_DEFAULT();
   // Monitor-only (promiscuous): we never associate or transmit, so cut the WiFi
-  // driver's RX/TX/aggregation buffers hard to leave internal SRAM for the PFD
-  // canvas + BLE controller. (Beacons repeat, so a small RX pool still catches RID.)
+  // driver's RX/TX/aggregation buffers hard. (Beacons repeat, so a small RX pool catches RID.)
   wcfg.static_rx_buf_num  = 4;     // default 10  (~1.6 KB each)
   wcfg.dynamic_rx_buf_num = 8;     // default 32
   wcfg.dynamic_tx_buf_num = 4;     // default 32  (we don't transmit)
@@ -292,12 +299,15 @@ static void wifi_begin() {
   esp_wifi_set_storage(WIFI_STORAGE_RAM);
   esp_wifi_set_mode(WIFI_MODE_NULL);           // not a station/AP — monitor only
   esp_wifi_start();
-  wifi_promiscuous_filter_t filt; filt.filter_mask = WIFI_PROMIS_FILTER_MASK_MGMT;
-  esp_wifi_set_promiscuous_filter(&filt);
-  esp_wifi_set_promiscuous_rx_cb(wifi_promisc_cb);
-  esp_wifi_set_promiscuous(true);
+  wifi_promisc_on();
   esp_wifi_set_channel(1, WIFI_SECOND_CHAN_NONE);
 }
+
+// CONFIG mode: the WiFi driver is ALREADY up as the softAP (WebConfig.ino). Just add
+// promiscuous capture on top — it delivers frames on the AP's channel (no hopping, since
+// hopping would drop AP clients), so RID drones on the AP channel still plot while the
+// config page is live. This is "WiFi RID + the AP at the same time".
+void wifiRidAttach() { wifi_promisc_on(); }
 
 // Cheap task: hop the WiFi channel so we sweep all of 2.4 GHz for drone beacons
 // (BLE needs no hopping — its controller scans the advertising channels itself).
@@ -313,21 +323,31 @@ static void rid_task(void *) {
     vTaskDelay(pdMS_TO_TICKS(RID_HOP_MS));
   }
 }
-#endif // RID_USE_WIFI
 
 // ---- public API ------------------------------------------------------------
+// FLIGHT mode (no AP): BLE and/or a standalone channel-hopping WiFi monitor, per the
+// runtime toggles. (When gRidWifi is on, the canvas is in PSRAM — see combinedDisplay* —
+// so there's internal SRAM for the WiFi driver.)
 void remoteid_begin() {
-  RID_LOG("[RID] starting receiver (BLE=%d WiFi=%d) internal free=%u\n",
-          (int)RID_USE_BLE, (int)RID_USE_WIFI,
+  RID_LOG("[RID] flight receiver (BLE=%d WiFi=%d) internal free=%u\n",
+          (int)gRidBle, (int)gRidWifi, (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL));
+  if (gRidBle) ble_begin();
+  if (gRidWifi) {
+    wifi_begin();
+    xTaskCreatePinnedToCore(rid_task, "ridhop", 2048, nullptr, RID_TASK_PRIO, nullptr, RID_TASK_CORE);
+  }
+  RID_LOG("[RID] flight receiver up; internal free=%u\n",
           (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL));
-#if RID_USE_BLE
-  ble_begin();
-#endif
-#if RID_USE_WIFI
-  wifi_begin();
-  xTaskCreatePinnedToCore(rid_task, "ridhop", 2048, nullptr, RID_TASK_PRIO, nullptr, RID_TASK_CORE);
-#endif
-  RID_LOG("[RID] receiver up; internal free=%u\n",
+}
+
+// CONFIG mode (AP up): BLE (now fits — the config-mode canvas is in PSRAM) and/or WiFi RID
+// attached to the AP's radio on its channel. Call AFTER webConfigBegin().
+void remoteid_begin_ap() {
+  RID_LOG("[RID] config receiver (BLE=%d WiFi=%d) internal free=%u\n",
+          (int)gRidBle, (int)gRidWifi, (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL));
+  if (gRidWifi) wifiRidAttach();
+  if (gRidBle)  ble_begin();
+  RID_LOG("[RID] config receiver up; internal free=%u\n",
           (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL));
 }
 
@@ -367,6 +387,8 @@ void remoteid_fill(state *s) {
 }
 
 #else  // !RID_ENABLE
+volatile bool gRidBle = false, gRidWifi = false;
 void remoteid_begin() {}
+void remoteid_begin_ap() {}
 void remoteid_fill(state *s) { s->n_rid = 0; s->n_rid_seen = 0; }
 #endif

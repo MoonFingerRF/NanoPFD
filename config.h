@@ -466,14 +466,18 @@ extern volatile float gBaroInHg;
 // Listens for drone/UAS Remote ID broadcasts on the ESP32's BLE + WiFi radios
 // and plots them on the ND (orange dot + altitude in ft). See RemoteID.cpp.
 #define RID_ENABLE    1     // master enable for the receiver
-#define RID_USE_BLE   1     // Bluetooth LE advertisements (most consumer drones +
+#define RID_USE_BLE   1     // BLE RID power-on DEFAULT (runtime gRidBle, set via the portal).
+                            //   Bluetooth LE advertisements (most consumer drones +
                             //   standalone Remote ID modules). REQUIRES arduino-esp32
                             //   core <= 3.3.6 — 3.3.7..3.3.10 have a regression that
                             //   panics S3 BLE startup (issue #12357). See build.sh.
-#define RID_USE_WIFI  0     // WiFi beacons (channel-hopping). OFF: the promiscuous
-                            //   per-packet callback steals significant CPU (drops
-                            //   render fps), and BLE covers most Remote ID. Enable
-                            //   for WiFi-broadcasting drones at an fps cost.
+#define RID_USE_WIFI  0     // WiFi RID power-on DEFAULT (runtime gRidWifi, set via the portal).
+                            //   WiFi beacons. In config mode WiFi RID rides the AP's radio on
+                            //   its channel (no hop); in flight it channel-hops (and forces the
+                            //   canvas to PSRAM -> lower fps). Off by default (fps cost).
+// Runtime RID enables — power-on defaults above; live values set from the config portal
+// (NVS-backed). gRidWifi also decides canvas placement (PSRAM when on). Defined in RemoteID.cpp.
+extern volatile bool gRidBle, gRidWifi;
 #define RID_AGE_MS    12000 // drop a target not heard from within this long (ms)
 #define RID_HOP_MS    700   // WiFi channel dwell (ms) — long enough to reliably
                             //   catch a ~1 Hz Remote ID beacon on each visit.

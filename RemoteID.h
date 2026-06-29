@@ -8,9 +8,13 @@
 // ============================================================================
 #include "State.h"
 
-// Start the BLE scanner + WiFi promiscuous receiver + the channel-hop task.
-// Safe to call once from setup(); a no-op if RID_ENABLE is 0.
+// FLIGHT mode (no AP): start BLE and/or a standalone channel-hopping WiFi monitor per
+// the runtime toggles (gRidBle / gRidWifi). Safe to call once; no-op if RID_ENABLE is 0.
 void remoteid_begin();
+
+// CONFIG mode (AP already up): start BLE and/or attach WiFi RID to the AP's radio (on its
+// channel). Call AFTER webConfigBegin(). No-op if RID_ENABLE is 0.
+void remoteid_begin_ap();
 
 // Copy the currently-live targets (seen recently, with a position) into the
 // shared state for the ND to draw. Ages out stale entries. Call periodically

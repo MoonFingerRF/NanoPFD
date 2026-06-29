@@ -75,6 +75,8 @@ void webConfigLoadSettings() {
   gOriFlipR = p.getUChar("oriR", ORI_FLIP_ROLL_DEF) ? 1 : 0;
   gOriFlipP = p.getUChar("oriP", ORI_FLIP_PITCH_DEF) ? 1 : 0;
   gOriSwap  = p.getUChar("oriS", ORI_SWAP_ROLL_PITCH_DEF) ? 1 : 0;
+  gRidBle   = p.getUChar("ridble",  RID_USE_BLE)  ? 1 : 0;   // RID enables (applied at boot)
+  gRidWifi  = p.getUChar("ridwifi", RID_USE_WIFI) ? 1 : 0;
   gHeadingOffset = p.getFloat("hdg", HEADING_OFFSET_DEF);
   int zoom  = p.getInt("zoom", -1);
   if (p.getBytesLength("pal") == NUM_COLORS * sizeof(uint16_t)) {   // restore a saved palette
@@ -167,10 +169,14 @@ font-weight:700;letter-spacing:2px;cursor:pointer;margin-top:2px}.save:active{fi
 <a class=save id=dl href="/flog.csv">DOWNLOAD CSV</a>
 <button class="save sec" onclick=resetLog()>RESET LOG</button></div></div>
 <div class="pane hide" id=net>
-<div class=c><h2>WiFi</h2>
+<div class=c><h2>Remote ID receiver</h2>
+<div class=r><label>Bluetooth LE</label><span class=tg><input type=checkbox id=rb><span class=sl></span></span></div>
+<div class=r><label>WiFi</label><span class=tg><input type=checkbox id=rw><span class=sl></span></span></div>
+<div class=u>Plots nearby drones as orange dots on the compass. WiFi RID also runs while this AP is on (on the AP's channel); in flight it lowers fps. Changes apply after the next reboot / mode switch.</div></div>
+<div class=c><h2>WiFi AP</h2>
 <div class=r><label>AP password</label><input type=text id=pw maxlength=63></div>
 <div class=u>8&ndash;63 chars for WPA2; shorter = open network</div></div>
-<div class=u style="text-align:center;line-height:1.6">This AP and the Remote&nbsp;ID receiver can't run at once.<br>Hold the <b>BOOT</b> button ~3&nbsp;s to switch to flight mode.</div></div>
+<div class=u style="text-align:center;line-height:1.6">Hold the <b>BOOT</b> button ~3&nbsp;s to switch between config (this AP) and flight (Remote&nbsp;ID at full fps) mode.</div></div>
 <button class=save onclick=save()>SAVE TO FLASH</button><div class=st id=st></div>
 </div><script>
 var $=function(i){return document.getElementById(i)};
@@ -190,6 +196,7 @@ $('b').onchange=function(){ap('baro='+this.value)}}
 function load(){fetch('/api').then(function(r){return r.json()}).then(function(d){
 $('v').checked=!!d.oriV;$('r').checked=!!d.oriR;$('p').checked=!!d.oriP;$('sw').checked=!!d.oriS;
 $('hdg').value=d.hdg;$('b').value=d.baro.toFixed(2);$('pw').value=d.pass;
+$('rb').checked=!!d.ridble;$('rw').checked=!!d.ridwifi;
 var z=$('z');z.innerHTML='';d.zooms.forEach(function(m,i){var o=document.createElement('option');
 o.value=i;o.text=m;if(i==d.zoom)o.selected=true;z.add(o)});
 var pe=$('pal');pe.innerHTML='';d.pal.forEach(function(hex,i){
@@ -201,7 +208,7 @@ row.appendChild(lb);row.appendChild(ci);pe.appendChild(row)});
 bind()})}
 function save(){var q='oriV='+($('v').checked?1:0)+'&oriR='+($('r').checked?1:0)+'&oriP='+($('p').checked?1:0)
 +'&oriS='+($('sw').checked?1:0)+'&zoom='+$('z').value+'&baro='+$('b').value+'&hdg='+($('hdg').value||0)
-+'&pass='+encodeURIComponent($('pw').value);
++'&ridble='+($('rb').checked?1:0)+'&ridwifi='+($('rw').checked?1:0)+'&pass='+encodeURIComponent($('pw').value);
 for(var i=0;i<PAL.length;i++){var e=$('pal'+i);if(e)q+='&pal'+i+'='+encodeURIComponent(e.value)}
 ap(q).then(function(r){flash(r.ok?'✓ saved':'error')})}
 var LOG=null,met=0,v0=0,v1=0;
@@ -246,6 +253,7 @@ static void cfgHandleApiGet() {
   j += "\"zoom\":" + String(mapZoomIdx()) + ",";
   j += "\"baro\":" + String(gBaroInHg, 2) + ",";
   j += "\"hdg\":" + String((int)lroundf(gHeadingOffset)) + ",";
+  j += "\"ridble\":" + String((int)gRidBle) + ",\"ridwifi\":" + String((int)gRidWifi) + ",";
   j += "\"pal\":[";
   for (int i = 0; i < NUM_COLORS; i++) {
     char hx[8]; rgb565ToHex(color_index[i], hx);
@@ -284,6 +292,8 @@ static void cfgHandleApiSet() {
     while (h >= 360.0f) h -= 360.0f;
     gHeadingOffset = h;
   }
+  if (cfgServer.hasArg("ridble"))  gRidBle  = cfgServer.arg("ridble").toInt() ? 1 : 0;   // applied next boot
+  if (cfgServer.hasArg("ridwifi")) gRidWifi = cfgServer.arg("ridwifi").toInt() ? 1 : 0;
   bool palChanged = false;
   for (int i = 0; i < NUM_COLORS; i++) {
     char key[8]; snprintf(key, sizeof key, "pal%d", i);
@@ -296,6 +306,7 @@ static void cfgHandleApiSet() {
   p.putUChar("oriP", gOriFlipP); p.putUChar("oriS", gOriSwap);
   p.putInt("zoom", mapZoomIdx());
   p.putFloat("hdg", gHeadingOffset);
+  p.putUChar("ridble", gRidBle); p.putUChar("ridwifi", gRidWifi);
   if (palChanged) p.putBytes("pal", (const void *)color_index, NUM_COLORS * sizeof(uint16_t));
   if (cfgServer.hasArg("pass")) p.putString("appass", cfgServer.arg("pass"));   // applies next config boot
   p.end();

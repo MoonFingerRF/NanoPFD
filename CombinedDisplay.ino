@@ -250,10 +250,11 @@ void combinedDisplayInit() {
   // controller (~71 KB internal) and the display task stacks then fit in what's
   // left ONLY because the tasks are created before remoteid_begin() (see setup())
   // and WiFi RID is off (RID_USE_WIFI) — together that keeps this internal.
-  // In CONFIG (AP) mode the WiFi driver + web server + flight-log API need the internal
-  // SRAM far more than the PFD needs speed, so put the canvas in PSRAM there (config runs
-  // at lower fps, which is fine on the ground). Flight mode keeps it internal for full fps.
-  bool apMode = webConfigApMode();
+  // Put the canvas in PSRAM when the WiFi stack needs the internal SRAM: CONFIG (AP) mode,
+  // or flight mode with WiFi RID on (gRidWifi -> a standalone WiFi monitor needs ~40 KB
+  // internal). Both run at lower fps, acceptable for those modes. Otherwise (plain flight)
+  // keep the canvas internal for full fps.
+  bool apMode = webConfigApMode() || gRidWifi;
   const char *pfdWhere = apMode ? "PSRAM (config mode)" : "INTERNAL";
   uint8_t *pfdBuf = apMode ? nullptr
     : (uint8_t *)heap_caps_malloc((size_t)RGB_WIDTH * PFD_REGION_H, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);

@@ -490,8 +490,9 @@ void setup(void) {
   delay(150);
   // WiFi AP and BLE Remote ID can't both fit in internal SRAM with the canvas (see
   // WebConfig.ino), so run exactly one per boot. Hold BOOT ~3 s to switch (handled in loop()).
-  if (webConfigApMode()) webConfigBegin();   // config mode: WiFi AP + captive settings portal
-  else                   remoteid_begin();   // flight mode: FAA Remote ID (BLE)
+  if (webConfigApMode()) { webConfigBegin();   // config mode: WiFi AP + captive settings portal
+                           remoteid_begin_ap(); }  // + RID on the AP's radio (BLE / WiFi per toggles)
+  else                     remoteid_begin();   // flight mode: FAA Remote ID (BLE / WiFi per toggles)
 }
 
 // loop() runs in the Arduino loopTask (core 1, low priority). It only handles
