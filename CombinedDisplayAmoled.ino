@@ -260,8 +260,11 @@ void combinedDisplayInit() {
   // PSRAM) so the fast RAM matters. ND canvas -> PSRAM: the ND draw is COMPUTE-bound (measured
   // 37ms IDENTICAL in internal vs PSRAM — it's map math/Bresenham, not pixel writes), so SRAM
   // would give it no speedup, and only one large contiguous internal block exists anyway.
-  uint8_t *pfdBuf = (uint8_t *)heap_caps_malloc((size_t)RGB_WIDTH * PFD_REGION_H,
-                                                MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+  // CONFIG (AP) mode: canvas -> PSRAM so the WiFi/web/log stack gets the internal SRAM
+  // (config fps is unimportant on the ground). Flight mode keeps it internal for full fps.
+  bool apMode = webConfigApMode();
+  uint8_t *pfdBuf = apMode ? nullptr
+    : (uint8_t *)heap_caps_malloc((size_t)RGB_WIDTH * PFD_REGION_H, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
   if (!pfdBuf)
     pfdBuf = (uint8_t *)heap_caps_malloc((size_t)RGB_WIDTH * PFD_REGION_H,
                                          MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);

@@ -44,8 +44,8 @@
 //  Enable exactly ONE board.
 // ============================================================================
 #define BOARD_A 0
-#define BOARD_C 0
-#define BOARD_D 1
+#define BOARD_C 1
+#define BOARD_D 0
 
 #if (BOARD_A + BOARD_C + BOARD_D) != 1
 #error "Enable exactly one board (BOARD_A, BOARD_C, or BOARD_D) in config.h"
