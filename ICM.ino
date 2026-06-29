@@ -135,6 +135,7 @@ bool icmUpdate(state *s) {
     float ux = 2 * (q1 * q3 - q0 * q2);
     float uy = 2 * (q0 * q1 + q2 * q3);
     float uz = q0 * q0 - q1 * q1 - q2 * q2 + q3 * q3;
+    mountTrim(ux, uy, uz);                       // arbitrary-mount trim / level capture
     // sensor body frame -> display frame (mounting knobs in config.h). Default:
     // roll<-X, pitch<-Y, vertical<-(-Z) so level reads (0, -1, 0).
     float roll = ux, pitch = uy, vert = uz;
@@ -162,10 +163,10 @@ bool icmUpdate(state *s) {
     float ax = gOriFlipR ? -arx :  arx;
     float ay = gOriFlipV ? -avz :  avz;
     float az = gOriFlipP ? -apy :  apy;
-    s->ax = s->ax * (1 - ALPHA_ATTITUDE) + ALPHA_ATTITUDE * ax;
-    s->ay = s->ay * (1 - ALPHA_ATTITUDE) + ALPHA_ATTITUDE * ay;
-    s->az = s->az * (1 - ALPHA_ATTITUDE) + ALPHA_ATTITUDE * az;
-    s->g  = s->g  * (1 - ALPHA_GFORCE)   + ALPHA_GFORCE  * amag;
+    s->ax = s->ax * (1 - gAlphaAtt) + gAlphaAtt * ax;
+    s->ay = s->ay * (1 - gAlphaAtt) + gAlphaAtt * ay;
+    s->az = s->az * (1 - gAlphaAtt) + gAlphaAtt * az;
+    s->g  = s->g  * (1 - gAlphaG)   + gAlphaG  * amag;
     if (s->g > s->max_g) s->max_g = s->g;
   }
 

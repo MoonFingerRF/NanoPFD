@@ -699,7 +699,7 @@ void drawHorizonDisplay(MyCanvas8 *canvas, GFXcanvas8 *inc_map, state *s, bool s
 
   // ---- Vertical Speed Indicator (thin bar on the far right edge) -----------
   // Pointer position is proportional to climb/descent rate, clamped to
-  // +/-VSI_FULL_SCALE ft/sec (center = level). Indentation ticks every VSI_TICK
+  // +/-gVsiFs ft/sec (center = level). Indentation ticks every VSI_TICK
   // ft/sec, mirroring the g-meter (longer ticks at the even multiples). Tunable
   // in config.h.
   {
@@ -709,24 +709,24 @@ void drawHorizonDisplay(MyCanvas8 *canvas, GFXcanvas8 *inc_map, state *s, bool s
     canvas->drawFastVLine(vsiX, vsiTop, vsiBot - vsiTop, IWHITE);
     // tick marks at 0, +/-10, +/-20 ft/sec, extending inward (left) from the bar;
     // alternating lengths (longer on even multiples: 0 and +/-20) like the g-meter
-    for (float t = -VSI_FULL_SCALE; t <= VSI_FULL_SCALE + 0.1f; t += VSI_TICK) {
-      int ty   = midPointY - (int)(t / VSI_FULL_SCALE * stdW2);
+    for (float t = -gVsiFs; t <= gVsiFs + 0.1f; t += VSI_TICK) {
+      int ty   = midPointY - (int)(t / gVsiFs * stdW2);
       int tlen = ((int)(fabsf(t) / VSI_TICK) % 2 == 0) ? lyt::scaled(4, width) : lyt::scaled(2, width);
       canvas->drawFastHLine(vsiX - tlen, ty, tlen, IWHITE);
     }
-    float vs  = s->BPS ? clamp(s->vertical_speed / 60.0f, -VSI_FULL_SCALE, VSI_FULL_SCALE) : 0;  // ft/min -> ft/sec
-    int   vsY = midPointY - (int)(vs / VSI_FULL_SCALE * stdW2);
+    float vs  = s->BPS ? clamp(s->vertical_speed / 60.0f, -gVsiFs, gVsiFs) : 0;  // ft/min -> ft/sec
+    int   vsY = midPointY - (int)(vs / gVsiFs * stdW2);
     uint8_t vsCol = s->BPS ? IGREEN : IGREY;
     canvas->fillTriangle(vsiX, vsY, vsiX - lyt::scaled(5, width), vsY - lyt::scaled(3, width),
                          vsiX - lyt::scaled(5, width), vsY + lyt::scaled(3, width), vsCol);
   }
 
-  // ---- G-meter (left edge, VSI-style bar: 0 g bottom .. GMETER_FS g top) ----
+  // ---- G-meter (left edge, VSI-style bar: 0 g bottom .. gGmeterFs g top) ----
   {
     int   gmX   = lyt::scaled(4, width);      // far-left edge (mirrors the VSI)
-    int   gmTop = midPointY - stdW2;          // GMETER_FS g
+    int   gmTop = midPointY - stdW2;          // gGmeterFs g
     int   gmBot = midPointY + stdW2;          // 0 g
-    float fs    = GMETER_FS;
+    float fs    = gGmeterFs;
     int   span  = gmBot - gmTop;
     canvas->drawFastVLine(gmX, gmTop, span, IWHITE);
     // integer-g ticks, alternating lengths (longer on even g), extending inward

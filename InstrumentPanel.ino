@@ -65,6 +65,35 @@ Preferences    baroPrefs;
 volatile float gHeadingOffset = HEADING_OFFSET_DEF;
 volatile bool  gPaletteDirty   = false;
 
+// Runtime-tunable instrument params (config portal). Default from the config.h #defines.
+volatile float gAlphaAtt = ALPHA_ATTITUDE, gAlphaG = ALPHA_GFORCE, gAlphaAlt = ALPHA_ALT,
+               gAlphaVs  = ALPHA_VSPEED,   gAlphaAsi = ALPHA_ASPEED;
+volatile float gVsiFs = VSI_FULL_SCALE, gGmeterFs = GMETER_FS;
+// IMU mounting trim (deg) + one-shot level-capture flag (set from the portal).
+volatile float gPitchTrim = 0, gRollTrim = 0;
+volatile bool  gLevelCapture = false;
+
+// Apply the IMU mounting trim to the sensor up-vector (ux,uy,uz; uz ~ +1 when level),
+// and, on a 'set level' request, capture the current tilt into the trims. Called from
+// the IMU drivers before the orientation flips. Trim 0 = identity (no change).
+void mountTrim(float &ux, float &uy, float &uz) {
+  if (gLevelCapture) {
+    gLevelCapture = false;
+    gRollTrim  = atan2f(ux, uz) * 180.0f / (float)M_PI;
+    gPitchTrim = atan2f(uy, uz) * 180.0f / (float)M_PI;
+    Preferences p; p.begin("cfg", false);
+    p.putFloat("ptrim", gPitchTrim); p.putFloat("rtrim", gRollTrim); p.end();
+  }
+  if (gRollTrim == 0.0f && gPitchTrim == 0.0f) return;            // fast path: no trim
+  float fr = gRollTrim * (float)M_PI / 180.0f, fp = gPitchTrim * (float)M_PI / 180.0f;
+  float cr = cosf(fr), sr = sinf(fr);
+  float nx = ux * cr - uz * sr, nz = ux * sr + uz * cr;          // cancel roll  (ux-uz plane)
+  ux = nx; uz = nz;
+  float cp = cosf(fp), sp = sinf(fp);
+  float ny = uy * cp - uz * sp, nz2 = uy * sp + uz * cp;         // cancel pitch (uy-uz plane)
+  uy = ny; uz = nz2;
+}
+
 // ----------------------------------------------------------------------------
 //  Shared state + locking
 // ----------------------------------------------------------------------------

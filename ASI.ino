@@ -102,7 +102,7 @@ void updateASI(state *s) {
     if (s->BPS && bmp.pressure > 0) {
       float airTemp = bmp.temperature + 273.15f;   // K
       float v = 2.23694f * sqrt(fabsf(pitot_pressure) * 2 * 287.05f * airTemp / bmp.pressure);
-      s->air_speed = s->air_speed * (1 - ALPHA_ASPEED) + ALPHA_ASPEED * v;
+      s->air_speed = s->air_speed * (1 - gAlphaAsi) + gAlphaAsi * v;
     }
   } else if (++asi_fail > 5) {
     // tolerate brief dropouts (occasional stale/NAK read on a loaded bus) — keep
@@ -146,7 +146,7 @@ void updateBPS(state *s) {
       BPS_First_Alt = true;
     }
 
-    float new_alt = s->alt * (1 - ALPHA_ALT) + ALPHA_ALT * 3.28084 * bmp.readAltitude(gBaroInHg * 33.8639f);
+    float new_alt = s->alt * (1 - gAlphaAlt) + gAlphaAlt * 3.28084 * bmp.readAltitude(gBaroInHg * 33.8639f);
 
     // Vertical speed = d(altitude)/dt, expressed in ft/min and smoothed.
     unsigned long now = millis();
@@ -154,7 +154,7 @@ void updateBPS(state *s) {
       float dt = (now - vs_last_time) / 1000.0f;   // seconds
       if (dt > 0) {
         float vs = (new_alt - vs_last_alt) / dt * 60.0f;   // ft/min (instantaneous)
-        s->vertical_speed = s->vertical_speed * (1 - ALPHA_VSPEED) + ALPHA_VSPEED * vs;
+        s->vertical_speed = s->vertical_speed * (1 - gAlphaVs) + gAlphaVs * vs;
       }
     }
     vs_last_time = now;

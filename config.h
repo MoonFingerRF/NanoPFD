@@ -379,6 +379,19 @@ extern volatile float gHeadingOffset;        // live, NVS-backed; added to both 
 // AMOLED rebuilds its RGB332 lookup next frame (BOARD_C/A read color_index directly).
 extern volatile bool  gPaletteDirty;
 
+// ---- Runtime-tunable instrument params (config portal 'Tuning' tab; NVS-backed) -----
+// Smoothing alphas (0..1, smaller = smoother) + instrument full-scale values. Power-on
+// defaults are the ALPHA_*/VSI/GMETER #defines below; these globals override at runtime.
+extern volatile float gAlphaAtt, gAlphaG, gAlphaAlt, gAlphaVs, gAlphaAsi;
+extern volatile float gVsiFs, gGmeterFs;
+// ---- IMU mounting trim (deg) — lets the IMU sit at ANY angle ------------------------
+// Applied to the sensor up-vector before the orientation flips (IMU.ino/ICM.ino). The
+// flips handle the gross 90-deg orientation; these trims cancel the residual tilt so the
+// horizon reads level at any mounting. 'Set level' (gLevelCapture) captures the current
+// attitude into the trims. Default 0 = no change.
+extern volatile float gPitchTrim, gRollTrim;
+extern volatile bool  gLevelCapture;
+
 // ---- Navigation display (map) ----------------------------------------------
 // ND moving-map chart (airports, runways, navaids, airspace, glide paths, river).
 #define MAP_ENABLE      1

@@ -305,10 +305,10 @@ void updateIMU(state *s) {
           float ax = gOriFlipR ? -roll  :  roll;
           float ay = gOriFlipV ? -vert  :  vert;
           float az = gOriFlipP ? -pitch :  pitch;
-          s->ax = s->ax * (1 - ALPHA_ATTITUDE) + ALPHA_ATTITUDE * ax;
-          s->ay = s->ay * (1 - ALPHA_ATTITUDE) + ALPHA_ATTITUDE * ay;
-          s->az = s->az * (1 - ALPHA_ATTITUDE) + ALPHA_ATTITUDE * az;
-          s->g  = s->g  * (1 - ALPHA_GFORCE)   + ALPHA_GFORCE  * amag / 9.8;
+          s->ax = s->ax * (1 - gAlphaAtt) + gAlphaAtt * ax;
+          s->ay = s->ay * (1 - gAlphaAtt) + gAlphaAtt * ay;
+          s->az = s->az * (1 - gAlphaAtt) + gAlphaAtt * az;
+          s->g  = s->g  * (1 - gAlphaG)   + gAlphaG  * amag / 9.8;
           if (s->g > s->max_g) s->max_g = s->g;   // track peak load factor
           break;
         }
@@ -317,9 +317,9 @@ void updateIMU(state *s) {
           float mx = sensorValue.un.magneticField.x;
           float my = sensorValue.un.magneticField.z;
           float mz = sensorValue.un.magneticField.y;
-          s->mx = s->mx * (1 - ALPHA_ATTITUDE) + ALPHA_ATTITUDE * mx;
-          s->my = s->my * (1 - ALPHA_ATTITUDE) + ALPHA_ATTITUDE * my;
-          s->mz = s->mz * (1 - ALPHA_ATTITUDE) + ALPHA_ATTITUDE * mz;
+          s->mx = s->mx * (1 - gAlphaAtt) + gAlphaAtt * mx;
+          s->my = s->my * (1 - gAlphaAtt) + gAlphaAtt * my;
+          s->mz = s->mz * (1 - gAlphaAtt) + gAlphaAtt * mz;
           break;
         }
       case SH2_LINEAR_ACCELERATION:
@@ -336,8 +336,9 @@ void updateIMU(state *s) {
           float gz = sensorValue.un.gravity.z;
           float gmag = sqrt(gx * gx + gy * gy + gz * gz);
           if (gmag <= 0) gmag = 1;
-          // up vector (roll/pitch/vertical sources), then config mounting flips
+          // up vector (roll/pitch/vertical sources): mount trim, then config mounting flips
           float roll = -gx / gmag, pitch = -gy / gmag, vert = -gz / gmag;
+          mountTrim(roll, pitch, vert);            // arbitrary-mount trim / level capture
           if (gOriSwap) { float t = roll; roll = pitch; pitch = t; }
           s->gx = gOriFlipR ? -roll  :  roll;
           s->gy = gOriFlipV ? -vert  :  vert;
@@ -437,11 +438,11 @@ void updateIMU(state *s) {
     // pointing down; the BNO's s->a points UP (accel reaction). Negate to match,
     // otherwise the turn coordinator reads inverted ("works upside down").
     float ad[3]; qrot(q_align, qmi_acc, ad);
-    s->ax = s->ax * (1 - ALPHA_ATTITUDE) + ALPHA_ATTITUDE * (-ad[0]);
-    s->ay = s->ay * (1 - ALPHA_ATTITUDE) + ALPHA_ATTITUDE * (-ad[1]);
-    s->az = s->az * (1 - ALPHA_ATTITUDE) + ALPHA_ATTITUDE * (-ad[2]);
+    s->ax = s->ax * (1 - gAlphaAtt) + gAlphaAtt * (-ad[0]);
+    s->ay = s->ay * (1 - gAlphaAtt) + gAlphaAtt * (-ad[1]);
+    s->az = s->az * (1 - gAlphaAtt) + gAlphaAtt * (-ad[2]);
     float am = sqrt(qmi_acc[0]*qmi_acc[0] + qmi_acc[1]*qmi_acc[1] + qmi_acc[2]*qmi_acc[2]);
-    s->g = s->g * (1 - ALPHA_GFORCE) + ALPHA_GFORCE * am / 9.8f;
+    s->g = s->g * (1 - gAlphaG) + gAlphaG * am / 9.8f;
     if (s->g > s->max_g) s->max_g = s->g;
   } else {
     imu_source = IMU_SRC_NONE;

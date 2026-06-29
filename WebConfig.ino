@@ -78,6 +78,11 @@ void webConfigLoadSettings() {
   gRidBle   = p.getUChar("ridble",  RID_USE_BLE)  ? 1 : 0;   // RID enables (applied at boot)
   gRidWifi  = p.getUChar("ridwifi", RID_USE_WIFI) ? 1 : 0;
   gHeadingOffset = p.getFloat("hdg", HEADING_OFFSET_DEF);
+  gPitchTrim = p.getFloat("ptrim", 0);  gRollTrim = p.getFloat("rtrim", 0);   // IMU mount trim
+  gAlphaAtt  = p.getFloat("aatt", gAlphaAtt);  gAlphaG   = p.getFloat("ag",   gAlphaG);
+  gAlphaAlt  = p.getFloat("aalt", gAlphaAlt);  gAlphaVs  = p.getFloat("avs",  gAlphaVs);
+  gAlphaAsi  = p.getFloat("aasi", gAlphaAsi);
+  gVsiFs     = p.getFloat("vsifs", gVsiFs);    gGmeterFs = p.getFloat("gmfs", gGmeterFs);
   int zoom  = p.getInt("zoom", -1);
   if (p.getBytesLength("pal") == NUM_COLORS * sizeof(uint16_t)) {   // restore a saved palette
     p.getBytes("pal", (void *)color_index, NUM_COLORS * sizeof(uint16_t));
@@ -134,7 +139,7 @@ font-weight:700;letter-spacing:2px;cursor:pointer;margin-top:2px}.save:active{fi
 <div class=tabs>
 <button class="tb on" data-t=att>Attitude</button><button class=tb data-t=disp>Display</button>
 <button class=tb data-t=nav>Nav</button><button class=tb data-t=air>Air</button>
-<button class=tb data-t=log>Log</button><button class=tb data-t=net>WiFi</button></div>
+<button class=tb data-t=tune>Tune</button><button class=tb data-t=log>Log</button><button class=tb data-t=net>WiFi</button></div>
 <div class=pane id=att>
 <div class=c><h2>IMU orientation</h2>
 <div class=r><label>Upside down</label><span class=tg><input type=checkbox id=v><span class=sl></span></span></div>
@@ -142,7 +147,12 @@ font-weight:700;letter-spacing:2px;cursor:pointer;margin-top:2px}.save:active{fi
 <div class=r><label>Reverse pitch</label><span class=tg><input type=checkbox id=p><span class=sl></span></span></div>
 <div class=r><label>Swap roll/pitch</label><span class=tg><input type=checkbox id=sw><span class=sl></span></span></div></div>
 <div class=c><h2>Compass</h2>
-<div class=r><label>Heading offset</label><span><input type=number id=hdg min=0 max=359 step=1><span class=u>deg</span></span></div></div></div>
+<div class=r><label>Heading offset</label><span><input type=number id=hdg min=0 max=359 step=1><span class=u>deg</span></span></div></div>
+<div class=c><h2>Mount trim</h2>
+<div class=r><label>Pitch trim</label><span><input type=number id=pt step=0.5><span class=u>deg</span></span></div>
+<div class=r><label>Roll trim</label><span><input type=number id=rt step=0.5><span class=u>deg</span></span></div>
+<button class="save sec" onclick=setLevel()>SET LEVEL (CAPTURE)</button>
+<div class=u>Mount the IMU at any angle; with the aircraft level, tap Set level to zero the horizon. Combine with the orientation flips above for 90&deg; mountings.</div></div></div>
 <div class="pane hide" id=disp>
 <div class=c><h2>Color palette</h2><div id=pal></div></div></div>
 <div class="pane hide" id=nav>
@@ -151,6 +161,17 @@ font-weight:700;letter-spacing:2px;cursor:pointer;margin-top:2px}.save:active{fi
 <div class="pane hide" id=air>
 <div class=c><h2>Air data</h2>
 <div class=r><label>Local pressure</label><span><input type=number id=b step=0.01 min=28 max=31><span class=u>inHg</span></span></div></div></div>
+<div class="pane hide" id=tune>
+<div class=c><h2>Smoothing</h2>
+<div class=r><label>Attitude</label><input type=number id=aatt step=0.02 min=0.02 max=1></div>
+<div class=r><label>G-force</label><input type=number id=ag step=0.02 min=0.02 max=1></div>
+<div class=r><label>Altitude</label><input type=number id=aalt step=0.02 min=0.02 max=1></div>
+<div class=r><label>Vertical speed</label><input type=number id=avs step=0.02 min=0.02 max=1></div>
+<div class=r><label>Airspeed</label><input type=number id=aasi step=0.02 min=0.02 max=1></div>
+<div class=u>0&ndash;1; smaller = smoother but slower to respond.</div></div>
+<div class=c><h2>Instrument scales</h2>
+<div class=r><label>VSI full-scale</label><span><input type=number id=vsifs step=1 min=1><span class=u>ft/s</span></span></div>
+<div class=r><label>G-meter full-scale</label><span><input type=number id=gmfs step=0.5 min=1><span class=u>g</span></span></div></div></div>
 <div class="pane hide" id=log>
 <div class=c><h2>Session peaks</h2>
 <div class=grid>
@@ -192,11 +213,16 @@ function bind(){
 $(id).onchange=function(){ap(key+'='+(this.checked?1:0))}});
 $('hdg').onchange=function(){ap('hdg='+(this.value||0))};
 $('z').onchange=function(){ap('zoom='+this.value)};
-$('b').onchange=function(){ap('baro='+this.value)}}
+$('b').onchange=function(){ap('baro='+this.value)};
+$('pt').onchange=function(){ap('ptrim='+this.value)};$('rt').onchange=function(){ap('rtrim='+this.value)};
+['aatt','ag','aalt','avs','aasi','vsifs','gmfs'].forEach(function(id){$(id).onchange=function(){ap(id+'='+this.value)}})}
+function setLevel(){ap('level=1').then(function(){flash('✓ captured');setTimeout(load,500)})}
 function load(){fetch('/api').then(function(r){return r.json()}).then(function(d){
 $('v').checked=!!d.oriV;$('r').checked=!!d.oriR;$('p').checked=!!d.oriP;$('sw').checked=!!d.oriS;
 $('hdg').value=d.hdg;$('b').value=d.baro.toFixed(2);$('pw').value=d.pass;
 $('rb').checked=!!d.ridble;$('rw').checked=!!d.ridwifi;
+$('pt').value=d.ptrim;$('rt').value=d.rtrim;$('aatt').value=d.aatt;$('ag').value=d.ag;
+$('aalt').value=d.aalt;$('avs').value=d.avs;$('aasi').value=d.aasi;$('vsifs').value=d.vsifs;$('gmfs').value=d.gmfs;
 var z=$('z');z.innerHTML='';d.zooms.forEach(function(m,i){var o=document.createElement('option');
 o.value=i;o.text=m;if(i==d.zoom)o.selected=true;z.add(o)});
 var pe=$('pal');pe.innerHTML='';d.pal.forEach(function(hex,i){
@@ -208,7 +234,10 @@ row.appendChild(lb);row.appendChild(ci);pe.appendChild(row)});
 bind()})}
 function save(){var q='oriV='+($('v').checked?1:0)+'&oriR='+($('r').checked?1:0)+'&oriP='+($('p').checked?1:0)
 +'&oriS='+($('sw').checked?1:0)+'&zoom='+$('z').value+'&baro='+$('b').value+'&hdg='+($('hdg').value||0)
-+'&ridble='+($('rb').checked?1:0)+'&ridwifi='+($('rw').checked?1:0)+'&pass='+encodeURIComponent($('pw').value);
++'&ridble='+($('rb').checked?1:0)+'&ridwifi='+($('rw').checked?1:0)
++'&ptrim='+$('pt').value+'&rtrim='+$('rt').value+'&aatt='+$('aatt').value+'&ag='+$('ag').value+'&aalt='+$('aalt').value
++'&avs='+$('avs').value+'&aasi='+$('aasi').value+'&vsifs='+$('vsifs').value+'&gmfs='+$('gmfs').value
++'&pass='+encodeURIComponent($('pw').value);
 for(var i=0;i<PAL.length;i++){var e=$('pal'+i);if(e)q+='&pal'+i+'='+encodeURIComponent(e.value)}
 ap(q).then(function(r){flash(r.ok?'✓ saved':'error')})}
 var LOG=null,met=0,v0=0,v1=0;
@@ -254,6 +283,10 @@ static void cfgHandleApiGet() {
   j += "\"baro\":" + String(gBaroInHg, 2) + ",";
   j += "\"hdg\":" + String((int)lroundf(gHeadingOffset)) + ",";
   j += "\"ridble\":" + String((int)gRidBle) + ",\"ridwifi\":" + String((int)gRidWifi) + ",";
+  j += "\"ptrim\":" + String(gPitchTrim, 1) + ",\"rtrim\":" + String(gRollTrim, 1) + ",";
+  j += "\"aatt\":" + String(gAlphaAtt, 3) + ",\"ag\":" + String(gAlphaG, 3) + ",\"aalt\":" + String(gAlphaAlt, 3) +
+       ",\"avs\":" + String(gAlphaVs, 3) + ",\"aasi\":" + String(gAlphaAsi, 3) + ",";
+  j += "\"vsifs\":" + String(gVsiFs, 1) + ",\"gmfs\":" + String(gGmeterFs, 1) + ",";
   j += "\"pal\":[";
   for (int i = 0; i < NUM_COLORS; i++) {
     char hx[8]; rgb565ToHex(color_index[i], hx);
@@ -294,6 +327,16 @@ static void cfgHandleApiSet() {
   }
   if (cfgServer.hasArg("ridble"))  gRidBle  = cfgServer.arg("ridble").toInt() ? 1 : 0;   // applied next boot
   if (cfgServer.hasArg("ridwifi")) gRidWifi = cfgServer.arg("ridwifi").toInt() ? 1 : 0;
+  if (cfgServer.hasArg("level"))   gLevelCapture = true;                                 // capture mount level
+  if (cfgServer.hasArg("ptrim"))   gPitchTrim = cfgServer.arg("ptrim").toFloat();
+  if (cfgServer.hasArg("rtrim"))   gRollTrim  = cfgServer.arg("rtrim").toFloat();
+  if (cfgServer.hasArg("aatt")) gAlphaAtt = constrain(cfgServer.arg("aatt").toFloat(), 0.01f, 1.0f);
+  if (cfgServer.hasArg("ag"))   gAlphaG   = constrain(cfgServer.arg("ag").toFloat(),   0.01f, 1.0f);
+  if (cfgServer.hasArg("aalt")) gAlphaAlt = constrain(cfgServer.arg("aalt").toFloat(), 0.01f, 1.0f);
+  if (cfgServer.hasArg("avs"))  gAlphaVs  = constrain(cfgServer.arg("avs").toFloat(),  0.01f, 1.0f);
+  if (cfgServer.hasArg("aasi")) gAlphaAsi = constrain(cfgServer.arg("aasi").toFloat(), 0.01f, 1.0f);
+  if (cfgServer.hasArg("vsifs")) gVsiFs   = constrain(cfgServer.arg("vsifs").toFloat(), 1.0f, 200.0f);
+  if (cfgServer.hasArg("gmfs"))  gGmeterFs= constrain(cfgServer.arg("gmfs").toFloat(),  1.0f, 20.0f);
   bool palChanged = false;
   for (int i = 0; i < NUM_COLORS; i++) {
     char key[8]; snprintf(key, sizeof key, "pal%d", i);
@@ -307,6 +350,10 @@ static void cfgHandleApiSet() {
   p.putInt("zoom", mapZoomIdx());
   p.putFloat("hdg", gHeadingOffset);
   p.putUChar("ridble", gRidBle); p.putUChar("ridwifi", gRidWifi);
+  p.putFloat("ptrim", gPitchTrim); p.putFloat("rtrim", gRollTrim);
+  p.putFloat("aatt", gAlphaAtt); p.putFloat("ag", gAlphaG); p.putFloat("aalt", gAlphaAlt);
+  p.putFloat("avs", gAlphaVs); p.putFloat("aasi", gAlphaAsi);
+  p.putFloat("vsifs", gVsiFs); p.putFloat("gmfs", gGmeterFs);
   if (palChanged) p.putBytes("pal", (const void *)color_index, NUM_COLORS * sizeof(uint16_t));
   if (cfgServer.hasArg("pass")) p.putString("appass", cfgServer.arg("pass"));   // applies next config boot
   p.end();
