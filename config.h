@@ -365,7 +365,7 @@
 #define BNO_SWAP_ROLL_PITCH  0    // 1 = sensor turned 90 deg: swap the roll & pitch axes
 //
 //  Heading — yaw of the BNO's fused 9-axis ROTATION_VECTOR (its on-chip Kalman,
-//  accel+gyro+mag); its mag calibration is persisted to the BNO's flash:
+//  accel+gyro+mag); the BNO stores/reloads its own calibration (we don't):
 #define BNO_HEADING_SIGN    -1.0f // compass spin direction (flip if it turns the wrong way)
 #define BNO_HEADING_OFFSET 180.0f // degrees added to heading (rotate magnetic north into place)
 
@@ -384,7 +384,7 @@
 //  DMP's compass/gyro/accel cal is persisted to flash (NVS) so RV stays stable and
 //  doesn't 180-flip after a power cycle:
 #define ICM_HEADING_SIGN    -1.0f // compass spin direction (flip if it turns the wrong way)
-#define ICM_HEADING_OFFSET 270.0f // degrees added to heading (rotate magnetic north into place)
+#define ICM_HEADING_OFFSET 180.0f // degrees added to heading (rotate magnetic north into place)
 
 // ---- Navigation display (map) ----------------------------------------------
 // ND moving-map chart (airports, runways, navaids, airspace, glide paths, river).

@@ -32,12 +32,6 @@ bool imu_ever_began = false;        // sh2 session has been opened at least once
 unsigned long imu_last_begin = 0;   // throttles re-init attempts (hot-plug)
 unsigned long imu_last_data  = 0;   // millis() of the last valid sensor event
 
-// bno_mag_acc = the BNO's fused-orientation accuracy (0..3) from its ROTATION_VECTOR
-// report; bno_dcd_saved gates the once-per-good-calibration save of the BNO's
-// Dynamic Calibration Data to its own flash (so the compass is good after a boot).
-uint8_t bno_mag_acc   = 0;
-bool    bno_dcd_saved = false;
-
 // How long without ANY event before we consider the IMU disconnected. The
 // BNO08x streams accel/gravity at ~500 Hz, so this only trips on a real fault.
 // (getSensorEvent() returns false on every idle cycle, which is normal and must
@@ -51,8 +45,8 @@ bool    bno_dcd_saved = false;
 // Heading now comes from the fused ROTATION_VECTOR (9-axis accel+gyro+mag, the
 // BNO's internal Kalman) instead of the raw magnetometer, which is far quieter.
 bool setIMUReports() {
-  // Make sure the BNO keeps calibrating accel/gyro/mag in the background, so its
-  // fused heading converges and we can persist a good cal to its flash (DCD).
+  // Make sure the BNO keeps calibrating accel/gyro/mag in the background. We do NOT
+  // save its cal — the BNO stores and reloads its own DCD across power cycles.
   sh2_setCalConfig(SH2_CAL_ACCEL | SH2_CAL_GYRO | SH2_CAL_MAG);
   bool a = bno08x.enableReport(SH2_ACCELEROMETER, 2000);     // g-meter / slip
   bool g = bno08x.enableReport(SH2_GRAVITY, 2000);           // horizon / attitude
@@ -368,7 +362,6 @@ void updateIMU(state *s) {
           while (h < 0)        h += 360.0f;
           while (h >= 360.0f)  h -= 360.0f;
           s->heading = h;
-          bno_mag_acc = sensorValue.status & 0x03;   // 0..3 fusion accuracy -> drives the DCD save
           break;
         }
       case SH2_GEOMAGNETIC_ROTATION_VECTOR:
@@ -383,12 +376,6 @@ void updateIMU(state *s) {
         break;
       }
     }
-    // Persist calibration: once the BNO reports its mag is fully calibrated, save
-    // its Dynamic Calibration Data to flash (done OUTSIDE the event loop so it can't
-    // re-enter sh2_service). The BNO auto-loads that DCD on the next boot, so the
-    // compass is good immediately. Re-arm if accuracy is later lost.
-    if (bno_mag_acc >= 3 && !bno_dcd_saved) { sh2_saveDcdNow(); bno_dcd_saved = true; }
-    else if (bno_mag_acc < 2)                 bno_dcd_saved = false;
   }
 
   // --- failover -------------------------------------------------------------
