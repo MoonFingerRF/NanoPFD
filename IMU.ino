@@ -354,7 +354,7 @@ void updateIMU(state *s) {
           float qk = sensorValue.un.rotationVector.k;
           float yaw = atan2(2.0f * (qr * qk + qi * qj),
                             1.0f - 2.0f * (qj * qj + qk * qk)) * 180.0f / PI;
-          float h = BNO_HEADING_SIGN * yaw + BNO_HEADING_OFFSET;
+          float h = BNO_HEADING_SIGN * yaw + gHeadingOffset;
           while (h < 0)        h += 360.0f;
           while (h >= 360.0f)  h -= 360.0f;
           s->heading = h;

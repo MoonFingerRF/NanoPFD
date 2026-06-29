@@ -365,14 +365,19 @@
 #define ORI_SWAP_ROLL_PITCH_DEF  0   // 1 = sensor turned 90 deg: swap the roll & pitch axes
 extern volatile uint8_t gOriFlipV, gOriFlipR, gOriFlipP, gOriSwap;   // live, NVS-backed
 
-// ---- Compass north alignment (per-IMU; not in the portal) ------------------
+// ---- Compass north alignment -----------------------------------------------
 //  Heading = yaw of each chip's fused 9-axis output (BNO ROTATION_VECTOR / ICM RV).
-//  Both chips store/reload their own mag calibration. Tune SIGN (CW/CCW) + OFFSET
-//  (rotate magnetic north into place, deg) to the mounting:
+//  Both chips store/reload their own mag calibration. SIGN (CW/CCW) is per-IMU and
+//  compile-time; OFFSET (rotate magnetic north into place, deg) is shared by both
+//  IMUs and set at RUNTIME from the config portal (NVS-backed). Default 0.
 #define BNO_HEADING_SIGN    -1.0f
-#define BNO_HEADING_OFFSET 180.0f
 #define ICM_HEADING_SIGN    -1.0f
-#define ICM_HEADING_OFFSET 180.0f
+#define HEADING_OFFSET_DEF   0.0f
+extern volatile float gHeadingOffset;        // live, NVS-backed; added to both IMUs' heading
+
+// Set true by the config portal when the color palette (color_index[]) changes, so the
+// AMOLED rebuilds its RGB332 lookup next frame (BOARD_C/A read color_index directly).
+extern volatile bool  gPaletteDirty;
 
 // ---- Navigation display (map) ----------------------------------------------
 // ND moving-map chart (airports, runways, navaids, airspace, glide paths, river).

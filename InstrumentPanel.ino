@@ -60,6 +60,11 @@ uint16_t color_index[NUM_COLORS] = {
 volatile float gBaroInHg = 29.92f;
 Preferences    baroPrefs;
 
+// Compass north offset (deg) added to both IMUs' heading, and a flag that tells the
+// AMOLED to rebuild its RGB332 palette LUT — both set live from the config portal.
+volatile float gHeadingOffset = HEADING_OFFSET_DEF;
+volatile bool  gPaletteDirty   = false;
+
 // ----------------------------------------------------------------------------
 //  Shared state + locking
 // ----------------------------------------------------------------------------

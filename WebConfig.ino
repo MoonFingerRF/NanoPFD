@@ -2,9 +2,10 @@
 //  WebConfig.ino — config-mode WiFi access point + captive-portal settings page.
 //
 //  CONFIG MODE: NanoPFD brings up a WiFi AP ("NanoPFD"). Join it from a phone and a
-//  captive portal pops the settings page automatically; changes (IMU orientation,
-//  map zoom, local pressure, AP password) save to flash and apply live on the
-//  display.
+//  captive portal pops a TABBED settings page (Attitude / Display / Nav / Air / WiFi):
+//  IMU orientation + compass heading offset, the color palette (per-color pickers),
+//  map zoom, local pressure, AP password. Changes apply LIVE on the panel and save to
+//  flash.
 //
 //  Why it's a MODE, not always-on: WiFi and the Remote ID BLE scanner can't run at
 //  once on this board. Measured on hardware: after the PFD canvas the chip has ~84 KB
@@ -37,6 +38,22 @@ volatile uint8_t gOriFlipR = ORI_FLIP_ROLL_DEF;
 volatile uint8_t gOriFlipP = ORI_FLIP_PITCH_DEF;
 volatile uint8_t gOriSwap  = ORI_SWAP_ROLL_PITCH_DEF;
 
+extern uint16_t color_index[];   // live RGB565 palette (defined in InstrumentPanel.ino)
+
+// RGB565 <-> "#rrggbb" for the web color pickers (expand/quantize the 5/6/5 channels).
+static void rgb565ToHex(uint16_t c, char out[8]) {
+  uint8_t r = (uint8_t)(((c >> 11) & 0x1F) * 255 / 31);
+  uint8_t g = (uint8_t)(((c >> 5)  & 0x3F) * 255 / 63);
+  uint8_t b = (uint8_t)(( c        & 0x1F) * 255 / 31);
+  snprintf(out, 8, "#%02x%02x%02x", r, g, b);
+}
+static uint16_t hexToRgb565(const String &s) {
+  int i = (s.length() && s[0] == '#') ? 1 : 0;
+  long v = strtol(s.c_str() + i, nullptr, 16);
+  uint8_t r = (v >> 16) & 0xFF, g = (v >> 8) & 0xFF, b = v & 0xFF;
+  return (uint16_t)(((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3));
+}
+
 #define AP_SSID         "NanoPFD"
 #define AP_PASS_DEFAULT "NanoPFD"     // < 8 chars -> WPA2 minimum not met -> open AP (see below)
 
@@ -58,58 +75,106 @@ void webConfigLoadSettings() {
   gOriFlipR = p.getUChar("oriR", ORI_FLIP_ROLL_DEF) ? 1 : 0;
   gOriFlipP = p.getUChar("oriP", ORI_FLIP_PITCH_DEF) ? 1 : 0;
   gOriSwap  = p.getUChar("oriS", ORI_SWAP_ROLL_PITCH_DEF) ? 1 : 0;
+  gHeadingOffset = p.getFloat("hdg", HEADING_OFFSET_DEF);
   int zoom  = p.getInt("zoom", -1);
+  if (p.getBytesLength("pal") == NUM_COLORS * sizeof(uint16_t)) {   // restore a saved palette
+    p.getBytes("pal", (void *)color_index, NUM_COLORS * sizeof(uint16_t));
+    gPaletteDirty = true;                                          // AMOLED rebuilds its LUT next frame
+  }
   p.end();
   if (zoom >= 0) mapZoomSet(zoom);     // gBaroInHg is restored separately (baroPrefs)
 }
 
 // ---- the settings page (dark EFIS theme, matches the display palette) -------
+// Tabbed (Attitude / Display / Nav / Air / WiFi). Every control LIVE-applies on change
+// for instant preview on the panel (the display runs in config mode); SAVE persists all,
+// incl. the AP password (which is save-only and takes effect next config boot).
 static const char CFG_PAGE[] PROGMEM = R"HTML(<!doctype html><html><head>
 <meta name=viewport content="width=device-width,initial-scale=1"><title>NanoPFD</title><style>
 :root{--bg:#000;--fg:#e8e8e8;--cy:#22d3ee;--gn:#37d067;--sky:#5aa9e6;--gy:#6b7280;--pn:#0c0f12;--ln:#1b2228}
 *{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--fg);
 font:14px/1.45 ui-monospace,Menlo,Consolas,monospace}.w{max-width:460px;margin:0 auto;padding:18px 14px}
 h1{font-size:20px;letter-spacing:3px;color:var(--cy);margin:6px 0 0;text-align:center;text-shadow:0 0 12px #0891b2}
-.s{text-align:center;color:var(--gy);font-size:11px;letter-spacing:2px;margin:2px 0 18px;text-transform:uppercase}
+.s{text-align:center;color:var(--gy);font-size:11px;letter-spacing:2px;margin:2px 0 14px;text-transform:uppercase}
+.tabs{display:flex;gap:4px;margin-bottom:14px}
+.tb{flex:1;width:auto;background:#11161b;color:var(--gy);border:1px solid var(--ln);border-radius:7px;
+padding:9px 2px;font:inherit;font-size:10px;letter-spacing:1px;cursor:pointer;text-transform:uppercase}
+.tb.on{background:var(--cy);color:#001014;border-color:var(--cy);font-weight:700}
+.pane.hide{display:none}
 .c{background:var(--pn);border:1px solid var(--ln);border-radius:9px;padding:13px 14px;margin-bottom:13px}
 .c h2{font-size:11px;letter-spacing:2px;color:var(--gn);text-transform:uppercase;margin:0 0 6px;
-border-bottom:1px solid var(--ln);padding-bottom:7px}.r{display:flex;align-items:center;justify-content:space-between;padding:8px 0}
+border-bottom:1px solid var(--ln);padding-bottom:7px}
+.r{display:flex;align-items:center;justify-content:space-between;padding:7px 0}
 input,select{background:#11161b;color:var(--fg);border:1px solid #2a333c;border-radius:6px;padding:8px;font:inherit}
-input[type=number]{width:104px;text-align:right}select{min-width:140px}input[type=text]{width:150px}
+input[type=number]{width:104px;text-align:right}select{min-width:140px}input[type=text]{width:160px}
+input[type=color]{width:48px;height:30px;padding:2px;cursor:pointer}
 .tg{position:relative;width:48px;height:26px;flex:0 0 auto}.tg input{opacity:0;width:0;height:0}
 .sl{position:absolute;inset:0;background:#2a333c;border-radius:26px;transition:.15s;cursor:pointer}
 .sl:after{content:"";position:absolute;height:20px;width:20px;left:3px;top:3px;background:#9aa6b2;border-radius:50%;transition:.15s}
 .tg input:checked+.sl{background:var(--sky)}.tg input:checked+.sl:after{transform:translateX(22px);background:#fff}
-button{width:100%;background:var(--cy);color:#001014;border:0;border-radius:9px;padding:13px;font:inherit;
-font-weight:700;letter-spacing:2px;cursor:pointer;margin-top:2px}button:active{filter:brightness(.85)}
-.st{text-align:center;color:var(--gn);min-height:20px;margin-top:10px;letter-spacing:1px}.u{color:var(--gy);font-size:11px;margin-left:6px}
+.save{width:100%;background:var(--cy);color:#001014;border:0;border-radius:9px;padding:13px;font:inherit;
+font-weight:700;letter-spacing:2px;cursor:pointer;margin-top:2px}.save:active{filter:brightness(.85)}
+.st{text-align:center;color:var(--gn);min-height:20px;margin-top:10px;letter-spacing:1px}
+.u{color:var(--gy);font-size:11px;margin-left:6px}
 </style></head><body><div class=w>
 <h1>NANO&middot;PFD</h1><div class=s>configuration</div>
+<div class=tabs>
+<button class="tb on" data-t=att>Attitude</button><button class=tb data-t=disp>Display</button>
+<button class=tb data-t=nav>Nav</button><button class=tb data-t=air>Air</button><button class=tb data-t=net>WiFi</button></div>
+<div class=pane id=att>
 <div class=c><h2>IMU orientation</h2>
 <div class=r><label>Upside down</label><span class=tg><input type=checkbox id=v><span class=sl></span></span></div>
 <div class=r><label>Reverse roll</label><span class=tg><input type=checkbox id=r><span class=sl></span></span></div>
 <div class=r><label>Reverse pitch</label><span class=tg><input type=checkbox id=p><span class=sl></span></span></div>
 <div class=r><label>Swap roll/pitch</label><span class=tg><input type=checkbox id=sw><span class=sl></span></span></div></div>
+<div class=c><h2>Compass</h2>
+<div class=r><label>Heading offset</label><span><input type=number id=hdg min=0 max=359 step=1><span class=u>deg</span></span></div></div></div>
+<div class="pane hide" id=disp>
+<div class=c><h2>Color palette</h2><div id=pal></div></div></div>
+<div class="pane hide" id=nav>
 <div class=c><h2>Navigation</h2>
-<div class=r><label>Map zoom</label><select id=z></select></div></div>
+<div class=r><label>Map zoom</label><select id=z></select></div></div></div>
+<div class="pane hide" id=air>
 <div class=c><h2>Air data</h2>
-<div class=r><label>Local pressure</label><span><input type=number id=b step=0.01 min=28 max=31><span class=u>inHg</span></span></div></div>
+<div class=r><label>Local pressure</label><span><input type=number id=b step=0.01 min=28 max=31><span class=u>inHg</span></span></div></div></div>
+<div class="pane hide" id=net>
 <div class=c><h2>WiFi</h2>
 <div class=r><label>AP password</label><input type=text id=pw maxlength=63></div>
 <div class=u>8&ndash;63 chars for WPA2; shorter = open network</div></div>
-<button onclick=save()>SAVE TO FLASH</button><div class=st id=st></div>
-<div class=u style="text-align:center;margin-top:16px;line-height:1.6">This Wi-Fi AP and the Remote&nbsp;ID receiver can't run at once.<br>Hold the <b>BOOT</b> button ~3&nbsp;s to switch to flight mode (Remote&nbsp;ID).</div>
+<div class=u style="text-align:center;line-height:1.6">This AP and the Remote&nbsp;ID receiver can't run at once.<br>Hold the <b>BOOT</b> button ~3&nbsp;s to switch to flight mode.</div></div>
+<button class=save onclick=save()>SAVE TO FLASH</button><div class=st id=st></div>
 </div><script>
 var $=function(i){return document.getElementById(i)};
+var PAL=['Background','Blue','Red / warning','Green','Cyan','Magenta','Yellow','White / text','Sky','Ground','Grey','Roads','Traffic','Water','Roads (med)'];
+function ap(q){return fetch('/api?'+q,{method:'POST'})}
+function flash(t){$('st').textContent=t;setTimeout(function(){$('st').textContent=''},2000)}
+var tb=document.querySelectorAll('.tb');for(var k=0;k<tb.length;k++){tb[k].onclick=function(){
+for(var j=0;j<tb.length;j++)tb[j].classList.remove('on');
+var ps=document.querySelectorAll('.pane');for(var j=0;j<ps.length;j++)ps[j].classList.add('hide');
+this.classList.add('on');$(this.dataset.t).classList.remove('hide')}}
+function bind(){
+['v','r','p','sw'].forEach(function(id,n){var key=['oriV','oriR','oriP','oriS'][n];
+$(id).onchange=function(){ap(key+'='+(this.checked?1:0))}});
+$('hdg').onchange=function(){ap('hdg='+(this.value||0))};
+$('z').onchange=function(){ap('zoom='+this.value)};
+$('b').onchange=function(){ap('baro='+this.value)}}
 function load(){fetch('/api').then(function(r){return r.json()}).then(function(d){
 $('v').checked=!!d.oriV;$('r').checked=!!d.oriR;$('p').checked=!!d.oriP;$('sw').checked=!!d.oriS;
-$('b').value=d.baro.toFixed(2);$('pw').value=d.pass;var z=$('z');z.innerHTML='';
-d.zooms.forEach(function(m,i){var o=document.createElement('option');o.value=i;o.text=m;
-if(i==d.zoom)o.selected=true;z.add(o)});})}
+$('hdg').value=d.hdg;$('b').value=d.baro.toFixed(2);$('pw').value=d.pass;
+var z=$('z');z.innerHTML='';d.zooms.forEach(function(m,i){var o=document.createElement('option');
+o.value=i;o.text=m;if(i==d.zoom)o.selected=true;z.add(o)});
+var pe=$('pal');pe.innerHTML='';d.pal.forEach(function(hex,i){
+var row=document.createElement('div');row.className='r';
+var lb=document.createElement('label');lb.textContent=PAL[i]||('Color '+i);
+var ci=document.createElement('input');ci.type='color';ci.value=hex;ci.id='pal'+i;
+ci.onchange=function(){ap('pal'+i+'='+encodeURIComponent(this.value))};
+row.appendChild(lb);row.appendChild(ci);pe.appendChild(row)});
+bind()})}
 function save(){var q='oriV='+($('v').checked?1:0)+'&oriR='+($('r').checked?1:0)+'&oriP='+($('p').checked?1:0)
-+'&oriS='+($('sw').checked?1:0)+'&zoom='+$('z').value+'&baro='+$('b').value+'&pass='+encodeURIComponent($('pw').value);
-fetch('/api?'+q,{method:'POST'}).then(function(r){$('st').textContent=r.ok?'✓ saved':'error';
-setTimeout(function(){$('st').textContent=''},2500)})}
++'&oriS='+($('sw').checked?1:0)+'&zoom='+$('z').value+'&baro='+$('b').value+'&hdg='+($('hdg').value||0)
++'&pass='+encodeURIComponent($('pw').value);
+for(var i=0;i<PAL.length;i++){var e=$('pal'+i);if(e)q+='&pal'+i+'='+encodeURIComponent(e.value)}
+ap(q).then(function(r){flash(r.ok?'✓ saved':'error')})}
 load();
 </script></body></html>)HTML";
 
@@ -121,6 +186,14 @@ static void cfgHandleApiGet() {
        ",\"oriP\":" + String(gOriFlipP) + ",\"oriS\":" + String(gOriSwap) + ",";
   j += "\"zoom\":" + String(mapZoomIdx()) + ",";
   j += "\"baro\":" + String(gBaroInHg, 2) + ",";
+  j += "\"hdg\":" + String((int)lroundf(gHeadingOffset)) + ",";
+  j += "\"pal\":[";
+  for (int i = 0; i < NUM_COLORS; i++) {
+    char hx[8]; rgb565ToHex(color_index[i], hx);
+    j += "\""; j += hx; j += "\"";
+    if (i + 1 < NUM_COLORS) j += ",";
+  }
+  j += "],";
   j += "\"pass\":\"" + cfgGetPass() + "\",\"zooms\":[";
   for (int i = 0; i < mapZoomCount(); i++) {
     int r = mapZoomRangeM(i);
@@ -146,10 +219,25 @@ static void cfgHandleApiSet() {
       Preferences bp; bp.begin("baro", false); bp.putFloat("inHg", b); bp.end();
     }
   }
+  if (cfgServer.hasArg("hdg")) {
+    float h = cfgServer.arg("hdg").toFloat();
+    while (h < 0)       h += 360.0f;
+    while (h >= 360.0f) h -= 360.0f;
+    gHeadingOffset = h;
+  }
+  bool palChanged = false;
+  for (int i = 0; i < NUM_COLORS; i++) {
+    char key[8]; snprintf(key, sizeof key, "pal%d", i);
+    if (cfgServer.hasArg(key)) { color_index[i] = hexToRgb565(cfgServer.arg(key)); palChanged = true; }
+  }
+  if (palChanged) gPaletteDirty = true;   // AMOLED rebuilds its RGB332 LUT next frame
+
   Preferences p; p.begin("cfg", false);
   p.putUChar("oriV", gOriFlipV); p.putUChar("oriR", gOriFlipR);
   p.putUChar("oriP", gOriFlipP); p.putUChar("oriS", gOriSwap);
   p.putInt("zoom", mapZoomIdx());
+  p.putFloat("hdg", gHeadingOffset);
+  if (palChanged) p.putBytes("pal", (const void *)color_index, NUM_COLORS * sizeof(uint16_t));
   if (cfgServer.hasArg("pass")) p.putString("appass", cfgServer.arg("pass"));   // applies next config boot
   p.end();
   cfgServer.send(200, "text/plain", "ok");

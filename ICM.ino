@@ -18,8 +18,8 @@
 //  Requires the SparkFun ICM-20948 library with DMP support enabled
 //  (#define ICM_20948_USE_DMP in src/util/ICM_20948_C.h — already set here).
 //
-//  TUNE: the sensor->display axis map (the s->gx/gy/gz lines) and the heading
-//  ICM_HEADING_SIGN / ICM_HEADING_OFFSET depend on how the board is mounted.
+//  TUNE: the sensor->display axis map (the s->gx/gy/gz lines), ICM_HEADING_SIGN, and the
+//  shared runtime gHeadingOffset (set via the config portal) depend on the mounting.
 // ============================================================================
 
 #if ENABLE_ICM20948
@@ -145,7 +145,7 @@ bool icmUpdate(state *s) {
 
     // heading: yaw of the magnetometer-referenced quaternion (absolute)
     float yaw = atan2(2 * (q0 * q3 + q1 * q2), 1 - 2 * (q2 * q2 + q3 * q3)) * 180.0f / PI;
-    float h = ICM_HEADING_SIGN * yaw + ICM_HEADING_OFFSET;
+    float h = ICM_HEADING_SIGN * yaw + gHeadingOffset;
     while (h < 0)       h += 360.0f;
     while (h >= 360.0f) h -= 360.0f;
     s->heading = h;

@@ -186,6 +186,17 @@ static uint8_t    *gBounce     = nullptr;            // AMO_PUSH_LPC lines, inte
 static volatile int gDrawBuf  = 0;                   // buffer the cores draw into this frame
 static uint8_t     gIdx332[NUM_COLORS];    // palette index -> nearest RGB332
 
+// (Re)build the index->RGB332 lookup from the live RGB565 palette. Called once at init
+// and again whenever the config portal edits color_index[] (gPaletteDirty), on the render
+// core so the encode never sees a half-updated table.
+void amoRebuildPalette() {
+  for (int i = 0; i < NUM_COLORS; i++) {
+    uint16_t c = color_index[i];
+    uint8_t R3 = (c >> 13) & 0x07, G3 = (c >> 8) & 0x07, B2 = (c >> 3) & 0x03;
+    gIdx332[i] = (R3 << 5) | (G3 << 2) | B2;
+  }
+}
+
 // Encode nLines rows of an 8-bit index canvas into the per-line RLE frame at rows
 // [frameY0 .. frameY0+nLines). Fused: runs are found on the index bytes and gIdx332 is
 // applied only on emit, so a flat line costs ~nothing (skips its run) -> cheaper than a
@@ -234,11 +245,7 @@ void combinedDisplayInit() {
   sy6970DisableWatchdog();
   sy6970EnableBatteryADC();                  // turn on the PMIC battery-voltage ADC (read in sensorTask)
 
-  for (int i = 0; i < NUM_COLORS; i++) {     // index -> RGB332 (top 3R,3G,2B of the RGB565 palette)
-    uint16_t c = color_index[i];
-    uint8_t R3 = (c >> 13) & 0x07, G3 = (c >> 8) & 0x07, B2 = (c >> 3) & 0x03;
-    gIdx332[i] = (R3 << 5) | (G3 << 2) | B2;
-  }
+  amoRebuildPalette();                       // index -> RGB332 (top 3R,3G,2B of the RGB565 palette)
 
   heap_caps_malloc_extmem_enable(100 * 1024);
   static GFXcanvas8 incmap = generate_inc_map(0.6 * PFD_REGION_H, lyt::txtScale(RGB_WIDTH));
@@ -313,6 +320,7 @@ void combinedTask(void *params) {
     vTaskDelay(200);
     continue;
 #endif
+    if (gPaletteDirty) { amoRebuildPalette(); gPaletteDirty = false; }   // config portal edited the palette
     getState(&gCmbSnap);
     unsigned long t0 = micros();
 
