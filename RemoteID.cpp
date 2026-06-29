@@ -51,6 +51,7 @@
 #include "nimble/nimble_port_freertos.h"
 #include "host/ble_hs.h"
 #include "host/ble_gap.h"
+#include "esp_bt.h"            // esp_bt_controller_* + BT_CONTROLLER_INIT_CONFIG_DEFAULT (lean cfg)
 #endif
 
 // ---- diagnostics -----------------------------------------------------------
@@ -187,14 +188,38 @@ static void ble_host_task(void *param) {
 }
 
 static void ble_begin() {
-  // Bring up the BLE controller with a LEAN config (we only ever do one passive
-  // scan), then the NimBLE host, instead of nimble_port_init()'s fat defaults —
-  // the defaults reserve ~10 BLE "activities" + big scan-dedup caches and cost
-  // ~71 KB internal RAM, which doesn't leave room for the internal PFD canvas.
-  // (Splitting controller+host this way is what nimble_port_init does internally;
-  // it still requires arduino-esp32 core <= 3.3.6 — see issue #12357.)
-  esp_err_t e = nimble_port_init();              // controller + host (core <= 3.3.6)
-  if (e != ESP_OK) { RID_LOG("[RID] nimble_port_init err %d\n", e); return; }
+  // Bring the BLE CONTROLLER up ourselves with a LEAN config BEFORE nimble_port_init()
+  // (which otherwise inits the controller with fat defaults: ~10 BLE "activities" +
+  // big scan-dedup caches ≈ 71 KB internal RAM — too much to also fit the WiFi config
+  // AP alongside the internal PFD canvas). We only ever run ONE passive scan, so cap
+  // the activities low and shrink the duplicate-filter list. nimble_port_init() then
+  // sees the controller already enabled and just brings up the host on top.
+  // Lean CONTROLLER first — its event/buffer counts (driven by ble_max_act) are what the
+  // NimBLE host's porting-layer mempools size themselves from.
+  esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
+  bt_cfg.ble_max_act = 2;            // default 10 — each activity reserves per-act buffers
+  esp_err_t ce = esp_bt_controller_init(&bt_cfg);
+  if (ce != ESP_OK && ce != ESP_ERR_INVALID_STATE) {
+    RID_LOG("[RID] bt_controller_init err %d — skipping BLE (low RAM?)\n", ce);
+    return;                          // bail cleanly instead of crashing the host downstream
+  }
+  esp_err_t ee = esp_bt_controller_enable(ESP_BT_MODE_BLE);
+  if (ee != ESP_OK && ee != ESP_ERR_INVALID_STATE) {
+    RID_LOG("[RID] bt_controller_enable err %d — skipping BLE\n", ee);
+    return;
+  }
+
+  // Then the NimBLE Porting Layer (funcs table + mempools); nimble_port_init() does this
+  // internally, so driving the steps by hand we must call both or esp_nimble_init() null-
+  // derefs allocating the default event queue (npl_freertos_eventq_init).
+  npl_freertos_funcs_init();
+  int mp = npl_freertos_mempool_init();
+  ble_npl_eventq_init(nimble_port_get_dflt_eventq());   // nimble_port_init() inits the default
+                                                        // event queue before the host; we must too
+  RID_LOG("[RID] npl_mempool_init=%d ce=%d ee=%d\n", mp, (int)ce, (int)ee);
+
+  esp_err_t e = esp_nimble_init();               // HOST ONLY (nimble_port_init would re-init the
+  if (e != ESP_OK) { RID_LOG("[RID] esp_nimble_init err %d\n", e); return; }  // controller -> INVALID_STATE)
   ble_hs_cfg.sync_cb  = ble_on_sync;             // start scanning once the host is ready
   ble_hs_cfg.reset_cb = ble_on_reset;
   nimble_port_freertos_init(ble_host_task);

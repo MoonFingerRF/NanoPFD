@@ -481,10 +481,10 @@ void setup(void) {
   // the PFD canvas internal. The delay lets combinedTask spin up its ndDrawTask
   // (created on first run) before the radios carve up what's left.
   delay(150);
-  remoteid_begin();    // FAA Remote ID receiver — BLE only (RID_USE_WIFI 0), brought up
-                       // FIRST so its lean controller gets internal SRAM before the AP.
-  webConfigBegin();    // always-on WiFi AP + captive settings portal; coexists with BLE
-                       // (the WiFi sniffer is off, so the radio is free for the softAP).
+  // WiFi AP and BLE Remote ID can't both fit in internal SRAM with the canvas (see
+  // WebConfig.ino), so run exactly one per boot. Hold BOOT ~3 s to switch (handled in loop()).
+  if (webConfigApMode()) webConfigBegin();   // config mode: WiFi AP + captive settings portal
+  else                   remoteid_begin();   // flight mode: FAA Remote ID (BLE)
 }
 
 // loop() runs in the Arduino loopTask (core 1, low priority). It only handles
@@ -508,13 +508,23 @@ void loop() {
   // IO0 (BOOT button): tap = +0.01 inHg on the altimeter setting; hold (>450 ms) =
   // continuous. One button, so it only counts up and wraps 31.00 -> 28.00.
   {
-    static bool bprev = false, bdirty = false;
+    static bool bprev = false, bdirty = false, bmodeToggled = false;
     static uint32_t bpress = 0, brepeat = 0, bsaveT = 0;
     bool bdown = (digitalRead(0) == LOW);
     uint32_t bnow = millis();
     bool tap = bdown && !bprev;
     bool rep = bdown && bprev && (bnow - bpress > 450) && (bnow - brepeat > 90);
     if (tap) bpress = bnow;
+    // BOOT held >=3 s -> switch between config (WiFi AP) and flight (BLE Remote ID) mode and
+    // reboot (the two radios can't coexist; see WebConfig.ino). GPIO0 read at RUNTIME is safe —
+    // only HOLDING it across a reset/power-on would enter the ROM bootloader.
+    if (bdown && !bmodeToggled && (bnow - bpress) >= 3000) {
+      bmodeToggled = true;
+      webConfigToggleApMode();
+      delay(40);                  // let the NVS write flush
+      ESP.restart();
+    }
+    if (!bdown) bmodeToggled = false;
     if (tap || rep) {
       brepeat = bnow;
       gBaroInHg = roundf((gBaroInHg + 0.01f) * 100.0f) / 100.0f;

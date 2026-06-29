@@ -1,25 +1,32 @@
 // ============================================================================
-//  WebConfig.ino — always-on WiFi access point + captive-portal settings page.
+//  WebConfig.ino — config-mode WiFi access point + captive-portal settings page.
 //
-//  NanoPFD brings up a WiFi AP ("NanoPFD") at boot. Join it from a phone and a
+//  CONFIG MODE: NanoPFD brings up a WiFi AP ("NanoPFD"). Join it from a phone and a
 //  captive portal pops the settings page automatically; changes (IMU orientation,
 //  map zoom, local pressure, AP password) save to flash and apply live on the
-//  display. Runs the whole time, so you can tweak settings in flight.
+//  display.
 //
-//  Coexistence: the AP shares the radio with the Remote ID BLE scanner via the
-//  ESP32-S3's built-in WiFi/BLE coexistence. This works because the Remote ID
-//  *WiFi* sniffer is off (config.h RID_USE_WIFI 0) — that promiscuous monitor mode
-//  is what can't share the radio with a softAP; BLE can. The AP is brought up AFTER
-//  the BLE controller (InstrumentPanel.ino) so BLE gets internal SRAM first, and it
-//  is leaned (1 client, fixed channel) to leave room for the PFD canvas.
+//  Why it's a MODE, not always-on: WiFi and the Remote ID BLE scanner can't run at
+//  once on this board. Measured on hardware: after the PFD canvas the chip has ~84 KB
+//  of internal SRAM, and the BLE controller+host eat ~71 KB of it, leaving ~13 KB —
+//  far too little for the WiFi driver (even trimmed). So the two are mutually
+//  exclusive, chosen at boot by an NVS flag ("cfg"/"apmode", default false = flight):
+//    flight mode  -> Remote ID (BLE), no AP
+//    config mode  -> WiFi AP (no BLE), so WiFi has the full ~84 KB to work with
+//  Toggle the flag + reboot by HOLDING the BOOT button ~3 s (InstrumentPanel.ino).
 //
 //  The page is one self-contained HTML string in flash (no filesystem); the JSON
 //  API is hand-built (no JSON library) to keep flash + RAM tiny.
 // ============================================================================
-#include <WiFi.h>
+#include <WiFi.h>          // IPAddress + the WebServer/DNSServer Arduino glue
 #include <WebServer.h>
 #include <DNSServer.h>
 #include <Preferences.h>
+#include "esp_wifi.h"      // raw WiFi driver — lean buffer config (Arduino softAP is too heavy)
+#include "esp_netif.h"
+#include "esp_event.h"
+#include "esp_wifi_default.h"   // esp_netif_create_default_wifi_ap()
+#include "nvs_flash.h"
 #include "config.h"       // ORI_*_DEF, BARO_*, CORE_SENSORS, gBaroInHg, gOri* externs
 #include "map_zoom.h"     // mapZoomSet / mapZoomIdx / mapZoomCount / mapZoomRangeM
 
@@ -147,10 +154,13 @@ static void cfgHandleApiSet() {
   cfgServer.send(200, "text/plain", "ok");
 }
 
+// esp_netif's default AP gateway (we bring the AP up via raw esp_wifi, below).
+#define AP_IP_STR "192.168.4.1"
+
 // Captive portal: any other URL (the OS connectivity probes) -> redirect to the page
 // so the "sign in to network" sheet pops automatically.
 static void cfgHandleNotFound() {
-  cfgServer.sendHeader("Location", "http://" + WiFi.softAPIP().toString() + "/", true);
+  cfgServer.sendHeader("Location", "http://" AP_IP_STR "/", true);
   cfgServer.send(302, "text/plain", "");
 }
 
@@ -164,26 +174,90 @@ static void cfgTask(void *) {
 }
 
 // Bring up the AP + captive portal + web server. Called every boot, after the BLE
-// controller, so BLE gets internal SRAM first. Leaned (channel 1, 1 client) to share
-// the radio + SRAM with the Remote ID BLE scanner and the PFD canvas.
+// controller (so BLE claims internal SRAM first).
+//
+// We do NOT use Arduino's WiFi.softAP(): it always allocates the core's DEFAULT WiFi
+// buffer pool (10 static + 32 dynamic RX, AMPDU reorder buffers, ...), which can't fit
+// in the ~80 KB of internal SRAM left after the PFD canvas + BLE controller — esp_wifi_init
+// fails with "alloc pm_beacon_offset fail". So bring the AP up by hand with the WiFi
+// driver buffers trimmed hard, the same lean approach the Remote ID monitor uses
+// (RemoteID.cpp). WiFi's DMA-capable buffers must live in internal SRAM, hence the diet.
+// ---- config-vs-flight mode -------------------------------------------------
+// The WiFi AP and the Remote ID BLE scanner can't share this board's internal SRAM:
+// the PFD canvas (kept in SRAM for fps) leaves only ~85 KB of internal heap, and WiFi
+// (~44 KB) + BLE (~68 KB) together overflow it (measured on hardware — WiFi's PHY/DMA
+// buffers can't move to PSRAM at runtime). So the two are MUTUALLY EXCLUSIVE, chosen at
+// boot from an NVS flag. Default = AP on (so the config page is reachable out of the box);
+// hold the BOOT button ~3 s in flight to toggle + reboot (InstrumentPanel.ino).
+bool webConfigApMode() {
+  Preferences p; p.begin("cfg", true);
+  bool m = p.getBool("apmode", true);     // default: AP/config mode ON
+  p.end();
+  return m;
+}
+void webConfigToggleApMode() {
+  Preferences p; p.begin("cfg", false);
+  bool m = p.getBool("apmode", true);
+  p.putBool("apmode", !m);
+  p.end();
+}
+
 void webConfigBegin() {
-  WiFi.mode(WIFI_AP);
   String pass = cfgGetPass();
-  // softAP(ssid, pass, channel, hidden, max_connection): fix the channel and cap the
-  // AP at one client to keep its buffer footprint small alongside BLE + the canvas.
-  bool ok;
-  if (pass.length() >= 8) ok = WiFi.softAP(AP_SSID, pass.c_str(), 1, 0, 1);   // WPA2
-  else                    ok = WiFi.softAP(AP_SSID, nullptr,      1, 0, 1);   // open (default <8-char pass)
-  WiFi.setTxPower(WIFI_POWER_11dBm);                            // plenty for cockpit range; eases WiFi/BLE coex
-  IPAddress ip = WiFi.softAPIP();
-  cfgDns.start(53, "*", ip);                                    // all DNS -> us (captive)
+  bool   wpa2 = pass.length() >= 8;
+
+  // netif + event-loop + AP netif/DHCP. In AP mode no BLE is up, so ~85 KB of internal SRAM
+  // is free here and these allocate without OOM (this is what aborted when attempted after BLE).
+  nvs_flash_init();                     // no-ops (ESP_ERR_INVALID_STATE) if already done — ignore
+  esp_netif_init();
+  esp_event_loop_create_default();
+  esp_netif_create_default_wifi_ap();   // AP netif + built-in DHCP server (gateway 192.168.4.1)
+
+  // Still push WiFi's heap buffers to PSRAM where the driver allows it (small extra headroom).
+  size_t saved_thresh = 256 * 1024;
+  heap_caps_malloc_extmem_enable(4096);
+
+  wifi_init_config_t wc = WIFI_INIT_CONFIG_DEFAULT();
+  wc.static_rx_buf_num  = 4;            // default 10  (~1.6 KB each, DMA -> internal)
+  wc.dynamic_rx_buf_num = 8;            // default 32
+  wc.dynamic_tx_buf_num = 8;            // the AP transmits (beacons / DHCP / HTTP) — keep a few
+  wc.cache_tx_buf_num   = 0;
+  wc.ampdu_rx_enable    = 0;            // no aggregation / reorder buffers
+  wc.ampdu_tx_enable    = 0;
+  wc.amsdu_tx_enable    = 0;
+  wc.nvs_enable         = 0;
+  wc.rx_ba_win          = 0;
+  esp_err_t ie = esp_wifi_init(&wc);
+  heap_caps_malloc_extmem_enable(saved_thresh);   // restore: big allocs -> PSRAM, small -> internal
+
+  esp_wifi_set_storage(WIFI_STORAGE_RAM);
+  esp_wifi_set_mode(WIFI_MODE_AP);
+
+  wifi_config_t ap = {};
+  strncpy((char *)ap.ap.ssid, AP_SSID, sizeof(ap.ap.ssid) - 1);
+  ap.ap.ssid_len        = strlen(AP_SSID);
+  ap.ap.channel         = 1;            // fixed channel: no scan, smaller footprint
+  ap.ap.max_connection  = 1;           // one phone at a time keeps the AP buffers small
+  ap.ap.beacon_interval = 300;         // longer beacon = less airtime, eases WiFi/BLE coex
+  if (wpa2) {
+    strncpy((char *)ap.ap.password, pass.c_str(), sizeof(ap.ap.password) - 1);
+    ap.ap.authmode = WIFI_AUTH_WPA2_PSK;
+  } else {
+    ap.ap.authmode = WIFI_AUTH_OPEN;   // the default <8-char pass -> open network
+  }
+  esp_wifi_set_config(WIFI_IF_AP, &ap);
+  esp_err_t se = esp_wifi_start();
+  esp_wifi_set_ps(WIFI_PS_NONE);        // AP: never modem-sleep
+  esp_wifi_set_max_tx_power(44);        // ~11 dBm (0.25 dBm units); plenty for cockpit range
+
+  cfgDns.start(53, "*", IPAddress(192, 168, 4, 1));   // all DNS -> us (captive)
   cfgServer.on("/", cfgHandleRoot);
   cfgServer.on("/api", HTTP_GET,  cfgHandleApiGet);
   cfgServer.on("/api", HTTP_POST, cfgHandleApiSet);
   cfgServer.onNotFound(cfgHandleNotFound);
   cfgServer.begin();
-  USBSerial.printf("WiFi AP '%s' (%s) %s at http://%s/\n", AP_SSID,
-                   pass.length() >= 8 ? "WPA2" : "OPEN",
-                   ok ? "up" : "FAILED (low internal RAM?)", ip.toString().c_str());
+  USBSerial.printf("WiFi AP '%s' (%s) init=%d start=%d internal_free=%u at http://%s/\n",
+                   AP_SSID, wpa2 ? "WPA2" : "OPEN", (int)ie, (int)se,
+                   (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL), AP_IP_STR);
   xTaskCreatePinnedToCore(cfgTask, "cfgweb", 4096, NULL, 1, NULL, CORE_SENSORS);
 }
