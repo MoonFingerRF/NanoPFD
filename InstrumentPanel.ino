@@ -219,6 +219,7 @@ void sensorTask(void *params) {
     }
     updateIMU(&gLocal);            // IMU as fast as it streams (FIFO drained each loop)
     updateHeading(&gLocal);        // tilt-compensated compass heading
+    flightLogTick(&gLocal);        // 10 Hz flight-log sample (self-throttled)
     setState(&gLocal);
     gSensCount++;                  // publish-rate counter (telemetry)
     vTaskDelay(1);
@@ -425,6 +426,7 @@ void setup(void) {
 
   mapZoomInit();                  // set the boot map zoom level (range/tier)
   webConfigLoadSettings();        // apply saved IMU orientation + default map zoom (NVS)
+  flightLogInit();                // alloc the 30-min flight-log ring (PSRAM) + reload from flash
 
   init_state(&State);
   init_state(&gLocal);
@@ -525,6 +527,7 @@ void loop() {
     // only HOLDING it across a reset/power-on would enter the ROM bootloader.
     if (bdown && !bmodeToggled && (bnow - bpress) >= 3000) {
       bmodeToggled = true;
+      flightLogSave();            // persist the flight log so it survives the reboot
       webConfigToggleApMode();
       delay(40);                  // let the NVS write flush
       ESP.restart();

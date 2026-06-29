@@ -1,7 +1,9 @@
 # Name,   Type, SubType, Offset,  Size, Flags
-# Maximum-APP layout (7.875 MB app, no OTA / no FS) on the 16 MB flash — needed for
-# the per-LOD pyramidal moving-map datasets. Used via PartitionScheme=custom (build.sh).
+# 7.875 MB app + a 1 MB LittleFS (spiffs) data partition for the flight log, in the
+# otherwise-unused 8-16 MB region. App holds the per-LOD pyramidal map datasets.
+# Used via PartitionScheme=custom (build.sh).
 nvs,      data, nvs,     0x9000,  0x5000,
 otadata,  data, ota,     0xe000,  0x2000,
 app0,     app,  factory, 0x10000, 0x7E0000,
 coredump, data, coredump,0x7F0000,0x10000,
+spiffs,   data, spiffs,  0x800000,0x100000,

@@ -96,11 +96,22 @@ static const char CFG_PAGE[] PROGMEM = R"HTML(<!doctype html><html><head>
 font:14px/1.45 ui-monospace,Menlo,Consolas,monospace}.w{max-width:460px;margin:0 auto;padding:18px 14px}
 h1{font-size:20px;letter-spacing:3px;color:var(--cy);margin:6px 0 0;text-align:center;text-shadow:0 0 12px #0891b2}
 .s{text-align:center;color:var(--gy);font-size:11px;letter-spacing:2px;margin:2px 0 14px;text-transform:uppercase}
-.tabs{display:flex;gap:4px;margin-bottom:14px}
-.tb{flex:1;width:auto;background:#11161b;color:var(--gy);border:1px solid var(--ln);border-radius:7px;
+.tabs{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:14px}
+.tb{flex:1 1 56px;background:#11161b;color:var(--gy);border:1px solid var(--ln);border-radius:7px;
 padding:9px 2px;font:inherit;font-size:10px;letter-spacing:1px;cursor:pointer;text-transform:uppercase}
 .tb.on{background:var(--cy);color:#001014;border-color:var(--cy);font-weight:700}
 .pane.hide{display:none}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.mc{background:#11161b;border:1px solid var(--ln);border-radius:7px;padding:8px 10px}
+.ml{font-size:10px;color:var(--gy);letter-spacing:1px;text-transform:uppercase}
+.mv{font-size:20px;color:var(--cy);margin-top:2px}
+.mt{display:flex;gap:4px;margin-bottom:8px}
+.mb{flex:1;background:#11161b;color:var(--gy);border:1px solid var(--ln);border-radius:6px;padding:7px 2px;font:inherit;font-size:10px;cursor:pointer}
+.mb.on{background:var(--sky);color:#001014}
+canvas#plot{width:100%;height:190px;background:#06090c;border:1px solid var(--ln);border-radius:7px;display:block;touch-action:none}
+.pc{display:flex;align-items:center;gap:6px;margin-top:8px}
+.pb{background:#11161b;color:var(--fg);border:1px solid var(--ln);border-radius:6px;padding:6px 12px;font:inherit;cursor:pointer}
+a.save{display:block;text-decoration:none;text-align:center;margin-bottom:8px}.save.sec{background:transparent;color:var(--fg);border:1px solid var(--ln)}
 .c{background:var(--pn);border:1px solid var(--ln);border-radius:9px;padding:13px 14px;margin-bottom:13px}
 .c h2{font-size:11px;letter-spacing:2px;color:var(--gn);text-transform:uppercase;margin:0 0 6px;
 border-bottom:1px solid var(--ln);padding-bottom:7px}
@@ -120,7 +131,8 @@ font-weight:700;letter-spacing:2px;cursor:pointer;margin-top:2px}.save:active{fi
 <h1>NANO&middot;PFD</h1><div class=s>configuration</div>
 <div class=tabs>
 <button class="tb on" data-t=att>Attitude</button><button class=tb data-t=disp>Display</button>
-<button class=tb data-t=nav>Nav</button><button class=tb data-t=air>Air</button><button class=tb data-t=net>WiFi</button></div>
+<button class=tb data-t=nav>Nav</button><button class=tb data-t=air>Air</button>
+<button class=tb data-t=log>Log</button><button class=tb data-t=net>WiFi</button></div>
 <div class=pane id=att>
 <div class=c><h2>IMU orientation</h2>
 <div class=r><label>Upside down</label><span class=tg><input type=checkbox id=v><span class=sl></span></span></div>
@@ -137,6 +149,23 @@ font-weight:700;letter-spacing:2px;cursor:pointer;margin-top:2px}.save:active{fi
 <div class="pane hide" id=air>
 <div class=c><h2>Air data</h2>
 <div class=r><label>Local pressure</label><span><input type=number id=b step=0.01 min=28 max=31><span class=u>inHg</span></span></div></div></div>
+<div class="pane hide" id=log>
+<div class=c><h2>Session peaks</h2>
+<div class=grid>
+<div class=mc><div class=ml>Top GPS</div><div class=mv id=mxgs>&ndash;</div></div>
+<div class=mc><div class=ml>Top airspeed</div><div class=mv id=mxasi>&ndash;</div></div>
+<div class=mc><div class=ml>Max altitude</div><div class=mv id=mxalt>&ndash;</div></div>
+<div class=mc><div class=ml>Max g</div><div class=mv id=mxg>&ndash;</div></div></div></div>
+<div class=c><h2>History <span class=u id=logdur></span></h2>
+<div class=mt>
+<button class="mb on" data-m=0>GPS kt</button><button class=mb data-m=1>ASI mph</button>
+<button class=mb data-m=2>Alt ft</button><button class=mb data-m=3>G</button></div>
+<canvas id=plot></canvas>
+<div class=pc><button class=pb id=zout>&minus;</button><button class=pb id=zin>+</button>
+<button class=pb id=zall>fit</button><span class=u id=plbl></span></div></div>
+<div class=c><h2>Data</h2>
+<a class=save id=dl href="/flog.csv">DOWNLOAD CSV</a>
+<button class="save sec" onclick=resetLog()>RESET LOG</button></div></div>
 <div class="pane hide" id=net>
 <div class=c><h2>WiFi</h2>
 <div class=r><label>AP password</label><input type=text id=pw maxlength=63></div>
@@ -151,7 +180,7 @@ function flash(t){$('st').textContent=t;setTimeout(function(){$('st').textConten
 var tb=document.querySelectorAll('.tb');for(var k=0;k<tb.length;k++){tb[k].onclick=function(){
 for(var j=0;j<tb.length;j++)tb[j].classList.remove('on');
 var ps=document.querySelectorAll('.pane');for(var j=0;j<ps.length;j++)ps[j].classList.add('hide');
-this.classList.add('on');$(this.dataset.t).classList.remove('hide')}}
+this.classList.add('on');$(this.dataset.t).classList.remove('hide');if(this.dataset.t=='log')loadLog()}}
 function bind(){
 ['v','r','p','sw'].forEach(function(id,n){var key=['oriV','oriR','oriP','oriS'][n];
 $(id).onchange=function(){ap(key+'='+(this.checked?1:0))}});
@@ -175,6 +204,36 @@ function save(){var q='oriV='+($('v').checked?1:0)+'&oriR='+($('r').checked?1:0)
 +'&pass='+encodeURIComponent($('pw').value);
 for(var i=0;i<PAL.length;i++){var e=$('pal'+i);if(e)q+='&pal'+i+'='+encodeURIComponent(e.value)}
 ap(q).then(function(r){flash(r.ok?'✓ saved':'error')})}
+var LOG=null,met=0,v0=0,v1=0;
+function fmtT(s){var m=Math.floor(s/60),x=Math.round(s%60);return m+':'+(x<10?'0':'')+x}
+function loadLog(){fetch('/flog').then(function(r){return r.json()}).then(function(d){LOG=d;
+$('mxgs').textContent=d.maxgs.toFixed(0)+' kt';$('mxasi').textContent=d.maxasi.toFixed(0)+' mph';
+$('mxalt').textContent=d.maxalt+' ft';$('mxg').textContent=d.maxg.toFixed(2)+' g';
+$('logdur').textContent='last '+fmtT(d.secs);v0=0;v1=d.n;drawPlot()})}
+function curArr(){return[LOG.gs,LOG.asi,LOG.alt,LOG.g][met]}
+function drawPlot(){if(!LOG||!LOG.n)return;var cv=$('plot'),w=cv.clientWidth,h=190;cv.width=w;cv.height=h;
+var x=cv.getContext('2d');x.clearRect(0,0,w,h);var a=curArr();
+if(v1<=v0){v0=0;v1=LOG.n}var i0=Math.max(0,Math.floor(v0)),i1=Math.min(LOG.n,Math.ceil(v1));if(i1<=i0)return;
+var mn=1e9,mx=-1e9,i;for(i=i0;i<i1;i++){if(a[i]<mn)mn=a[i];if(a[i]>mx)mx=a[i]}
+if(mx<=mn)mx=mn+1;var pd=(mx-mn)*0.1;mn-=pd;mx+=pd;
+x.strokeStyle='#1b2228';for(var gy=0;gy<=4;gy++){var yy=h-1-gy/4*(h-2);x.beginPath();x.moveTo(0,yy);x.lineTo(w,yy);x.stroke()}
+x.strokeStyle=['#22d3ee','#37d067','#5aa9e6','#fd6800'][met];x.lineWidth=1.5;x.beginPath();
+var n=i1-i0;for(i=0;i<n;i++){var v=a[i0+i],px=n>1?i/(n-1)*w:0,py=h-1-(v-mn)/(mx-mn)*(h-2);
+i?x.lineTo(px,py):x.moveTo(px,py)}x.stroke();
+x.fillStyle='#6b7280';x.font='10px monospace';var dc=met==3?2:0;
+x.fillText(mx.toFixed(dc),3,11);x.fillText(mn.toFixed(dc),3,h-4);
+var t0=i0/LOG.n*LOG.secs,t1=i1/LOG.n*LOG.secs;$('plbl').textContent=fmtT(t0)+'-'+fmtT(t1)}
+var mb=document.querySelectorAll('.mb');for(var mi=0;mi<mb.length;mi++){mb[mi].onclick=function(){
+for(var j=0;j<mb.length;j++)mb[j].classList.remove('on');this.classList.add('on');met=+this.dataset.m;drawPlot()}}
+$('zin').onclick=function(){var c=(v0+v1)/2,r=(v1-v0)/4;v0=c-r;v1=c+r;drawPlot()};
+$('zout').onclick=function(){var c=(v0+v1)/2,r=v1-v0;v0=c-r;v1=c+r;if(v0<0)v0=0;if(v1>LOG.n)v1=LOG.n;drawPlot()};
+$('zall').onclick=function(){v0=0;v1=LOG.n;drawPlot()};
+(function(){var cv=$('plot'),dn=false,sx=0,s0=0,s1=0;
+cv.addEventListener('pointerdown',function(e){dn=true;sx=e.clientX;s0=v0;s1=v1;cv.setPointerCapture(e.pointerId)});
+cv.addEventListener('pointermove',function(e){if(!dn||!LOG)return;var d=(e.clientX-sx)/cv.clientWidth*(s1-s0);
+v0=s0-d;v1=s1-d;if(v0<0){v1-=v0;v0=0}if(v1>LOG.n){v0-=v1-LOG.n;v1=LOG.n;if(v0<0)v0=0}drawPlot()});
+cv.addEventListener('pointerup',function(){dn=false})})();
+function resetLog(){fetch('/flog/reset',{method:'POST'}).then(loadLog)}
 load();
 </script></body></html>)HTML";
 
@@ -242,6 +301,60 @@ static void cfgHandleApiSet() {
   p.end();
   cfgServer.send(200, "text/plain", "ok");
 }
+
+// ---- flight log endpoints (FlightLog.ino) ----------------------------------
+// /flog      -> JSON: session peaks + a downsampled series (<=720 pts/metric) for the plot
+// /flog.csv  -> full 10 Hz log as a CSV download (streamed)
+// /flog/reset-> clear the log + peaks
+extern volatile float gFlogMaxGs, gFlogMaxAsi, gFlogMaxAlt, gFlogMaxG;
+
+static void cfgHandleFlog() {
+  uint32_t cnt = flightLogCount();
+  const int target = 720;
+  int step = (cnt > (uint32_t)target) ? (int)((cnt + target - 1) / target) : 1;
+  String ags = "[", aasi = "[", aalt = "[", ag = "[";
+  int outN = 0;
+  for (uint32_t b = 0; b < cnt; b += step) {
+    float mgs = 0, masi = 0, malt = -1e9f, mg = 0;          // bucket peaks (preserve maxima)
+    uint32_t end = b + step; if (end > cnt) end = cnt;
+    for (uint32_t k = b; k < end; k++) {
+      float gs, asi, alt, g; flightLogGet(k, &gs, &asi, &alt, &g);
+      if (gs > mgs) mgs = gs; if (asi > masi) masi = asi;
+      if (alt > malt) malt = alt; if (g > mg) mg = g;
+    }
+    if (outN) { ags += ","; aasi += ","; aalt += ","; ag += ","; }
+    ags += String(mgs, 1); aasi += String(masi, 1);
+    aalt += String((int)malt); ag += String(mg, 2);
+    outN++;
+  }
+  ags += "]"; aasi += "]"; aalt += "]"; ag += "]";
+  String j = "{\"hz\":10,\"count\":" + String(cnt) + ",\"secs\":" + String(cnt / 10) + ",";
+  j += "\"maxgs\":" + String(gFlogMaxGs, 1) + ",\"maxasi\":" + String(gFlogMaxAsi, 1) +
+       ",\"maxalt\":" + String((int)gFlogMaxAlt) + ",\"maxg\":" + String(gFlogMaxG, 2) + ",";
+  j += "\"n\":" + String(outN) + ",\"gs\":" + ags + ",\"asi\":" + aasi +
+       ",\"alt\":" + aalt + ",\"g\":" + ag + "}";
+  cfgServer.send(200, "application/json", j);
+}
+
+static void cfgHandleFlogCsv() {
+  cfgServer.sendHeader("Content-Disposition", "attachment; filename=flightlog.csv");
+  cfgServer.setContentLength(CONTENT_LENGTH_UNKNOWN);
+  cfgServer.send(200, "text/csv", "");
+  cfgServer.sendContent("t_s,gps_kt,asi_mph,alt_ft,g\n");
+  uint32_t cnt = flightLogCount();
+  String chunk; chunk.reserve(2048);
+  for (uint32_t j = 0; j < cnt; j++) {
+    float gs, asi, alt, g; flightLogGet(j, &gs, &asi, &alt, &g);
+    chunk += String(j / 10.0f, 1); chunk += ','; chunk += String(gs, 1); chunk += ',';
+    chunk += String(asi, 1); chunk += ','; chunk += String((int)alt); chunk += ','; chunk += String(g, 2);
+    chunk += '\n';
+    if (chunk.length() > 1800) { cfgServer.sendContent(chunk); chunk = ""; }
+  }
+  if (chunk.length()) cfgServer.sendContent(chunk);
+  cfgServer.sendContent("");          // terminate the chunked response
+}
+
+static void cfgHandleFlogReset() { flightLogReset(); cfgServer.send(200, "text/plain", "ok"); }
 
 // esp_netif's default AP gateway (we bring the AP up via raw esp_wifi, below).
 #define AP_IP_STR "192.168.4.1"
@@ -343,6 +456,9 @@ void webConfigBegin() {
   cfgServer.on("/", cfgHandleRoot);
   cfgServer.on("/api", HTTP_GET,  cfgHandleApiGet);
   cfgServer.on("/api", HTTP_POST, cfgHandleApiSet);
+  cfgServer.on("/flog", HTTP_GET, cfgHandleFlog);
+  cfgServer.on("/flog.csv", HTTP_GET, cfgHandleFlogCsv);
+  cfgServer.on("/flog/reset", HTTP_POST, cfgHandleFlogReset);
   cfgServer.onNotFound(cfgHandleNotFound);
   cfgServer.begin();
   USBSerial.printf("WiFi AP '%s' (%s) init=%d start=%d internal_free=%u at http://%s/\n",
