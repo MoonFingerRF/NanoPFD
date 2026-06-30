@@ -143,10 +143,10 @@ font-weight:700;letter-spacing:2px;cursor:pointer;margin-top:2px}.save:active{fi
 <button class=tb data-t=tune>Tune</button><button class=tb data-t=log>Log</button><button class=tb data-t=net>WiFi</button></div>
 <div class=pane id=att>
 <div class=c><h2>IMU orientation</h2>
-<div class=r><label>Upside down</label><span class=tg><input type=checkbox id=v><span class=sl></span></span></div>
-<div class=r><label>Reverse roll</label><span class=tg><input type=checkbox id=r><span class=sl></span></span></div>
-<div class=r><label>Reverse pitch</label><span class=tg><input type=checkbox id=p><span class=sl></span></span></div>
-<div class=r><label>Swap roll/pitch</label><span class=tg><input type=checkbox id=sw><span class=sl></span></span></div></div>
+<div class=r><label>Upside down</label><label class=tg><input type=checkbox id=v><span class=sl></span></label></div>
+<div class=r><label>Reverse roll</label><label class=tg><input type=checkbox id=r><span class=sl></span></label></div>
+<div class=r><label>Reverse pitch</label><label class=tg><input type=checkbox id=p><span class=sl></span></label></div>
+<div class=r><label>Swap roll/pitch</label><label class=tg><input type=checkbox id=sw><span class=sl></span></label></div></div>
 <div class=c><h2>Compass</h2>
 <div class=r><label>Heading offset</label><span><input type=number id=hdg min=0 max=359 step=1><span class=u>deg</span></span></div></div>
 <div class=c><h2>Mount trim</h2>
@@ -192,8 +192,8 @@ font-weight:700;letter-spacing:2px;cursor:pointer;margin-top:2px}.save:active{fi
 <button class="save sec" onclick=resetLog()>RESET LOG</button></div></div>
 <div class="pane hide" id=net>
 <div class=c><h2>Remote ID receiver</h2>
-<div class=r><label>Bluetooth LE</label><span class=tg><input type=checkbox id=rb><span class=sl></span></span></div>
-<div class=r><label>WiFi</label><span class=tg><input type=checkbox id=rw><span class=sl></span></span></div>
+<div class=r><label>Bluetooth LE</label><label class=tg><input type=checkbox id=rb><span class=sl></span></label></div>
+<div class=r><label>WiFi</label><label class=tg><input type=checkbox id=rw><span class=sl></span></label></div>
 <div class=u>Plots nearby drones as orange dots on the compass. WiFi RID also runs while this AP is on (on the AP's channel); in flight it lowers fps. Changes apply after the next reboot / mode switch.</div></div>
 <div class=c><h2>WiFi AP</h2>
 <div class=r><label>AP password</label><input type=text id=pw maxlength=63></div>
