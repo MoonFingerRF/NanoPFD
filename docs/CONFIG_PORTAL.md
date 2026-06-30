@@ -5,35 +5,33 @@ you can change settings and review a flight log from your phone, with **no refla
 
 ---
 
-## Config mode vs flight mode
+## One always-on mode
 
-The Wi-Fi access point and the **full** frame rate can't both have the internal memory they
-want at the same time (the AP needs the RAM the fast display canvas would use), so the firmware
-runs in one of two modes, chosen at boot:
+NanoPFD runs **everything at once, all the time** — the glass display (PFD + ND + sensors +
+logging), the Wi-Fi AP + web portal, and **both** Remote ID receivers (BLE and Wi-Fi). There is
+**no mode to switch**: the AP is always up and the portal is always reachable.
 
-| Mode | What runs | Display |
-|------|-----------|---------|
-| **Flight** (default) | Remote ID only (no AP) | **full fps** |
-| **Config** | Wi-Fi AP + web portal, **and** Remote ID per your toggles | **lower fps** (canvas in PSRAM) |
+This is possible because the display canvas is packed to 4 bits/pixel, which frees enough
+internal memory for the AP and both radios to coexist (the older firmware had to pick *one* of
+{full-fps display, Wi-Fi AP, BLE} per boot — that limitation is gone).
 
-**Both modes run the real instruments** (PFD + ND + sensors + logging) — config mode just renders
-slower. So **you can fly in config mode with the AP on**; you only give up frame rate (≈6 fps on
-the 2.8B / BOARD_C, better on BOARD_D). Switch to flight mode when you want full fps and don't
-need the AP in the air.
+- **Frame rate:** ~13 fps on the 2.8B / BOARD_C. This is the panel's hardware ceiling (the RGB
+  display continuously streams its framebuffer out of PSRAM, which caps how fast the map can be
+  redrawn) — it is **not** affected by having the AP and radios on.
+- **Wi-Fi RID** listens on the AP's channel (**6**, where Remote ID Wi-Fi beacons almost always
+  are) since it can't channel-hop without dropping your phone. **BLE RID** scans at low duty so
+  the AP keeps the radio responsive. Both plot drones as orange dots on the compass.
+- The **WiFi** tab has a **Reboot** button (re-reads flash / recovers); both RID toggles also
+  flip live.
 
-**Default is flight mode** (full fps, AP off) — so the panel is fast out of the box.
-
-**Enter config mode (turn the AP on):** hold the **BOOT** button for ~3 seconds (the device reboots
-into config mode). The BOOT button also tap-adjusts the altimeter; only a long hold switches mode.
-
-**Exit config mode (back to full fps):** tap **EXIT TO FLIGHT MODE** on the WiFi tab, or hold BOOT ~3 s.
+> To revert to the old two-mode (flight / config) firmware, build with `ALWAYS_ON_MODE 0` in
+> `config.h`.
 
 ---
 
 ## Connecting
 
-1. Enter **config mode**: hold the **BOOT** button ~3 s (the default is flight mode, AP off).
-2. On your phone, join the Wi-Fi network **`NanoPFD`**.
+1. On your phone, join the Wi-Fi network **`NanoPFD`** (it's always broadcasting).
    - It is an **open** network out of the box (the 7-character default password is below the
      WPA2 minimum). Set an 8–63 character password on the **WiFi** tab to switch it to WPA2.
 3. A **captive portal** should pop the settings page automatically. If not, open
@@ -77,8 +75,8 @@ The flight logger — see [Flight log](#flight-log).
 
 ### WiFi
 - **Remote ID receiver** — enable/disable **Bluetooth LE** and **WiFi** drone detection (see
-  [Remote ID](#remote-id)). *Applies after the next reboot / mode switch.*
-- **AP password** — 8–63 chars for WPA2; shorter runs the AP open. *Applies next config boot.*
+  [Remote ID](#remote-id)). *Toggles apply live; both default on at every boot.*
+- **AP password** — 8–63 chars for WPA2; shorter runs the AP open. *Applies after a reboot.*
 
 ---
 
@@ -106,16 +104,13 @@ orange dots (with altitude) on the compass. Two radios, each independently toggl
 - **Bluetooth LE** — most consumer drones and standalone RID modules (BT4-legacy).
 - **WiFi** — drones that beacon over WiFi.
 
-How they behave per mode:
+Both run continuously alongside the AP and the display:
 
-- **Config mode (AP on):** BLE RID and WiFi RID both run **alongside the AP**. WiFi RID rides the
-  AP's radio on the AP's channel (no channel hopping), so it sees drones on that channel while the
-  portal is live.
-- **Flight mode:** BLE RID runs normally. WiFi RID, if enabled, runs a channel-hopping monitor —
-  this needs extra memory, so it moves the PFD canvas to PSRAM and **lowers the frame rate**. Leave
-  WiFi RID off for full-fps flight unless you specifically want WiFi drone detection in the air.
+- **Bluetooth LE** scans at low duty so the AP keeps the radio responsive.
+- **WiFi RID** rides the AP's radio on its channel (**6**, where Remote ID WiFi beacons almost
+  always are — it can't channel-hop without dropping your phone). So it catches drones on channel 6.
 
-Changes to the RID toggles take effect after the next reboot / mode switch.
+Both toggles flip live and default on at every boot.
 
 ---
 
@@ -123,8 +118,7 @@ Changes to the RID toggles take effect after the next reboot / mode switch.
 
 A circular buffer continuously records **GPS ground speed, indicated airspeed, MSL altitude, and
 load factor (g)** at **10 Hz**, keeping the **last 30 minutes** (in PSRAM). It is saved to flash
-when you switch modes and reloaded at boot, so a flight recorded in flight mode survives the
-switch to config mode for review.
+on reboot and reloaded at boot, so a recorded flight survives a power cycle for later review.
 
 On the **Log** tab:
 - **Session peaks** — top GPS speed, top airspeed, max altitude, max g (since power-on / last reset).
@@ -133,8 +127,8 @@ On the **Log** tab:
 - **DOWNLOAD CSV** — the full 10 Hz log as `flightlog.csv` (`t_s,gps_kt,asi_mph,alt_ft,g`).
 - **RESET LOG** — clears the buffer and peaks.
 
-To review a flight: fly in flight mode, land, hold **BOOT** ~3 s to enter config mode (the log is
-saved across the reboot), join `NanoPFD`, open the **Log** tab.
+To review a flight: land, join `NanoPFD` (always broadcasting), open the **Log** tab. The log
+persists across power cycles, so you can also review it after the unit has been off.
 
 ---
 
