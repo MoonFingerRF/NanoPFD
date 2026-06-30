@@ -461,13 +461,13 @@ static void cfgTask(void *) {
 // hold the BOOT button ~3 s in flight to toggle + reboot (InstrumentPanel.ino).
 bool webConfigApMode() {
   Preferences p; p.begin("cfg", true);
-  bool m = p.getBool("apmode", false);    // default: FLIGHT (full fps, 8-bit canvas, no AP).
-  p.end();                                // Config/AP (4-bit canvas, ~8 fps with the radios) is
-  return m;                               // opt-in: BOOT-hold ~3 s. (The AP fps is CPU-bound — the
-}                                         //  AP + BLE + web share the render core — not memory-bound.)
+  bool m = p.getBool("apmode", true);     // DEBUG: default config/AP mode to debug the 4-bit path.
+  p.end();
+  return m;
+}
 void webConfigToggleApMode() {
   Preferences p; p.begin("cfg", false);
-  bool m = p.getBool("apmode", false);
+  bool m = p.getBool("apmode", true);
   p.putBool("apmode", !m);
   p.end();
 }

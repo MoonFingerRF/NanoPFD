@@ -350,11 +350,15 @@ void remoteid_begin() {
 // CONFIG mode (AP up): BLE (now fits — the config-mode canvas is in PSRAM) and/or WiFi RID
 // attached to the AP's radio on its channel. Call AFTER webConfigBegin().
 void remoteid_begin_ap() {
-  RID_LOG("[RID] config receiver (BLE=%d WiFi=%d) internal free=%u\n",
-          (int)gRidBle, (int)gRidWifi, (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL));
-  g_ble_share_radio = true;                        // AP is up -> BLE must share the radio (low duty)
+  RID_LOG("[RID] config receiver (WiFi=%d) internal free=%u\n",
+          (int)gRidWifi, (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL));
+  g_ble_share_radio = true;
+  // NOTE: BLE is NOT started in config mode. With the 4-bit PFD canvas kept in INTERNAL
+  // SRAM (the goal) + the AP, the BLE controller's ~60 KB would leave only ~20 KB free —
+  // too little for a phone to associate + the web server to serve (it crashed -> boot loop).
+  // So config mode runs AP + WiFi RID (which rides the AP's radio for ~free); BLE RID runs
+  // in flight mode, where there's plenty of internal SRAM.
   if (gRidWifi) wifiRidAttach();
-  if (gRidBle)  ble_begin();
   RID_LOG("[RID] config receiver up; internal free=%u\n",
           (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL));
 }
