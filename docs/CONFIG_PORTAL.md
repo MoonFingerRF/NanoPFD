@@ -13,8 +13,8 @@ runs in one of two modes, chosen at boot:
 
 | Mode | What runs | Display |
 |------|-----------|---------|
-| **Config** (default) | Wi-Fi AP + web portal, **and** Remote ID per your toggles | **lower fps** (canvas in PSRAM) |
-| **Flight** | Remote ID only (no AP) | **full fps** |
+| **Flight** (default) | Remote ID only (no AP) | **full fps** |
+| **Config** | Wi-Fi AP + web portal, **and** Remote ID per your toggles | **lower fps** (canvas in PSRAM) |
 
 **Both modes run the real instruments** (PFD + ND + sensors + logging) — config mode just renders
 slower. So **you can fly in config mode with the AP on**; you only give up frame rate (≈6 fps on
@@ -32,7 +32,7 @@ into config mode). The BOOT button also tap-adjusts the altimeter; only a long h
 
 ## Connecting
 
-1. Power the device in **config mode** (the default after a fresh flash).
+1. Enter **config mode**: hold the **BOOT** button ~3 s (the default is flight mode, AP off).
 2. On your phone, join the Wi-Fi network **`NanoPFD`**.
    - It is an **open** network out of the box (the 7-character default password is below the
      WPA2 minimum). Set an 8–63 character password on the **WiFi** tab to switch it to WPA2.
