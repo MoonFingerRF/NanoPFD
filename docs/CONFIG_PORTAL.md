@@ -7,20 +7,23 @@ you can change settings and review a flight log from your phone, with **no refla
 
 ## Config mode vs flight mode
 
-The Wi-Fi access point and the high-frame-rate flight display can't both have the internal
-memory they want at the same time, so the firmware runs in one of two modes, chosen at boot:
+The Wi-Fi access point and the **full** frame rate can't both have the internal memory they
+want at the same time (the AP needs the RAM the fast display canvas would use), so the firmware
+runs in one of two modes, chosen at boot:
 
 | Mode | What runs | Display |
 |------|-----------|---------|
-| **Config** (default) | Wi-Fi AP + web portal, **and** Remote ID per your toggles | lower fps (the PFD canvas moves to PSRAM to free RAM) |
-| **Flight** | Remote ID only (no AP) | full fps |
+| **Config** (default) | Wi-Fi AP + web portal, **and** Remote ID per your toggles | **lower fps** (canvas in PSRAM) |
+| **Flight** | Remote ID only (no AP) | **full fps** |
+
+**Both modes run the real instruments** (PFD + ND + sensors + logging) — config mode just renders
+slower. So **you can fly in config mode with the AP on**; you only give up frame rate (≈6 fps on
+the 2.8B / BOARD_C, better on BOARD_D). Switch to flight mode when you want full fps and don't
+need the AP in the air.
 
 **Switch modes:** hold the **BOOT** button for ~3 seconds. The device saves the flight log,
 flips the mode, and reboots. (The BOOT button also tap-adjusts the altimeter; only a long hold
-toggles the mode.)
-
-> The on-screen panel keeps working in both modes — config mode just renders a few frames per
-> second. Do your configuring on the ground in config mode, then switch to flight mode to fly.
+toggles the mode.) Config mode is the default, so the AP is on out of the box.
 
 ---
 
