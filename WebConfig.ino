@@ -245,10 +245,15 @@ for(var i=0;i<PAL.length;i++){var e=$('pal'+i);if(e)q+='&pal'+i+'='+encodeURICom
 ap(q).then(function(r){flash(r.ok?'✓ saved':'error')})}
 var LOG=null,met=0,v0=0,v1=0;
 function fmtT(s){var m=Math.floor(s/60),x=Math.round(s%60);return m+':'+(x<10?'0':'')+x}
+function z2(x){return(x<10?'0':'')+x}
+function fmtClock(e){var d=new Date(e*1000);return z2(d.getUTCHours())+':'+z2(d.getUTCMinutes())+':'+z2(d.getUTCSeconds())}
+function useUTC(){return LOG&&LOG.tsrc==2&&LOG.tend>0}            // GPS time acquired?
+function epAt(k){return LOG.tend-LOG.secs*(LOG.n-1-k)/(LOG.n>1?LOG.n-1:1)}  // UTC sec at point k
 function loadLog(){fetch('/flog').then(function(r){return r.json()}).then(function(d){LOG=d;
 $('mxgs').textContent=d.maxgs.toFixed(0)+' kt';$('mxasi').textContent=d.maxasi.toFixed(0)+' mph';
 $('mxalt').textContent=d.maxalt+' ft';$('mxg').textContent=d.maxg.toFixed(2)+' g';
-$('logdur').textContent='last '+fmtT(d.secs);v0=0;v1=d.n;drawPlot()})}
+$('logdur').textContent='last '+fmtT(d.secs)+(useUTC()?' · ended '+fmtClock(d.tend)+'Z':' · no GPS time');
+v0=0;v1=d.n;drawPlot()})}
 function curArr(){return[LOG.gs,LOG.asi,LOG.alt,LOG.g][met]}
 function drawPlot(){if(!LOG||!LOG.n)return;var cv=$('plot'),w=cv.clientWidth,h=190;cv.width=w;cv.height=h;
 var x=cv.getContext('2d');x.clearRect(0,0,w,h);var a=curArr();
@@ -261,7 +266,11 @@ var n=i1-i0;for(i=0;i<n;i++){var v=a[i0+i],px=n>1?i/(n-1)*w:0,py=h-1-(v-mn)/(mx-
 i?x.lineTo(px,py):x.moveTo(px,py)}x.stroke();
 x.fillStyle='#6b7280';x.font='10px monospace';var dc=met==3?2:0;
 x.fillText(mx.toFixed(dc),3,11);x.fillText(mn.toFixed(dc),3,h-4);
-var t0=i0/LOG.n*LOG.secs,t1=i1/LOG.n*LOG.secs;$('plbl').textContent=fmtT(t0)+'-'+fmtT(t1)}
+// x-axis = actual time: center + right ticks in-canvas (avoid the bottom-left value label)
+var U=useUTC();function tlab(k){return U?fmtClock(epAt(k)):fmtT(k/LOG.n*LOG.secs)}
+x.textAlign='center';x.fillText(tlab((i0+i1)/2),w/2,h-4);
+x.textAlign='right';x.fillText(tlab(i1-1),w-3,h-4);x.textAlign='left';
+$('plbl').textContent=(U?tlab(i0)+' – '+tlab(i1-1)+' UTC':fmtT(i0/LOG.n*LOG.secs)+'-'+fmtT(i1/LOG.n*LOG.secs))}
 var mb=document.querySelectorAll('.mb');for(var mi=0;mi<mb.length;mi++){mb[mi].onclick=function(){
 for(var j=0;j<mb.length;j++)mb[j].classList.remove('on');this.classList.add('on');met=+this.dataset.m;drawPlot()}}
 $('zin').onclick=function(){var c=(v0+v1)/2,r=(v1-v0)/4;v0=c-r;v1=c+r;drawPlot()};
@@ -377,6 +386,8 @@ static void cfgHandleApiSet() {
 // /flog.csv  -> full 10 Hz log as a CSV download (streamed)
 // /flog/reset-> clear the log + peaks
 extern volatile float gFlogMaxGs, gFlogMaxAsi, gFlogMaxAlt, gFlogMaxG;
+extern uint32_t flightLogLastEpochSec();   // epoch (UTC s) of the newest sample; 0 if never stamped
+extern uint8_t  flightLogTimeSrc();        // 0=none 1=system(relative) 2=GPS UTC
 
 // Stream one downsampled metric array as a chunked JSON fragment: "key":[v,v,...]
 // which: 0=gps-speed 1=airspeed 2=altitude 3=g. Bucket = the peak over `step` samples.
@@ -412,7 +423,8 @@ static void cfgHandleFlog() {
   int outN = step ? (int)((cnt + step - 1) / step) : 0;     // ceil(cnt/step) = bucket count
   cfgServer.setContentLength(CONTENT_LENGTH_UNKNOWN);        // chunked
   cfgServer.send(200, "application/json", "");
-  String head = "{\"hz\":10,\"count\":" + String(cnt) + ",\"secs\":" + String(cnt / 10) + ",";
+  String head = "{\"hz\":10,\"count\":" + String(cnt) + ",\"secs\":" + String(cnt / 10) +
+                ",\"tend\":" + String(flightLogLastEpochSec()) + ",\"tsrc\":" + String((int)flightLogTimeSrc()) + ",";
   head += "\"maxgs\":" + String(gFlogMaxGs, 1) + ",\"maxasi\":" + String(gFlogMaxAsi, 1) +
           ",\"maxalt\":" + String((int)gFlogMaxAlt) + ",\"maxg\":" + String(gFlogMaxG, 2) + ",";
   head += "\"n\":" + String(outN) + ",";
@@ -429,12 +441,22 @@ static void cfgHandleFlogCsv() {
   cfgServer.sendHeader("Content-Disposition", "attachment; filename=flightlog.csv");
   cfgServer.setContentLength(CONTENT_LENGTH_UNKNOWN);
   cfgServer.send(200, "text/csv", "");
-  cfgServer.sendContent("t_s,gps_kt,asi_mph,alt_ft,g\n");
+  cfgServer.sendContent("t_s,utc,gps_kt,asi_mph,alt_ft,g\n");
   uint32_t cnt = flightLogCount();
+  uint32_t tend = flightLogLastEpochSec();      // UTC epoch (s) of the NEWEST sample
+  bool utcOk = (flightLogTimeSrc() == 2) && tend;
   String chunk; chunk.reserve(2048);
   for (uint32_t j = 0; j < cnt; j++) {
     float gs, asi, alt, g; flightLogGet(j, &gs, &asi, &alt, &g);
-    chunk += String(j / 10.0f, 1); chunk += ','; chunk += String(gs, 1); chunk += ',';
+    chunk += String(j / 10.0f, 1); chunk += ',';
+    if (utcOk) {                                // actual UTC clock time of this sample (10 Hz back-count)
+      long tenths = (long)tend * 10 - (long)(cnt - 1 - j);
+      time_t sec = (time_t)(tenths / 10); int f = (int)(tenths % 10);
+      struct tm tmv; gmtime_r(&sec, &tmv);
+      char ts[24]; strftime(ts, sizeof ts, "%Y-%m-%dT%H:%M:%S", &tmv);
+      chunk += ts; chunk += '.'; chunk += String(f); chunk += 'Z';
+    }
+    chunk += ','; chunk += String(gs, 1); chunk += ',';
     chunk += String(asi, 1); chunk += ','; chunk += String((int)alt); chunk += ','; chunk += String(g, 2);
     chunk += '\n';
     if (chunk.length() > 1800) { cfgServer.sendContent(chunk); chunk = ""; }

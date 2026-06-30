@@ -8,11 +8,24 @@
 //  it across power cycles, and the first fix is latched as "home".
 // ============================================================================
 #include <Preferences.h>           // NVS storage for the last GPS lock position
+#include <sys/time.h>              // settimeofday() — sync the system clock to GPS UTC
 
 HardwareSerial GPSSerial(1);          // ESP32-S3 UART1 (GPS_RX / GPS_TX)
 Preferences    gpsPrefs;
 
 bool GPS_First_Fix;
+volatile bool gGpsTimeSet = false;    // true once the system clock has been set from GPS UTC
+
+// Civil date (UTC) -> Unix epoch seconds (Howard Hinnant's algorithm; valid for all dates).
+static int64_t ymdToEpoch(int y, int mo, int d, int hh, int mm, int ss) {
+  y -= (mo <= 2);
+  int era = (y >= 0 ? y : y - 399) / 400;
+  unsigned yoe = (unsigned)(y - era * 400);
+  unsigned doy = (153u * (mo + (mo > 2 ? -3 : 9)) + 2) / 5 + d - 1;
+  unsigned doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
+  int64_t days = (int64_t)era * 146097 + (int64_t)doe - 719468;
+  return days * 86400LL + hh * 3600 + mm * 60 + ss;
+}
 
 void initGPS(state *s) {
   GPSSerial.begin(GPS_BAUD, SERIAL_8N1, GPS_RX, GPS_TX);
@@ -69,6 +82,28 @@ static void ubxHandlePVT(state *s) {
   bool ok = (flags & 0x01) && fixType >= 2;
   s->sats = numSV;                           // valid even before a usable fix
   s->GPS  = ok;
+
+  // UTC time/date (NAV-PVT: valid@11 bit1=validTime bit2=fullyResolved; year@4 u2, m@6, d@7,
+  // h@8, min@9, s@10). Once the GPS has a resolved UTC, set the ESP32 system clock so the flight
+  // recorder can stamp samples with real wall-clock time. Re-sync periodically to correct drift.
+  uint8_t tvalid = ubxBuf[11];
+  if (tvalid & 0x06) {                       // validTime or fullyResolved
+    int yr = (int)((uint16_t)ubxBuf[4] | ((uint16_t)ubxBuf[5] << 8));
+    if (yr >= 2020 && yr < 2100) {
+      static uint32_t lastSync = 0;
+      uint32_t nowm = millis();
+      if (!gGpsTimeSet || (uint32_t)(nowm - lastSync) > 60000) {   // first lock, then hourly-ish drift fix
+        lastSync = nowm;
+        int64_t epoch = ymdToEpoch(yr, ubxBuf[6], ubxBuf[7], ubxBuf[8], ubxBuf[9], ubxBuf[10]);
+        struct timeval tv = { (time_t)epoch, 0 };
+        settimeofday(&tv, nullptr);
+        if (!gGpsTimeSet)
+          USBSerial.printf("[GPS] UTC time set: %04d-%02d-%02d %02d:%02d:%02d epoch=%lld\n",
+                           yr, ubxBuf[6], ubxBuf[7], ubxBuf[8], ubxBuf[9], ubxBuf[10], (long long)epoch);
+        gGpsTimeSet = true;
+      }
+    }
+  }
   if (ok) {
     s->lon          = rdI32(&ubxBuf[24]) * 1e-7f;          // 1e-7 deg
     s->lat          = rdI32(&ubxBuf[28]) * 1e-7f;
