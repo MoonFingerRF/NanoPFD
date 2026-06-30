@@ -170,15 +170,16 @@ bool icmUpdate(state *s) {
     if (s->g > s->max_g) s->max_g = s->g;
   }
 
-  // Save the latest DMP cal every 30 s (only when it has actually moved, to spare the
-  // flash). The cal is APPLIED only at startup/reconnect (icmLoadBias), so this save
-  // can never clobber a good live cal — it just keeps flash current for the next boot.
+  // Save the latest DMP cal at most every 5 min, and only when it has MEANINGFULLY moved
+  // (kind to the flash — the cal converges and then stops changing, so in practice this
+  // writes only a handful of times per session, never continuously). Applied only at
+  // startup/reconnect (icmLoadBias), so it can't clobber a good live cal.
   static unsigned long lastSave = 0;
-  if (millis() - lastSave > 30000) {
+  if (millis() - lastSave > 300000) {
     lastSave = millis();
     int32_t b[9]; icmGetBias(b);
     long diff = 0; for (int i = 0; i < 9; i++) diff += labs((long)b[i] - (long)icm_saved_bias[i]);
-    if (diff > 200) { icmSaveBias(b); for (int i = 0; i < 9; i++) icm_saved_bias[i] = b[i]; }
+    if (diff > 1000) { icmSaveBias(b); for (int i = 0; i < 9; i++) icm_saved_bias[i] = b[i]; }
   }
 
   icm_last_data = millis();

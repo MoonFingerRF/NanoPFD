@@ -198,7 +198,9 @@ font-weight:700;letter-spacing:2px;cursor:pointer;margin-top:2px}.save:active{fi
 <div class=c><h2>WiFi AP</h2>
 <div class=r><label>AP password</label><input type=text id=pw maxlength=63></div>
 <div class=u>8&ndash;63 chars for WPA2; shorter = open network</div></div>
-<div class=u style="text-align:center;line-height:1.6">Hold the <b>BOOT</b> button ~3&nbsp;s to switch between config (this AP) and flight (Remote&nbsp;ID at full fps) mode.</div></div>
+<div class=c><h2>Mode</h2>
+<div class=u style="margin:0 0 10px">You're in <b>config mode</b> (AP on, display runs slow). Exit to <b>flight mode</b> for full frame rate (Wi-Fi off). To come back, hold the <b>BOOT</b> button ~3&nbsp;s.</div>
+<button class=save onclick=exitCfg()>EXIT TO FLIGHT MODE (FULL FPS)</button></div></div>
 <button class=save onclick=save()>SAVE TO FLASH</button><div class=st id=st></div>
 </div><script>
 var $=function(i){return document.getElementById(i)};
@@ -271,6 +273,7 @@ cv.addEventListener('pointermove',function(e){if(!dn||!LOG)return;var d=(e.clien
 v0=s0-d;v1=s1-d;if(v0<0){v1-=v0;v0=0}if(v1>LOG.n){v0-=v1-LOG.n;v1=LOG.n;if(v0<0)v0=0}drawPlot()});
 cv.addEventListener('pointerup',function(){dn=false})})();
 function resetLog(){fetch('/flog/reset',{method:'POST'}).then(loadLog)}
+function exitCfg(){$('st').textContent='Rebooting to flight mode…';ap('exit=1')}
 load();
 </script></body></html>)HTML";
 
@@ -308,6 +311,12 @@ static void cfgHandleApiGet() {
 }
 
 static void cfgHandleApiSet() {
+  if (cfgServer.hasArg("exit")) {            // "Exit to flight mode" -> full-fps, no AP, reboot
+    webConfigSetFlightMode();
+    cfgServer.send(200, "text/plain", "ok");
+    gPendingReboot = true;                   // loop() saves the log + reboots
+    return;
+  }
   if (cfgServer.hasArg("oriV")) gOriFlipV = cfgServer.arg("oriV").toInt() ? 1 : 0;
   if (cfgServer.hasArg("oriR")) gOriFlipR = cfgServer.arg("oriR").toInt() ? 1 : 0;
   if (cfgServer.hasArg("oriP")) gOriFlipP = cfgServer.arg("oriP").toInt() ? 1 : 0;
@@ -452,14 +461,20 @@ static void cfgTask(void *) {
 // hold the BOOT button ~3 s in flight to toggle + reboot (InstrumentPanel.ino).
 bool webConfigApMode() {
   Preferences p; p.begin("cfg", true);
-  bool m = p.getBool("apmode", true);     // default: AP/config mode ON
+  bool m = p.getBool("apmode", false);    // default: FLIGHT mode (full fps). Config/AP is opt-in.
   p.end();
   return m;
 }
 void webConfigToggleApMode() {
   Preferences p; p.begin("cfg", false);
-  bool m = p.getBool("apmode", true);
+  bool m = p.getBool("apmode", false);
   p.putBool("apmode", !m);
+  p.end();
+}
+// Force flight mode (used by the page's "Exit to flight mode" button — definitive, not a toggle).
+void webConfigSetFlightMode() {
+  Preferences p; p.begin("cfg", false);
+  p.putBool("apmode", false);
   p.end();
 }
 

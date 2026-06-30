@@ -21,9 +21,12 @@ slower. So **you can fly in config mode with the AP on**; you only give up frame
 the 2.8B / BOARD_C, better on BOARD_D). Switch to flight mode when you want full fps and don't
 need the AP in the air.
 
-**Switch modes:** hold the **BOOT** button for ~3 seconds. The device saves the flight log,
-flips the mode, and reboots. (The BOOT button also tap-adjusts the altimeter; only a long hold
-toggles the mode.) Config mode is the default, so the AP is on out of the box.
+**Default is flight mode** (full fps, AP off) — so the panel is fast out of the box.
+
+**Enter config mode (turn the AP on):** hold the **BOOT** button for ~3 seconds (the device reboots
+into config mode). The BOOT button also tap-adjusts the altimeter; only a long hold switches mode.
+
+**Exit config mode (back to full fps):** tap **EXIT TO FLIGHT MODE** on the WiFi tab, or hold BOOT ~3 s.
 
 ---
 

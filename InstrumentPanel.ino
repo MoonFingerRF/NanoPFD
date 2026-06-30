@@ -72,6 +72,7 @@ volatile float gVsiFs = VSI_FULL_SCALE, gGmeterFs = GMETER_FS;
 // IMU mounting trim (deg) + one-shot level-capture flag (set from the portal).
 volatile float gPitchTrim = 0, gRollTrim = 0;
 volatile bool  gLevelCapture = false;
+volatile bool  gPendingReboot = false;   // "Exit to flight mode" web button -> reboot from loop()
 
 // Apply the IMU mounting trim to the sensor up-vector (ux,uy,uz; uz ~ +1 when level),
 // and, on a 'set level' request, capture the current tilt into the trims. Called from
@@ -528,6 +529,11 @@ void setup(void) {
 // the soft power button and optional debug telemetry — the displays and sensors
 // are driven by their own tasks above.
 void loop() {
+  if (gPendingReboot) {            // "Exit to flight mode" pressed on the config page
+    flightLogSave();               // persist the flight log before the reboot
+    delay(150);
+    ESP.restart();
+  }
 #if ENABLE_POWER_MGMT
   // Soft power button: long-press latches SYS_EN low to power down.
   // TODO(board A): enable once SYS_EN/SYS_OUT pins are wired and set in config.h.

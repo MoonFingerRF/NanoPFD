@@ -391,6 +391,8 @@ extern volatile float gVsiFs, gGmeterFs;
 // attitude into the trims. Default 0 = no change.
 extern volatile float gPitchTrim, gRollTrim;
 extern volatile bool  gLevelCapture;
+// Set by the config portal's "Exit to flight mode" button; loop() saves the log + reboots.
+extern volatile bool  gPendingReboot;
 
 // ---- Navigation display (map) ----------------------------------------------
 // ND moving-map chart (airports, runways, navaids, airspace, glide paths, river).
