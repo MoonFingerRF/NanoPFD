@@ -194,13 +194,13 @@ font-weight:700;letter-spacing:2px;cursor:pointer;margin-top:2px}.save:active{fi
 <div class=c><h2>Remote ID receiver</h2>
 <div class=r><label>Bluetooth LE</label><label class=tg><input type=checkbox id=rb><span class=sl></span></label></div>
 <div class=r><label>WiFi</label><label class=tg><input type=checkbox id=rw><span class=sl></span></label></div>
-<div class=u>Plots nearby drones as orange dots on the compass. WiFi RID also runs while this AP is on (on the AP's channel); in flight it lowers fps. Changes apply after the next reboot / mode switch.</div></div>
+<div class=u>Plots nearby drones as orange dots on the compass. Both radios run continuously alongside the AP and the display &mdash; WiFi RID listens on the AP's channel (6, where Remote&nbsp;ID beacons live), BLE scans at low duty. Toggles apply live.</div></div>
 <div class=c><h2>WiFi AP</h2>
 <div class=r><label>AP password</label><input type=text id=pw maxlength=63></div>
 <div class=u>8&ndash;63 chars for WPA2; shorter = open network</div></div>
-<div class=c><h2>Mode</h2>
-<div class=u style="margin:0 0 10px">You're in <b>config mode</b> (AP on, display runs slow). Exit to <b>flight mode</b> for full frame rate (Wi-Fi off). To come back, hold the <b>BOOT</b> button ~3&nbsp;s.</div>
-<button class=save onclick=exitCfg()>EXIT TO FLIGHT MODE (FULL FPS)</button></div></div>
+<div class=c><h2>Reboot</h2>
+<div class=u style="margin:0 0 10px">This unit runs <b>one always-on mode</b>: the glass display, the WiFi AP, and both Remote&nbsp;ID receivers, all the time. Reboot to re-read flash or recover.</div>
+<button class=save onclick=exitCfg()>REBOOT</button></div></div>
 <button class=save onclick=save()>SAVE TO FLASH</button><div class=st id=st></div>
 </div><script>
 var $=function(i){return document.getElementById(i)};
@@ -273,7 +273,7 @@ cv.addEventListener('pointermove',function(e){if(!dn||!LOG)return;var d=(e.clien
 v0=s0-d;v1=s1-d;if(v0<0){v1-=v0;v0=0}if(v1>LOG.n){v0-=v1-LOG.n;v1=LOG.n;if(v0<0)v0=0}drawPlot()});
 cv.addEventListener('pointerup',function(){dn=false})})();
 function resetLog(){fetch('/flog/reset',{method:'POST'}).then(loadLog)}
-function exitCfg(){$('st').textContent='Rebooting to flight mode…';ap('exit=1')}
+function exitCfg(){$('st').textContent='Rebooting…';ap('exit=1')}
 load();
 </script></body></html>)HTML";
 
@@ -311,8 +311,10 @@ static void cfgHandleApiGet() {
 }
 
 static void cfgHandleApiSet() {
-  if (cfgServer.hasArg("exit")) {            // "Exit to flight mode" -> full-fps, no AP, reboot
-    webConfigSetFlightMode();
+  if (cfgServer.hasArg("exit")) {            // "Reboot" button -> save log + restart (back into always-on)
+#if !ALWAYS_ON_MODE
+    webConfigSetFlightMode();                // legacy: exit to flight (no AP)
+#endif
     cfgServer.send(200, "text/plain", "ok");
     gPendingReboot = true;                   // loop() saves the log + reboots
     return;
@@ -376,32 +378,51 @@ static void cfgHandleApiSet() {
 // /flog/reset-> clear the log + peaks
 extern volatile float gFlogMaxGs, gFlogMaxAsi, gFlogMaxAlt, gFlogMaxG;
 
+// Stream one downsampled metric array as a chunked JSON fragment: "key":[v,v,...]
+// which: 0=gps-speed 1=airspeed 2=altitude 3=g. Bucket = the peak over `step` samples.
+// Kept to a ~1.6KB chunk so the whole /flog response peaks at ~2KB heap (was ~34KB when it
+// built four arrays + a combined String — that OOM'd at low free memory and boot-looped).
+static void flogStreamArray(const char *key, uint32_t cnt, int step, int which) {
+  String chunk; chunk.reserve(1700);
+  chunk = "\""; chunk += key; chunk += "\":[";
+  bool first = true;
+  for (uint32_t b = 0; b < cnt; b += step) {
+    float m = (which == 2) ? -1e9f : 0.0f;                  // altitude can be negative
+    uint32_t end = b + step; if (end > cnt) end = cnt;
+    for (uint32_t k = b; k < end; k++) {
+      float gs, asi, alt, g; flightLogGet(k, &gs, &asi, &alt, &g);
+      float v = which == 0 ? gs : which == 1 ? asi : which == 2 ? alt : g;
+      if (v > m) m = v;
+    }
+    if (!first) chunk += ",";
+    first = false;
+    if      (which == 2) chunk += String((int)m);
+    else if (which == 3) chunk += String(m, 2);
+    else                 chunk += String(m, 1);
+    if (chunk.length() > 1500) { cfgServer.sendContent(chunk); chunk = ""; }
+  }
+  chunk += "]";
+  cfgServer.sendContent(chunk);
+}
+
 static void cfgHandleFlog() {
   uint32_t cnt = flightLogCount();
   const int target = 720;
   int step = (cnt > (uint32_t)target) ? (int)((cnt + target - 1) / target) : 1;
-  String ags = "[", aasi = "[", aalt = "[", ag = "[";
-  int outN = 0;
-  for (uint32_t b = 0; b < cnt; b += step) {
-    float mgs = 0, masi = 0, malt = -1e9f, mg = 0;          // bucket peaks (preserve maxima)
-    uint32_t end = b + step; if (end > cnt) end = cnt;
-    for (uint32_t k = b; k < end; k++) {
-      float gs, asi, alt, g; flightLogGet(k, &gs, &asi, &alt, &g);
-      if (gs > mgs) mgs = gs; if (asi > masi) masi = asi;
-      if (alt > malt) malt = alt; if (g > mg) mg = g;
-    }
-    if (outN) { ags += ","; aasi += ","; aalt += ","; ag += ","; }
-    ags += String(mgs, 1); aasi += String(masi, 1);
-    aalt += String((int)malt); ag += String(mg, 2);
-    outN++;
-  }
-  ags += "]"; aasi += "]"; aalt += "]"; ag += "]";
-  String j = "{\"hz\":10,\"count\":" + String(cnt) + ",\"secs\":" + String(cnt / 10) + ",";
-  j += "\"maxgs\":" + String(gFlogMaxGs, 1) + ",\"maxasi\":" + String(gFlogMaxAsi, 1) +
-       ",\"maxalt\":" + String((int)gFlogMaxAlt) + ",\"maxg\":" + String(gFlogMaxG, 2) + ",";
-  j += "\"n\":" + String(outN) + ",\"gs\":" + ags + ",\"asi\":" + aasi +
-       ",\"alt\":" + aalt + ",\"g\":" + ag + "}";
-  cfgServer.send(200, "application/json", j);
+  int outN = step ? (int)((cnt + step - 1) / step) : 0;     // ceil(cnt/step) = bucket count
+  cfgServer.setContentLength(CONTENT_LENGTH_UNKNOWN);        // chunked
+  cfgServer.send(200, "application/json", "");
+  String head = "{\"hz\":10,\"count\":" + String(cnt) + ",\"secs\":" + String(cnt / 10) + ",";
+  head += "\"maxgs\":" + String(gFlogMaxGs, 1) + ",\"maxasi\":" + String(gFlogMaxAsi, 1) +
+          ",\"maxalt\":" + String((int)gFlogMaxAlt) + ",\"maxg\":" + String(gFlogMaxG, 2) + ",";
+  head += "\"n\":" + String(outN) + ",";
+  cfgServer.sendContent(head);
+  flogStreamArray("gs",  cnt, step, 0); cfgServer.sendContent(",");
+  flogStreamArray("asi", cnt, step, 1); cfgServer.sendContent(",");
+  flogStreamArray("alt", cnt, step, 2); cfgServer.sendContent(",");
+  flogStreamArray("g",   cnt, step, 3);
+  cfgServer.sendContent("}");
+  cfgServer.sendContent("");                                // terminate the chunked response
 }
 
 static void cfgHandleFlogCsv() {
@@ -460,10 +481,14 @@ static void cfgTask(void *) {
 // boot from an NVS flag. Default = AP on (so the config page is reachable out of the box);
 // hold the BOOT button ~3 s in flight to toggle + reboot (InstrumentPanel.ino).
 bool webConfigApMode() {
+#if ALWAYS_ON_MODE
+  return true;                             // one always-on mode: AP is always up (ignores NVS)
+#else
   Preferences p; p.begin("cfg", true);
-  bool m = p.getBool("apmode", true);     // DEBUG: default config/AP mode to debug the 4-bit path.
+  bool m = p.getBool("apmode", false);     // default: flight (8-bit, no AP); BOOT-hold to config
   p.end();
   return m;
+#endif
 }
 void webConfigToggleApMode() {
   Preferences p; p.begin("cfg", false);
@@ -512,7 +537,9 @@ void webConfigBegin() {
   wifi_config_t ap = {};
   strncpy((char *)ap.ap.ssid, AP_SSID, sizeof(ap.ap.ssid) - 1);
   ap.ap.ssid_len        = strlen(AP_SSID);
-  ap.ap.channel         = 1;            // fixed channel: no scan, smaller footprint
+  ap.ap.channel         = 6;            // ch 6: where Remote-ID WiFi beacons almost always live, so
+                                        // WiFi RID (which rides the AP's channel, no hop) actually
+                                        // catches drones. The phone scans all channels to find us.
   ap.ap.max_connection  = 2;           // allow a reconnect slot (config mode has the RAM now)
   ap.ap.beacon_interval = 100;         // default cadence -> easier discovery + association
                                         // (we no longer starve coex: BLE RID runs at low duty)

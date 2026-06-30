@@ -449,10 +449,24 @@ extern volatile float gBaroInHg;
 // were trimmed from 20000/16000 to free internal SRAM for the Remote ID radios —
 // letting the PFD canvas stay in internal SRAM (full fps) with RID on. 6 KB is
 // still ~2.6x the measured peak. (sensorTask kept larger for the GPS/I2C parse.)
-#define STACK_PFD       6000   // bytes (canvases are heap-allocated, not stack)
-#define STACK_SENSORS   8000
-#define STACK_ND        6000
+// Right-sized to ~2x the MEASURED high-water peak (uxTaskGetSystemState: sensors 1880,
+// combined 2220, ndDraw 2320 bytes used). Reclaims ~7KB internal SRAM for the BLE+AP+WiFi
+// coexistence. loopTask is cut separately via SET_LOOP_TASK_STACK_SIZE in the main sketch.
+#define STACK_PFD       4608   // bytes (canvases are heap-allocated, not stack)
+#define STACK_SENSORS   4608
+#define STACK_ND        4608
 #define STACK_BLIT      4096
+
+// ---- Unified always-on mode -------------------------------------------------
+// ALWAYS_ON_MODE: ONE mode — WiFi AP + BLE RID + WiFi RID + the glass display, all up
+// together, all the time. No flight/config switch (the old 8-bit flight path boot-looped
+// at ~10KB free; the 4-bit canvas frees 86KB so everything coexists with headroom).
+// Set to 0 to restore the old flight/config BOOT-hold toggle.
+#define ALWAYS_ON_MODE   1
+// CANVAS_FORCE_4BIT: always use the 4-bit packed PFD canvas (86KB internal, vs 172KB for
+// 8-bit) so the AP + both RID radios fit in internal SRAM. 0 = old auto (8-bit unless WiFi
+// needs the SRAM). The 4-bit math is host-proven identical (tests/test_canvas4.cpp).
+#define CANVAS_FORCE_4BIT 1
 
 // ---- Debug -----------------------------------------------------------------
 #define DEBUG_SERIAL       1     // 1 = stream fps / battery telemetry over USB
@@ -486,10 +500,10 @@ extern volatile float gBaroInHg;
                             //   standalone Remote ID modules). REQUIRES arduino-esp32
                             //   core <= 3.3.6 — 3.3.7..3.3.10 have a regression that
                             //   panics S3 BLE startup (issue #12357). See build.sh.
-#define RID_USE_WIFI  0     // WiFi RID power-on DEFAULT (runtime gRidWifi, set via the portal).
-                            //   WiFi beacons. In config mode WiFi RID rides the AP's radio on
-                            //   its channel (no hop); in flight it channel-hops (and forces the
-                            //   canvas to PSRAM -> lower fps). Off by default (fps cost).
+#define RID_USE_WIFI  1     // WiFi RID power-on DEFAULT (runtime gRidWifi, set via the portal).
+                            //   WiFi beacons. In always-on mode WiFi RID rides the AP's radio on
+                            //   its channel (no hop, ~free) so it runs alongside BLE RID + the AP.
+                            //   On by default now that the 4-bit canvas frees the SRAM.
 // Runtime RID enables — power-on defaults above; live values set from the config portal
 // (NVS-backed). gRidWifi also decides canvas placement (PSRAM when on). Defined in RemoteID.cpp.
 extern volatile bool gRidBle, gRidWifi;

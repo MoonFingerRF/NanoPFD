@@ -250,7 +250,11 @@ void combinedDisplayInit() {
   // The PFD canvas is 4-bit ONLY when WiFi (the AP, or flight-mode WiFi RID) needs the
   // internal SRAM; otherwise 8-bit for full speed. It's always INTERNAL. The ND is always
   // 8-bit (its scattered-pixel map is slow when packed) and lives in PSRAM.
+#if CANVAS_FORCE_4BIT
+  bool need4 = true;                                   // always 4-bit (frees 86KB internal for AP+BLE+WiFi)
+#else
   bool need4 = webConfigApMode() || gRidWifi;
+#endif
   pfd.packed4 = need4;
   nd.packed4  = false;
   combineLutRebuild();                                  // 4-bit byte -> RGB565 combo LUT

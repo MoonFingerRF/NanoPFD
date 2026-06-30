@@ -74,6 +74,11 @@ volatile float gPitchTrim = 0, gRollTrim = 0;
 volatile bool  gLevelCapture = false;
 volatile bool  gPendingReboot = false;   // "Exit to flight mode" web button -> reboot from loop()
 
+// Shrink the Arduino loopTask stack from the 8192 default — loop() only polls the BOOT
+// button + telemetry (measured peak ~2.4KB incl. setup's BLE init). Frees ~3.5KB internal
+// SRAM for the AP + BLE + WiFi RID coexistence. Must be at global scope.
+SET_LOOP_TASK_STACK_SIZE(4608);
+
 // Apply the IMU mounting trim to the sensor up-vector (ux,uy,uz; uz ~ +1 when level),
 // and, on a 'set level' request, capture the current tilt into the trims. Called from
 // the IMU drivers before the orientation flips. Trim 0 = identity (no change).
@@ -518,11 +523,19 @@ void setup(void) {
   // the PFD canvas internal. The delay lets combinedTask spin up its ndDrawTask
   // (created on first run) before the radios carve up what's left.
   delay(150);
-  // WiFi AP and BLE Remote ID can't both fit in internal SRAM with the canvas (see
-  // WebConfig.ino), so run exactly one per boot. Hold BOOT ~3 s to switch (handled in loop()).
+#if ALWAYS_ON_MODE
+  // ONE always-on mode: WiFi AP + settings portal + BLE RID + WiFi RID + the glass display,
+  // all up together. The 4-bit canvas + right-sized stacks + streamed /flog leave the headroom
+  // that the old all-8-bit single-mode-per-boot scheme lacked (it boot-looped at ~10KB free).
+  webConfigBegin();
+  remoteid_begin_ap();   // AP-shared-radio path: BLE RID + WiFi RID per the runtime toggles
+#else
+  // Legacy: WiFi AP and BLE can't both fit with the 8-bit canvas, so run one per boot.
+  // Hold BOOT ~3 s to switch (handled in loop()).
   if (webConfigApMode()) { webConfigBegin();   // config mode: WiFi AP + captive settings portal
                            remoteid_begin_ap(); }  // + RID on the AP's radio (BLE / WiFi per toggles)
   else                     remoteid_begin();   // flight mode: FAA Remote ID (BLE / WiFi per toggles)
+#endif
 }
 
 // loop() runs in the Arduino loopTask (core 1, low priority). It only handles
@@ -558,9 +571,11 @@ void loop() {
     bool tap = bdown && !bprev;
     bool rep = bdown && bprev && (bnow - bpress > 450) && (bnow - brepeat > 90);
     if (tap) bpress = bnow;
+#if !ALWAYS_ON_MODE
     // BOOT held >=3 s -> switch between config (WiFi AP) and flight (BLE Remote ID) mode and
     // reboot (the two radios can't coexist; see WebConfig.ino). GPIO0 read at RUNTIME is safe —
     // only HOLDING it across a reset/power-on would enter the ROM bootloader.
+    // (Disabled in ALWAYS_ON_MODE: there is only one mode — AP + BLE + WiFi RID + display.)
     if (bdown && !bmodeToggled && (bnow - bpress) >= 3000) {
       bmodeToggled = true;
       flightLogSave();            // persist the flight log so it survives the reboot
@@ -569,6 +584,9 @@ void loop() {
       ESP.restart();
     }
     if (!bdown) bmodeToggled = false;
+#else
+    (void)bmodeToggled;
+#endif
     if (tap || rep) {
       brepeat = bnow;
       gBaroInHg = roundf((gBaroInHg + 0.01f) * 100.0f) / 100.0f;
@@ -583,6 +601,20 @@ void loop() {
   }
 
 #if DEBUG_SERIAL
+  static bool s_stackReported = false;
+  if (!s_stackReported && millis() > 9000) {     // one-shot: per-task stack free-at-peak (bytes), all tasks
+    s_stackReported = true;
+    const UBaseType_t CAP = 40;
+    TaskStatus_t *arr = (TaskStatus_t *)malloc(sizeof(TaskStatus_t) * CAP);
+    if (arr) {
+      UBaseType_t n = uxTaskGetSystemState(arr, CAP, NULL);
+      USBSerial.printf("=== STACK HWM (free bytes at peak) n=%u iram_free=%u ===\n",
+                       (unsigned)n, (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL));
+      for (UBaseType_t i = 0; i < n; i++)
+        USBSerial.printf("  STK %-14s hwm=%u\n", arr[i].pcTaskName, (unsigned)arr[i].usStackHighWaterMark);
+      free(arr);
+    }
+  }
   static unsigned long lastPrint = 0;
   if (millis() - lastPrint > DEBUG_PRINT_MS) {
     lastPrint = millis();

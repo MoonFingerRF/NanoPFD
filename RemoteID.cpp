@@ -350,17 +350,21 @@ void remoteid_begin() {
 // CONFIG mode (AP up): BLE (now fits — the config-mode canvas is in PSRAM) and/or WiFi RID
 // attached to the AP's radio on its channel. Call AFTER webConfigBegin().
 void remoteid_begin_ap() {
-  RID_LOG("[RID] config receiver (WiFi=%d) internal free=%u\n",
-          (int)gRidWifi, (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL));
-  g_ble_share_radio = true;
-  // NOTE: BLE is NOT started in config mode. With the 4-bit PFD canvas kept in INTERNAL
-  // SRAM (the goal) + the AP, the BLE controller's ~60 KB would leave only ~20 KB free —
-  // too little for a phone to associate + the web server to serve (it crashed -> boot loop).
-  // So config mode runs AP + WiFi RID (which rides the AP's radio for ~free); BLE RID runs
-  // in flight mode, where there's plenty of internal SRAM.
-  if (gRidWifi) wifiRidAttach();
-  RID_LOG("[RID] config receiver up; internal free=%u\n",
-          (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL));
+  RID_LOG("[RID] always-on receiver (BLE=%d WiFi=%d) internal free=%u\n",
+          (int)gRidBle, (int)gRidWifi, (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL));
+  g_ble_share_radio = true;                 // AP is up -> BLE scans at low duty so the AP keeps the radio
+#if ALWAYS_ON_MODE
+  gRidBle = true; gRidWifi = true;          // always-on: both RID radios up every boot (the site
+                                            // toggles still flip them live within a session)
+#endif
+  // Always-on mode: AP + BLE RID + WiFi RID all coexist. This fits now because the 4-bit PFD
+  // canvas (86KB, vs 172KB for 8-bit) + right-sized task stacks + the streamed /flog endpoint
+  // leave ~40KB internal free — enough for a phone to associate and the web server to serve
+  // with BLE up. (The old all-8-bit path left only ~10-21KB -> OOM on connect -> boot loop.)
+  if (gRidWifi) wifiRidAttach();            // rides the AP channel (no hop) -> nearly free
+  if (gRidBle)  ble_begin();                // low-duty BLE scan, shares the radio with the AP
+  RID_LOG("[RID] always-on receiver up (BLE=%d WiFi=%d); internal free=%u\n",
+          (int)gRidBle, (int)gRidWifi, (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL));
 }
 
 void remoteid_fill(state *s) {
