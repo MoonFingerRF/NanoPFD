@@ -149,19 +149,25 @@ static void ble_parse_adv(const uint8_t *bda, const uint8_t *adv, int len) {
 
 static int ble_gap_event_cb(struct ble_gap_event *event, void *arg);  // fwd decl
 
-// Kick off (or restart) a continuous passive legacy scan.
+// True when the WiFi AP is also up (config mode): the radio is SHARED, so the BLE scan
+// must NOT run at 100% duty or it starves the AP — phones can't associate / get a DHCP
+// lease. Flight mode (no AP) keeps the full-duty scan for the fastest RID detection.
+static bool g_ble_share_radio = false;
+
+// Kick off (or restart) a passive legacy scan.
 static void ble_start_disc() {
   uint8_t own_addr_type = 0;                     // BLE_OWN_ADDR_PUBLIC
   ble_hs_id_infer_auto(0, &own_addr_type);       // use the chip's public address
   struct ble_gap_disc_params dp = {0};
-  dp.itvl             = 0x50;                     // 0.625ms units -> ~50 ms
-  dp.window           = 0x50;                     // 100% duty cycle
+  dp.itvl             = 0x60;                     // 0.625ms units -> ~60 ms scan interval
+  dp.window           = g_ble_share_radio ? 0x18 // ~15 ms listen (25% duty) -> AP gets the radio
+                                          : 0x60; // ~60 ms listen (100%) in flight (no AP)
   dp.passive          = 1;                        // passive: just listen, never request
   dp.filter_duplicates = 0;                       // report every advert (position updates)
   dp.filter_policy    = 0;                        // accept all advertisers
   dp.limited          = 0;
   int rc = ble_gap_disc(own_addr_type, BLE_HS_FOREVER, &dp, ble_gap_event_cb, nullptr);
-  RID_LOG("[RID] BLE: ble_gap_disc rc=%d\n", rc);
+  RID_LOG("[RID] BLE: ble_gap_disc rc=%d (share=%d)\n", rc, (int)g_ble_share_radio);
 }
 
 // NimBLE GAP event: an advertisement arrived (or the scan ended -> restart).
@@ -331,6 +337,7 @@ static void rid_task(void *) {
 void remoteid_begin() {
   RID_LOG("[RID] flight receiver (BLE=%d WiFi=%d) internal free=%u\n",
           (int)gRidBle, (int)gRidWifi, (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL));
+  g_ble_share_radio = false;                       // no AP in flight -> full-duty BLE scan
   if (gRidBle) ble_begin();
   if (gRidWifi) {
     wifi_begin();
@@ -345,6 +352,7 @@ void remoteid_begin() {
 void remoteid_begin_ap() {
   RID_LOG("[RID] config receiver (BLE=%d WiFi=%d) internal free=%u\n",
           (int)gRidBle, (int)gRidWifi, (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL));
+  g_ble_share_radio = true;                        // AP is up -> BLE must share the radio (low duty)
   if (gRidWifi) wifiRidAttach();
   if (gRidBle)  ble_begin();
   RID_LOG("[RID] config receiver up; internal free=%u\n",

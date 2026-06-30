@@ -27,6 +27,7 @@
 #include "esp_netif.h"
 #include "esp_event.h"
 #include "esp_wifi_default.h"   // esp_netif_create_default_wifi_ap()
+#include "esp_coexist.h"        // esp_coex_preference_set — favour WiFi when BLE RID shares the radio
 #include "nvs_flash.h"
 #include "config.h"       // ORI_*_DEF, BARO_*, CORE_SENSORS, gBaroInHg, gOri* externs
 #include "map_zoom.h"     // mapZoomSet / mapZoomIdx / mapZoomCount / mapZoomRangeM
@@ -497,8 +498,9 @@ void webConfigBegin() {
   strncpy((char *)ap.ap.ssid, AP_SSID, sizeof(ap.ap.ssid) - 1);
   ap.ap.ssid_len        = strlen(AP_SSID);
   ap.ap.channel         = 1;            // fixed channel: no scan, smaller footprint
-  ap.ap.max_connection  = 1;           // one phone at a time keeps the AP buffers small
-  ap.ap.beacon_interval = 300;         // longer beacon = less airtime, eases WiFi/BLE coex
+  ap.ap.max_connection  = 2;           // allow a reconnect slot (config mode has the RAM now)
+  ap.ap.beacon_interval = 100;         // default cadence -> easier discovery + association
+                                        // (we no longer starve coex: BLE RID runs at low duty)
   if (wpa2) {
     strncpy((char *)ap.ap.password, pass.c_str(), sizeof(ap.ap.password) - 1);
     ap.ap.authmode = WIFI_AUTH_WPA2_PSK;
@@ -507,6 +509,7 @@ void webConfigBegin() {
   }
   esp_wifi_set_config(WIFI_IF_AP, &ap);
   esp_err_t se = esp_wifi_start();
+  esp_coex_preference_set(ESP_COEX_PREFER_WIFI);   // BLE RID shares this radio — let the AP win
   esp_wifi_set_ps(WIFI_PS_NONE);        // AP: never modem-sleep
   esp_wifi_set_max_tx_power(44);        // ~11 dBm (0.25 dBm units); plenty for cockpit range
 
