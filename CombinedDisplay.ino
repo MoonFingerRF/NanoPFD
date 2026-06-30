@@ -283,6 +283,7 @@ void combinedDisplayInit() {
 // clock) — at 16/24 MHz the two cores' framebuffer traffic starved the LCD DMA.
 static SemaphoreHandle_t gNdStart = nullptr;
 static SemaphoreHandle_t gNdDone  = nullptr;
+static SemaphoreHandle_t gNdDrawDone = nullptr;   // ND DRAW finished -> core1 may composite its half
 static state gCmbSnap;   // shared frame snapshot (written before gNdStart, then read-only)
 
 // 8-bit composite: index region -> RGB565 framebuffer, TWO pixels per 32-bit store.
@@ -312,17 +313,37 @@ static inline void compositeRegion4(uint16_t *fb, const uint8_t *packed, int npi
   if (npix & 1) fb[npix - 1] = color_index[packed[nb] >> 4];
 }
 
+// Composite ND canvas rows [r0,r1) -> framebuffer. Used to SPLIT the ND composite across both
+// cores (core0 the top half, core1 the bottom half) so the idle-after-PFD core1 helps drain the
+// PSRAM-write latency in parallel. Regions are disjoint -> no race. ND_SPLIT chosen on an even
+// pixel boundary so the 4-bit byte offset is exact.
+// 50/50 split (core0 top, core1 bottom). Tested 2/3 toward core0 -> no measurable change (the
+// frame is gated by the ND draw + parallel-composite contention, not the split ratio).
+#define ND_SPLIT (ND_CANVAS_H / 2)
+static inline void compositeNdRange(int r0, int r1) {
+  int npix = RGB_WIDTH * (r1 - r0);
+  uint16_t *fb  = gRgb->getFramebuffer() + RGB_WIDTH * (ND_TOP + r0);
+  uint8_t  *buf = gCmbNd->getBuffer() + MyCanvas8::bufBytes(RGB_WIDTH, r0, gCmbNd->packed4);
+  if (gCmbNd->packed4) compositeRegion4(fb, buf, npix);
+  else                 compositeRegion8(fb, buf, npix);
+}
+
 void ndDrawTask(void *params) {
   for (;;) {
     xSemaphoreTake(gNdStart, portMAX_DELAY);
     unsigned long t0 = micros();
     drawNavigationDisplay(gCmbNd, &gCmbSnap);
     unsigned long tDraw = micros();
-    uint16_t *ndfb = gRgb->getFramebuffer() + RGB_WIDTH * ND_TOP;  // ND region of the framebuffer
+#if ND_SPLIT_COMPOSITE
+    xSemaphoreGive(gNdDrawDone);                 // release core1 to composite the bottom half
+    compositeNdRange(0, ND_SPLIT);               // core0 composites the TOP half
+#else
+    uint16_t *ndfb = gRgb->getFramebuffer() + RGB_WIDTH * ND_TOP;
     if (gCmbNd->packed4) compositeRegion4(ndfb, gCmbNd->getBuffer(), RGB_WIDTH * ND_CANVAS_H);
     else                 compositeRegion8(ndfb, gCmbNd->getBuffer(), RGB_WIDTH * ND_CANVAS_H);
+#endif
     gNdDrawUs = tDraw - t0;            // ND draw (map+compass)
-    gNdBlitUs = micros() - tDraw;      // ND composite (LUT -> framebuffer)
+    gNdBlitUs = micros() - tDraw;      // ND composite (incl. wait/half) -> framebuffer
     xSemaphoreGive(gNdDone);
   }
 }
@@ -333,6 +354,7 @@ void combinedTask(void *params) {
   init_state(&gCmbSnap);
   gNdStart = xSemaphoreCreateBinary();
   gNdDone  = xSemaphoreCreateBinary();
+  gNdDrawDone = xSemaphoreCreateBinary();
   xTaskCreatePinnedToCore(ndDrawTask, "ndDraw", STACK_ND, NULL, PRIO_ND, NULL, CORE_SENSORS);
   unsigned long prevTime = millis();
   for (;;) {
@@ -362,7 +384,11 @@ void combinedTask(void *params) {
     else                  compositeRegion8(gRgb->getFramebuffer(), gCmbPfd->getBuffer(), RGB_WIDTH * ND_TOP);
     gPfdBlitUs = micros() - tPfd;             // PFD composite (LUT -> framebuffer)
 
-    xSemaphoreTake(gNdDone, portMAX_DELAY);   // ND draw + composite finished on core 0
+#if ND_SPLIT_COMPOSITE
+    xSemaphoreTake(gNdDrawDone, portMAX_DELAY);   // wait until the ND DRAW is done...
+    compositeNdRange(ND_SPLIT, ND_CANVAS_H);      // ...then composite the ND BOTTOM half here (parallel)
+#endif
+    xSemaphoreTake(gNdDone, portMAX_DELAY);   // ND draw + (core0's half of the) composite finished
     gRgb->flush();
     gPfdDrawUs = micros() - t0;
 

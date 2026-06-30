@@ -161,7 +161,10 @@
 // ---- RGB panel geometry + timing (portrait) --------------------------------
 #define RGB_WIDTH       480
 #define RGB_HEIGHT      640
-#define RGB_PCLK_HZ      9000000   // 9 MHz (~21 Hz refresh) = the measured render-fps PEAK (18.4 fps).
+#define RGB_PCLK_HZ      9000000   // 9 MHz (~21 Hz refresh): flicker-free peak. Tested 8 MHz with the
+                                   // dense 4-bit render -> only +0.2 fps (the render is bus-bound on its
+                                   // OWN PSRAM ops, not just the LCD scan) and 18.7 Hz risks flicker, so
+                                   // 9 MHz stays. Lowering further is not the path to higher fps here.
                                    // Lowering the clock frees PSRAM bandwidth for the parallel
                                    // composite (12MHz->16.7, 9MHz->18.4) UP TO A POINT: below ~9 the
                                    // panel frame gets slow enough to gate the render (8MHz dropped to
@@ -472,6 +475,10 @@ extern volatile float gBaroInHg;
 // LCD_CAM continuously scans the framebuffer from PSRAM). The map's scattered pixels go RMW, but
 // that's far fewer pixels than the per-frame fill+composite it saves. 0 = keep ND 8-bit.
 #define ND_PACKED4 1
+// ND_SPLIT_COMPOSITE: split the ND framebuffer composite across BOTH cores (core0 top half,
+// core1's post-PFD idle does the bottom half) to parallelize PSRAM-write latency. 0 = core0 does
+// the whole ND composite (the other core idles).
+#define ND_SPLIT_COMPOSITE 1
 
 // ---- Debug -----------------------------------------------------------------
 #define DEBUG_SERIAL       1     // 1 = stream fps / battery telemetry over USB
