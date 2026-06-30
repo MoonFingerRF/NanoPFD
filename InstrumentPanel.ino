@@ -257,7 +257,10 @@ void sensorTask(void *params) {
     flightLogTick(&gLocal);        // 10 Hz flight-log sample (self-throttled)
     setState(&gLocal);
     gSensCount++;                  // publish-rate counter (telemetry)
-    vTaskDelay(1);
+    // ~200 Hz loop (was ~575): the IMU FIFO is still fully drained each pass (no lag) and 200 Hz
+    // is ~13x the display rate, so attitude stays smooth — but core0 is preempted far less, which
+    // gives the ND map draw more contiguous time. (vTaskDelay(1)=575Hz cost the render fps.)
+    vTaskDelay(3);
   }
 }
 
