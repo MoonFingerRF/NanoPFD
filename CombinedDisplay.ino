@@ -244,27 +244,19 @@ void combinedDisplayInit() {
 
   static MyCanvas8 pfd(RGB_WIDTH, PFD_REGION_H, false);
   static MyCanvas8 nd(RGB_WIDTH, ND_CANVAS_H, false);   // taller: extends ND_OVERLAP px up
-  // The PFD draw is MEMORY-bound, so the PFD canvas MUST be in fast internal SRAM
-  // for full fps (in PSRAM the draw ~doubles and fps halves). It's allocated here,
-  // first, while a 170 KB contiguous internal block is still free; the BLE
-  // controller (~71 KB internal) and the display task stacks then fit in what's
-  // left ONLY because the tasks are created before remoteid_begin() (see setup())
-  // and WiFi RID is off (RID_USE_WIFI) — together that keeps this internal.
-  // Put the canvas in PSRAM when the WiFi stack needs the internal SRAM: CONFIG (AP) mode,
-  // or flight mode with WiFi RID on (gRidWifi -> a standalone WiFi monitor needs ~40 KB
-  // internal). Both run at lower fps, acceptable for those modes. Otherwise (plain flight)
-  // keep the canvas internal for full fps.
-  bool apMode = webConfigApMode() || gRidWifi;
-  const char *pfdWhere = apMode ? "PSRAM (config mode)" : "INTERNAL";
-  uint8_t *pfdBuf = apMode ? nullptr
-    : (uint8_t *)heap_caps_malloc((size_t)RGB_WIDTH * PFD_REGION_H, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
-  if (!pfdBuf) { if (!apMode) pfdWhere = "PSRAM (fallback)";
-    pfdBuf = (uint8_t *)heap_caps_malloc((size_t)RGB_WIDTH * PFD_REGION_H,
-                                         MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT); }
+  // 4-bit packed canvases (2 px/byte, MyCanvas8.h) -> the PFD canvas is only ~84 KB now,
+  // so it fits internal SRAM even with the WiFi AP + BLE + WiFi RID all up. Keep it INTERNAL
+  // for full fps (the draw is memory-bound; PSRAM ~doubles it). ND stays in PSRAM.
+  combineLutRebuild();                                  // build the 4-bit -> RGB565 combo LUT
+  size_t pfdSz = MyCanvas8::bufBytes(RGB_WIDTH, PFD_REGION_H);
+  const char *pfdWhere = "INTERNAL (4-bit)";
+  uint8_t *pfdBuf = (uint8_t *)heap_caps_malloc(pfdSz, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+  if (!pfdBuf) { pfdWhere = "PSRAM (fallback)";
+    pfdBuf = (uint8_t *)heap_caps_malloc(pfdSz, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT); }
   USBSerial.printf("COMBINED: PFD canvas in %s; internal free=%u\n", pfdWhere,
                    (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL));
   pfd.useBuffer(pfdBuf);
-  nd.useBuffer((uint8_t *)heap_caps_malloc((size_t)RGB_WIDTH * ND_CANVAS_H,
+  nd.useBuffer((uint8_t *)heap_caps_malloc(MyCanvas8::bufBytes(RGB_WIDTH, ND_CANVAS_H),
                                            MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT));
   gCmbPfd = &pfd;   // the drawers set canvas->textScale from width (lyt::txtScale)
   gCmbNd  = &nd;
@@ -279,16 +271,23 @@ static SemaphoreHandle_t gNdStart = nullptr;
 static SemaphoreHandle_t gNdDone  = nullptr;
 static state gCmbSnap;   // shared frame snapshot (written before gNdStart, then read-only)
 
-// Composite an index region into the RGB565 framebuffer, TWO pixels per 32-bit store.
-// The framebuffer region starts on a 4-byte boundary (RGB_WIDTH and ND_TOP are even), so
-// the uint32 writes are aligned. Halves the store count -> bursts PSRAM better than
-// one uint16 at a time (the composite was store-bound, ~13 MB/s, well under PSRAM BW).
-static inline void compositeRegion(uint16_t *fb, const uint8_t *idx, int npix) {
+// 4-bit composite LUT: a packed byte (a pixel-pair) -> its two RGB565 pixels in one uint32.
+// Left pixel (even x) is the byte's HIGH nibble and lands in the low 16 bits (little-endian
+// framebuffer). Rebuilt from color_index whenever the palette changes (combineLutRebuild()).
+static uint32_t gComboLUT[256];
+void combineLutRebuild() {
+  for (int b = 0; b < 256; b++)
+    gComboLUT[b] = (uint32_t)color_index[(b >> 4) & 0x0F] | ((uint32_t)color_index[b & 0x0F] << 16);
+}
+
+// Composite a 4-bit packed region into the RGB565 framebuffer: one byte (2 px) -> one combo-LUT
+// load -> one aligned 32-bit store (two pixels). The region starts on a 4-byte boundary
+// (RGB_WIDTH and ND_TOP are even). npix is even on every call, so the odd tail never runs.
+static inline void compositeRegion(uint16_t *fb, const uint8_t *packed, int npix) {
   uint32_t *fb32 = (uint32_t *)fb;
-  int i = 0, half = npix >> 1;
-  for (int j = 0; j < half; j++, i += 2)
-    fb32[j] = (uint32_t)color_index[idx[i]] | ((uint32_t)color_index[idx[i + 1]] << 16);
-  if (npix & 1) fb[npix - 1] = color_index[idx[npix - 1]];   // odd tail
+  int nb = npix >> 1;
+  for (int b = 0; b < nb; b++) fb32[b] = gComboLUT[packed[b]];
+  if (npix & 1) fb[npix - 1] = color_index[packed[nb] >> 4];   // odd tail = even pixel (high nibble)
 }
 
 void ndDrawTask(void *params) {
@@ -326,6 +325,7 @@ void combinedTask(void *params) {
     vTaskDelay(200);
     continue;
 #endif
+    if (gPaletteDirty) { combineLutRebuild(); gPaletteDirty = false; }   // config portal edited the palette
     getState(&gCmbSnap);
 
     unsigned long t0 = micros();

@@ -1,8 +1,106 @@
 #pragma once
+#include "config.h"            // BOARD_C selects the 4-bit packed canvas (below)
 #include <Adafruit_GFX.h>
 #include <Fonts/FreeSans9pt7b.h>
 #include <Fonts/FreeMono9pt7b.h>
 
+#if BOARD_C && !defined(SVG_RENDER)
+// ============================================================================
+//  MyCanvas8 — BOARD_C variant: a 4-BIT PACKED palette canvas (2 pixels per byte).
+//
+//  The palette has 15 colors (fits in a nibble), so packing 2 px/byte halves the
+//  PFD/ND canvas footprint. That frees ~84 KB of internal SRAM, enough to keep the
+//  PFD canvas in fast internal SRAM AND run the WiFi AP + BLE + WiFi Remote ID at the
+//  same time at full fps. It also speeds the hot paths: same-color spans memset two
+//  pixels per byte, and the composite reads a byte (a pixel-pair) through a 256-entry
+//  combo LUT -> two RGB565 pixels per 32-bit store (CombinedDisplay.ino).
+//
+//  Nibble convention (WIDTH is even, so each row is byte-aligned and x parity == index
+//  parity): even x -> HIGH nibble (bits 7:4), odd x -> LOW nibble (bits 3:0). A byte
+//  therefore holds (px[even] << 4) | px[odd], left pixel in the high nibble.
+//
+//  Kept API-compatible with the 8-bit class so the shared drawers (instrument_drawer.ino)
+//  need no changes except the direct-buffer horizon fill, which forks #if BOARD_C.
+//  Screen rotation is 0 on the combined panel; only the ND compass uses the rotation
+//  MATRIX (setRotationMatrix), handled in drawPixel.
+// ============================================================================
+class MyCanvas8 : public GFXcanvas8 {
+public:
+  MyCanvas8(uint16_t w, uint16_t h, bool allocate_buffer = false) : GFXcanvas8(w, h, false) {
+    (void)allocate_buffer;        // 4-bit canvases always use an external (half-size) buffer
+    setRotationMatrix();
+  }
+  float rotA, rotB, offX, offY;
+  bool  identity;
+  void setRotationMatrix(float angle = 0, float x = 0, float y = 0) {
+    rotA = cosf(angle); rotB = sinf(angle); offX = x; offY = y;
+    identity = (angle == 0.0f && x == 0.0f && y == 0.0f);
+  }
+
+  // Write one palette index (0..15) into its nibble.
+  inline void putNib(int16_t x, int16_t y, uint8_t c) {
+    if ((uint16_t)x >= (uint16_t)WIDTH || (uint16_t)y >= (uint16_t)HEIGHT) return;
+    int32_t i = (int32_t)y * WIDTH + x;
+    uint8_t *p = buffer + (i >> 1);
+    if (i & 1) *p = (*p & 0xF0) | (c & 0x0F);              // odd x  -> low nibble
+    else       *p = (*p & 0x0F) | ((c & 0x0F) << 4);       // even x -> high nibble
+  }
+
+  void drawPixel(int16_t x, int16_t y, uint16_t color) {
+    if (!identity) {                                        // ND compass rotation matrix
+      float x_ = x - offX, y_ = y - offY;
+      x = (int16_t)(rotA * x_ - rotB * y_ + offX);
+      y = (int16_t)(rotA * y_ + rotB * x_ + offY);
+    }
+    putNib(x, y, (uint8_t)color);                           // panel is rotation 0
+  }
+  void fastDrawPixel(int16_t x, int16_t y, uint16_t color) { putNib(x, y, (uint8_t)color); }
+
+  void drawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t color) {
+    if (!identity) { for (int16_t i = 0; i < w; i++) drawPixel(x + i, y, color); return; }
+    if (w <= 0 || y < 0 || y >= HEIGHT) return;
+    if (x < 0) { w += x; x = 0; }
+    if (x + w > WIDTH) w = WIDTH - x;
+    if (w <= 0) return;
+    uint8_t c = color & 0x0F;
+    int32_t rowx = (int32_t)y * WIDTH + x;                  // linear index of (x,y)
+    if (x & 1) { uint8_t *p = buffer + (rowx >> 1); *p = (*p & 0xF0) | c; rowx++; w--; }  // odd lead
+    int bytes = w >> 1;                                     // middle: 2 px/byte
+    if (bytes) { memset(buffer + (rowx >> 1), (uint8_t)((c << 4) | c), bytes); rowx += bytes * 2; w -= bytes * 2; }
+    if (w == 1) { uint8_t *p = buffer + (rowx >> 1); *p = (*p & 0x0F) | (c << 4); }        // even tail
+  }
+
+  void drawFastVLine(int16_t x, int16_t y, int16_t h, uint16_t color) {
+    if (!identity) { for (int16_t i = 0; i < h; i++) drawPixel(x, y + i, color); return; }
+    if (h <= 0 || x < 0 || x >= WIDTH) return;
+    if (y < 0) { h += y; y = 0; }
+    if (y + h > HEIGHT) h = HEIGHT - y;
+    if (h <= 0) return;
+    uint8_t c = color & 0x0F;
+    uint8_t *p = buffer + (((int32_t)y * WIDTH + x) >> 1);
+    int step = WIDTH >> 1;                                  // bytes per row
+    if (x & 1) { for (int16_t i = 0; i < h; i++) { *p = (*p & 0xF0) | c;        p += step; } }       // low
+    else       { uint8_t cc = c << 4; for (int16_t i = 0; i < h; i++) { *p = (*p & 0x0F) | cc; p += step; } } // high
+  }
+
+  void fillScreen(uint16_t color) {
+    uint8_t c = color & 0x0F;
+    memset(buffer, (uint8_t)((c << 4) | c), ((int32_t)WIDTH * HEIGHT + 1) >> 1);
+  }
+
+  void useBuffer(uint8_t *b) { buffer = b; }
+  uint8_t textScale = 1;
+  void setTextSize(uint8_t s) { GFXcanvas8::setTextSize((uint8_t)(s * textScale)); }
+
+  // Bytes needed for a 4-bit packed w*h canvas (half, rounded up).
+  static size_t bufBytes(uint16_t w, uint16_t h) { return ((size_t)w * h + 1) >> 1; }
+};
+
+#else
+// ---------------------------------------------------------------------------
+//  8-bit palette canvas — BOARD_A (dual SPI) and BOARD_D (AMOLED) + the host SVG
+//  generator. Unchanged from the original.
+// ---------------------------------------------------------------------------
 class MyCanvas8 : public GFXcanvas8 {
 public:
   MyCanvas8(uint16_t w, uint16_t h, bool allocate_buffer = true) : GFXcanvas8(w, h, allocate_buffer) {
@@ -83,6 +181,7 @@ public:
   // one knob covers every setTextSize() the drawers issue on this canvas.
   uint8_t textScale = 1;
   void setTextSize(uint8_t s) { GFXcanvas8::setTextSize((uint8_t)(s * textScale)); }
+  static size_t bufBytes(uint16_t w, uint16_t h) { return (size_t)w * h; }
 
 #ifdef SVG_RENDER
   // Host SVG generator (tools/svggen) only: Adafruit_GFX's drawCircle/fillCircle/
@@ -97,3 +196,4 @@ public:
   virtual void fillTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t c) { Adafruit_GFX::fillTriangle(x0, y0, x1, y1, x2, y2, c); }
 #endif
 };
+#endif  // BOARD_C 4-bit vs 8-bit

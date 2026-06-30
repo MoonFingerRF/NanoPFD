@@ -461,13 +461,13 @@ static void cfgTask(void *) {
 // hold the BOOT button ~3 s in flight to toggle + reboot (InstrumentPanel.ino).
 bool webConfigApMode() {
   Preferences p; p.begin("cfg", true);
-  bool m = p.getBool("apmode", false);    // default: FLIGHT mode (full fps). Config/AP is opt-in.
-  p.end();
+  bool m = p.getBool("apmode", true);     // default: AP ON. With the 4-bit canvas it stays in
+  p.end();                                // internal SRAM, so config mode is now ALSO full fps.
   return m;
 }
 void webConfigToggleApMode() {
   Preferences p; p.begin("cfg", false);
-  bool m = p.getBool("apmode", false);
+  bool m = p.getBool("apmode", true);
   p.putBool("apmode", !m);
   p.end();
 }
