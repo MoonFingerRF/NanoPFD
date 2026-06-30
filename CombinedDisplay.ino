@@ -247,16 +247,22 @@ void combinedDisplayInit() {
   // 4-bit packed canvases (2 px/byte, MyCanvas8.h) -> the PFD canvas is only ~84 KB now,
   // so it fits internal SRAM even with the WiFi AP + BLE + WiFi RID all up. Keep it INTERNAL
   // for full fps (the draw is memory-bound; PSRAM ~doubles it). ND stays in PSRAM.
-  combineLutRebuild();                                  // build the 4-bit -> RGB565 combo LUT
-  size_t pfdSz = MyCanvas8::bufBytes(RGB_WIDTH, PFD_REGION_H);
-  const char *pfdWhere = "INTERNAL (4-bit)";
+  // The PFD canvas is 4-bit ONLY when WiFi (the AP, or flight-mode WiFi RID) needs the
+  // internal SRAM; otherwise 8-bit for full speed. It's always INTERNAL. The ND is always
+  // 8-bit (its scattered-pixel map is slow when packed) and lives in PSRAM.
+  bool need4 = webConfigApMode() || gRidWifi;
+  pfd.packed4 = need4;
+  nd.packed4  = false;
+  combineLutRebuild();                                  // 4-bit byte -> RGB565 combo LUT
+  size_t pfdSz = MyCanvas8::bufBytes(RGB_WIDTH, PFD_REGION_H, need4);
+  const char *pfdWhere = need4 ? "INTERNAL (4-bit, WiFi on)" : "INTERNAL (8-bit)";
   uint8_t *pfdBuf = (uint8_t *)heap_caps_malloc(pfdSz, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
   if (!pfdBuf) { pfdWhere = "PSRAM (fallback)";
     pfdBuf = (uint8_t *)heap_caps_malloc(pfdSz, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT); }
-  USBSerial.printf("COMBINED: PFD canvas in %s; internal free=%u\n", pfdWhere,
+  USBSerial.printf("COMBINED: PFD canvas %s; internal free=%u\n", pfdWhere,
                    (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL));
   pfd.useBuffer(pfdBuf);
-  nd.useBuffer((uint8_t *)heap_caps_malloc(MyCanvas8::bufBytes(RGB_WIDTH, ND_CANVAS_H),
+  nd.useBuffer((uint8_t *)heap_caps_malloc(MyCanvas8::bufBytes(RGB_WIDTH, ND_CANVAS_H, false),
                                            MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT));
   gCmbPfd = &pfd;   // the drawers set canvas->textScale from width (lyt::txtScale)
   gCmbNd  = &nd;
@@ -271,6 +277,15 @@ static SemaphoreHandle_t gNdStart = nullptr;
 static SemaphoreHandle_t gNdDone  = nullptr;
 static state gCmbSnap;   // shared frame snapshot (written before gNdStart, then read-only)
 
+// 8-bit composite: index region -> RGB565 framebuffer, TWO pixels per 32-bit store.
+static inline void compositeRegion8(uint16_t *fb, const uint8_t *idx, int npix) {
+  uint32_t *fb32 = (uint32_t *)fb;
+  int i = 0, half = npix >> 1;
+  for (int j = 0; j < half; j++, i += 2)
+    fb32[j] = (uint32_t)color_index[idx[i]] | ((uint32_t)color_index[idx[i + 1]] << 16);
+  if (npix & 1) fb[npix - 1] = color_index[idx[npix - 1]];
+}
+
 // 4-bit composite LUT: a packed byte (a pixel-pair) -> its two RGB565 pixels in one uint32.
 // Left pixel (even x) is the byte's HIGH nibble and lands in the low 16 bits (little-endian
 // framebuffer). Rebuilt from color_index whenever the palette changes (combineLutRebuild()).
@@ -280,14 +295,13 @@ void combineLutRebuild() {
     gComboLUT[b] = (uint32_t)color_index[(b >> 4) & 0x0F] | ((uint32_t)color_index[b & 0x0F] << 16);
 }
 
-// Composite a 4-bit packed region into the RGB565 framebuffer: one byte (2 px) -> one combo-LUT
-// load -> one aligned 32-bit store (two pixels). The region starts on a 4-byte boundary
-// (RGB_WIDTH and ND_TOP are even). npix is even on every call, so the odd tail never runs.
-static inline void compositeRegion(uint16_t *fb, const uint8_t *packed, int npix) {
+// Composite a 4-bit packed region: one byte (2 px) -> one combo-LUT load -> one aligned 32-bit
+// store. npix is even on every call (RGB_WIDTH, ND_TOP even), so the odd tail never runs.
+static inline void compositeRegion4(uint16_t *fb, const uint8_t *packed, int npix) {
   uint32_t *fb32 = (uint32_t *)fb;
   int nb = npix >> 1;
   for (int b = 0; b < nb; b++) fb32[b] = gComboLUT[packed[b]];
-  if (npix & 1) fb[npix - 1] = color_index[packed[nb] >> 4];   // odd tail = even pixel (high nibble)
+  if (npix & 1) fb[npix - 1] = color_index[packed[nb] >> 4];
 }
 
 void ndDrawTask(void *params) {
@@ -296,8 +310,8 @@ void ndDrawTask(void *params) {
     unsigned long t0 = micros();
     drawNavigationDisplay(gCmbNd, &gCmbSnap);
     unsigned long tDraw = micros();
-    compositeRegion(gRgb->getFramebuffer() + RGB_WIDTH * ND_TOP,   // ND region (overlaps up)
-                    gCmbNd->getBuffer(), RGB_WIDTH * ND_CANVAS_H);
+    compositeRegion8(gRgb->getFramebuffer() + RGB_WIDTH * ND_TOP,  // ND region (always 8-bit)
+                     gCmbNd->getBuffer(), RGB_WIDTH * ND_CANVAS_H);
     gNdDrawUs = tDraw - t0;            // ND draw (map+compass)
     gNdBlitUs = micros() - tDraw;      // ND composite (LUT -> framebuffer)
     xSemaphoreGive(gNdDone);
@@ -335,7 +349,8 @@ void combinedTask(void *params) {
 
     // Composite the PFD region on this core (core 0 handles the ND region). Only the top
     // ND_TOP rows are written; the ND owns the rest (its overlap covers the PFD's black bottom).
-    compositeRegion(gRgb->getFramebuffer(), gCmbPfd->getBuffer(), RGB_WIDTH * ND_TOP);
+    if (gCmbPfd->packed4) compositeRegion4(gRgb->getFramebuffer(), gCmbPfd->getBuffer(), RGB_WIDTH * ND_TOP);
+    else                  compositeRegion8(gRgb->getFramebuffer(), gCmbPfd->getBuffer(), RGB_WIDTH * ND_TOP);
     gPfdBlitUs = micros() - tPfd;             // PFD composite (LUT -> framebuffer)
 
     xSemaphoreTake(gNdDone, portMAX_DELAY);   // ND draw + composite finished on core 0

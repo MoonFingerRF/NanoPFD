@@ -601,43 +601,45 @@ void drawHorizonDisplay(MyCanvas8 *canvas, GFXcanvas8 *inc_map, state *s, bool s
       default: base = (long)ly + (long)(nativeH - 1 - cx) * nativeW; break;   // 3
     }
 #if BOARD_C
-    // 4-bit packed canvas (MyCanvas8.h): write the sampled index into its nibble. The column
-    // cx has fixed parity (nativeW is even), so it's the HIGH nibble (even x) or LOW (odd x)
-    // all the way down. rot is 0 on the combined panel, so dstStep = nativeW (positive).
-    uint8_t *cp    = cbuf + (base >> 1);
-    int      bstep = dstStep >> 1;            // bytes per row
-    bool     hi    = !(cx & 1);
-    for (int y = -ymax; y <= ymax; y++) {
-      int piy = (int)py;
-      if (piy < 0) piy = -piy; else if (piy >= mh) piy = 2 * (mh - 1) - piy;
-      if (piy < 0) piy = 0; else if (piy >= mh) piy = mh - 1;
-      int pix = (int)px;
-      uint8_t v = (pix < 0 || pix >= mw) ? IBLACK : mbuf[piy * mw + pix];
-      if (hi) *cp = (*cp & 0x0F) | (v << 4);
-      else    *cp = (*cp & 0xF0) | (v & 0x0F);
-      cp += bstep;
-      px -= mxy;
-      py -= myy;
-    }
-#else
-    uint8_t *crow = cbuf + base;
-
-    for (int y = -ymax; y <= ymax; y++) {
-      // reflect py into the texture's vertical bounds (the ladder is mirrored
-      // top/bottom about the horizon), then clamp as a safety net
-      int piy = (int)py;
-      if (piy < 0) piy = -piy;
-      else if (piy >= mh) piy = 2 * (mh - 1) - piy;
-      if (piy < 0) piy = 0; else if (piy >= mh) piy = mh - 1;
-
-      int pix = (int)px;
-      *crow = (pix < 0 || pix >= mw) ? IBLACK : mbuf[piy * mw + pix];
-
-      crow += dstStep;
-      px -= mxy;
-      py -= myy;
-    }
+    if (canvas->packed4) {
+      // 4-bit packed canvas: write the sampled index into its nibble. The column cx has fixed
+      // parity (nativeW even), so it's the HIGH nibble (even x) or LOW (odd x) all the way down.
+      // rot is 0 on the combined panel, so dstStep = nativeW (positive).
+      uint8_t *cp    = cbuf + (base >> 1);
+      int      bstep = dstStep >> 1;
+      bool     hi    = !(cx & 1);
+      for (int y = -ymax; y <= ymax; y++) {
+        int piy = (int)py;
+        if (piy < 0) piy = -piy; else if (piy >= mh) piy = 2 * (mh - 1) - piy;
+        if (piy < 0) piy = 0; else if (piy >= mh) piy = mh - 1;
+        int pix = (int)px;
+        uint8_t v = (pix < 0 || pix >= mw) ? IBLACK : mbuf[piy * mw + pix];
+        if (hi) *cp = (*cp & 0x0F) | (v << 4);
+        else    *cp = (*cp & 0xF0) | (v & 0x0F);
+        cp += bstep;
+        px -= mxy;
+        py -= myy;
+      }
+    } else
 #endif
+    {
+      uint8_t *crow = cbuf + base;
+      for (int y = -ymax; y <= ymax; y++) {
+        // reflect py into the texture's vertical bounds (the ladder is mirrored
+        // top/bottom about the horizon), then clamp as a safety net
+        int piy = (int)py;
+        if (piy < 0) piy = -piy;
+        else if (piy >= mh) piy = 2 * (mh - 1) - piy;
+        if (piy < 0) piy = 0; else if (piy >= mh) piy = mh - 1;
+
+        int pix = (int)px;
+        *crow = (pix < 0 || pix >= mw) ? IBLACK : mbuf[piy * mw + pix];
+
+        crow += dstStep;
+        px -= mxy;
+        py -= myy;
+      }
+    }
   }
 
 #ifdef SVG_RENDER

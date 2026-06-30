@@ -1,33 +1,33 @@
 #pragma once
-#include "config.h"            // BOARD_C selects the 4-bit packed canvas (below)
+#include "config.h"            // BOARD_C enables the optional 4-bit packed canvas (below)
 #include <Adafruit_GFX.h>
 #include <Fonts/FreeSans9pt7b.h>
 #include <Fonts/FreeMono9pt7b.h>
 
 #if BOARD_C && !defined(SVG_RENDER)
 // ============================================================================
-//  MyCanvas8 — BOARD_C variant: a 4-BIT PACKED palette canvas (2 pixels per byte).
+//  MyCanvas8 — BOARD_C: a palette canvas that is EITHER 8-bit (1 px/byte) or 4-bit
+//  PACKED (2 px/byte), selected per-instance by `packed4`.
 //
-//  The palette has 15 colors (fits in a nibble), so packing 2 px/byte halves the
-//  PFD/ND canvas footprint. That frees ~84 KB of internal SRAM, enough to keep the
-//  PFD canvas in fast internal SRAM AND run the WiFi AP + BLE + WiFi Remote ID at the
-//  same time at full fps. It also speeds the hot paths: same-color spans memset two
-//  pixels per byte, and the composite reads a byte (a pixel-pair) through a 256-entry
-//  combo LUT -> two RGB565 pixels per 32-bit store (CombinedDisplay.ino).
+//  Why both: 4-bit halves the canvas, freeing ~84 KB of internal SRAM so the PFD canvas
+//  can stay in fast internal SRAM while the WiFi AP + BLE + WiFi Remote ID all run. But
+//  4-bit makes SCATTERED single-pixel writes (the ND moving map) ~2x slower (read-modify-
+//  write a nibble). So:
+//    * PFD canvas -> 4-bit ONLY in config mode (AP on); 8-bit in flight (full fps, no AP).
+//    * ND  canvas -> always 8-bit (its map is scattered-pixel heavy; keep it fast). It lives
+//      in PSRAM, where there is plenty of room for the full-size buffer.
 //
-//  Nibble convention (WIDTH is even, so each row is byte-aligned and x parity == index
-//  parity): even x -> HIGH nibble (bits 7:4), odd x -> LOW nibble (bits 3:0). A byte
-//  therefore holds (px[even] << 4) | px[odd], left pixel in the high nibble.
+//  4-bit nibble convention (WIDTH even -> rows byte-aligned, x parity == index parity):
+//  even x -> HIGH nibble, odd x -> LOW nibble; a byte is (px[even]<<4)|px[odd].
 //
-//  Kept API-compatible with the 8-bit class so the shared drawers (instrument_drawer.ino)
-//  need no changes except the direct-buffer horizon fill, which forks #if BOARD_C.
-//  Screen rotation is 0 on the combined panel; only the ND compass uses the rotation
-//  MATRIX (setRotationMatrix), handled in drawPixel.
+//  Screen rotation is 0 on the combined panel; the ND compass uses the rotation MATRIX
+//  (setRotationMatrix), handled in drawPixel for both formats.
 // ============================================================================
 class MyCanvas8 : public GFXcanvas8 {
 public:
+  bool packed4 = false;        // false = 8-bit (default), true = 4-bit packed
   MyCanvas8(uint16_t w, uint16_t h, bool allocate_buffer = false) : GFXcanvas8(w, h, false) {
-    (void)allocate_buffer;        // 4-bit canvases always use an external (half-size) buffer
+    (void)allocate_buffer;     // these canvases always use an external buffer (useBuffer)
     setRotationMatrix();
   }
   float rotA, rotB, offX, offY;
@@ -37,24 +37,33 @@ public:
     identity = (angle == 0.0f && x == 0.0f && y == 0.0f);
   }
 
-  // Write one palette index (0..15) into its nibble.
-  inline void putNib(int16_t x, int16_t y, uint8_t c) {
+  inline void putNib(int16_t x, int16_t y, uint8_t c) {       // 4-bit nibble write
     if ((uint16_t)x >= (uint16_t)WIDTH || (uint16_t)y >= (uint16_t)HEIGHT) return;
     int32_t i = (int32_t)y * WIDTH + x;
     uint8_t *p = buffer + (i >> 1);
-    if (i & 1) *p = (*p & 0xF0) | (c & 0x0F);              // odd x  -> low nibble
-    else       *p = (*p & 0x0F) | ((c & 0x0F) << 4);       // even x -> high nibble
+    if (i & 1) *p = (*p & 0xF0) | (c & 0x0F);
+    else       *p = (*p & 0x0F) | ((c & 0x0F) << 4);
   }
 
   void drawPixel(int16_t x, int16_t y, uint16_t color) {
-    if (!identity) {                                        // ND compass rotation matrix
+    if (!identity) {                                          // ND compass rotation matrix
       float x_ = x - offX, y_ = y - offY;
       x = (int16_t)(rotA * x_ - rotB * y_ + offX);
       y = (int16_t)(rotA * y_ + rotB * x_ + offY);
     }
-    putNib(x, y, (uint8_t)color);                           // panel is rotation 0
+    if ((uint16_t)x >= (uint16_t)WIDTH || (uint16_t)y >= (uint16_t)HEIGHT) return;
+    if (packed4) {
+      int32_t i = (int32_t)y * WIDTH + x; uint8_t *p = buffer + (i >> 1);
+      if (i & 1) *p = (*p & 0xF0) | ((uint8_t)color & 0x0F);
+      else       *p = (*p & 0x0F) | (((uint8_t)color & 0x0F) << 4);
+    } else {
+      buffer[(int32_t)y * WIDTH + x] = (uint8_t)color;
+    }
   }
-  void fastDrawPixel(int16_t x, int16_t y, uint16_t color) { putNib(x, y, (uint8_t)color); }
+  void fastDrawPixel(int16_t x, int16_t y, uint16_t color) {
+    if (packed4) putNib(x, y, (uint8_t)color);
+    else GFXcanvas8::drawPixel(x, y, color);
+  }
 
   void drawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t color) {
     if (!identity) { for (int16_t i = 0; i < w; i++) drawPixel(x + i, y, color); return; }
@@ -62,12 +71,13 @@ public:
     if (x < 0) { w += x; x = 0; }
     if (x + w > WIDTH) w = WIDTH - x;
     if (w <= 0) return;
+    if (!packed4) { memset(buffer + (int32_t)y * WIDTH + x, (uint8_t)color, w); return; }
     uint8_t c = color & 0x0F;
-    int32_t rowx = (int32_t)y * WIDTH + x;                  // linear index of (x,y)
-    if (x & 1) { uint8_t *p = buffer + (rowx >> 1); *p = (*p & 0xF0) | c; rowx++; w--; }  // odd lead
-    int bytes = w >> 1;                                     // middle: 2 px/byte
+    int32_t rowx = (int32_t)y * WIDTH + x;
+    if (x & 1) { uint8_t *p = buffer + (rowx >> 1); *p = (*p & 0xF0) | c; rowx++; w--; }    // odd lead
+    int bytes = w >> 1;                                                                     // 2 px/byte
     if (bytes) { memset(buffer + (rowx >> 1), (uint8_t)((c << 4) | c), bytes); rowx += bytes * 2; w -= bytes * 2; }
-    if (w == 1) { uint8_t *p = buffer + (rowx >> 1); *p = (*p & 0x0F) | (c << 4); }        // even tail
+    if (w == 1) { uint8_t *p = buffer + (rowx >> 1); *p = (*p & 0x0F) | (c << 4); }          // even tail
   }
 
   void drawFastVLine(int16_t x, int16_t y, int16_t h, uint16_t color) {
@@ -76,24 +86,29 @@ public:
     if (y < 0) { h += y; y = 0; }
     if (y + h > HEIGHT) h = HEIGHT - y;
     if (h <= 0) return;
+    if (!packed4) {
+      uint8_t *pp = buffer + (int32_t)y * WIDTH + x, c = (uint8_t)color;
+      for (int16_t i = 0; i < h; i++) { *pp = c; pp += WIDTH; }
+      return;
+    }
     uint8_t c = color & 0x0F;
     uint8_t *p = buffer + (((int32_t)y * WIDTH + x) >> 1);
-    int step = WIDTH >> 1;                                  // bytes per row
-    if (x & 1) { for (int16_t i = 0; i < h; i++) { *p = (*p & 0xF0) | c;        p += step; } }       // low
-    else       { uint8_t cc = c << 4; for (int16_t i = 0; i < h; i++) { *p = (*p & 0x0F) | cc; p += step; } } // high
+    int step = WIDTH >> 1;
+    if (x & 1) { for (int16_t i = 0; i < h; i++) { *p = (*p & 0xF0) | c;        p += step; } }
+    else       { uint8_t cc = c << 4; for (int16_t i = 0; i < h; i++) { *p = (*p & 0x0F) | cc; p += step; } }
   }
 
   void fillScreen(uint16_t color) {
-    uint8_t c = color & 0x0F;
-    memset(buffer, (uint8_t)((c << 4) | c), ((int32_t)WIDTH * HEIGHT + 1) >> 1);
+    if (packed4) { uint8_t c = color & 0x0F; memset(buffer, (uint8_t)((c << 4) | c), ((int32_t)WIDTH * HEIGHT + 1) >> 1); }
+    else           memset(buffer, (uint8_t)color, (int32_t)WIDTH * HEIGHT);
   }
 
   void useBuffer(uint8_t *b) { buffer = b; }
   uint8_t textScale = 1;
   void setTextSize(uint8_t s) { GFXcanvas8::setTextSize((uint8_t)(s * textScale)); }
 
-  // Bytes needed for a 4-bit packed w*h canvas (half, rounded up).
-  static size_t bufBytes(uint16_t w, uint16_t h) { return ((size_t)w * h + 1) >> 1; }
+  // Buffer bytes for a w*h canvas in the given format.
+  static size_t bufBytes(uint16_t w, uint16_t h, bool p4) { return p4 ? (((size_t)w * h + 1) >> 1) : ((size_t)w * h); }
 };
 
 #else
@@ -181,7 +196,6 @@ public:
   // one knob covers every setTextSize() the drawers issue on this canvas.
   uint8_t textScale = 1;
   void setTextSize(uint8_t s) { GFXcanvas8::setTextSize((uint8_t)(s * textScale)); }
-  static size_t bufBytes(uint16_t w, uint16_t h) { return (size_t)w * h; }
 
 #ifdef SVG_RENDER
   // Host SVG generator (tools/svggen) only: Adafruit_GFX's drawCircle/fillCircle/
@@ -196,4 +210,4 @@ public:
   virtual void fillTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t c) { Adafruit_GFX::fillTriangle(x0, y0, x1, y1, x2, y2, c); }
 #endif
 };
-#endif  // BOARD_C 4-bit vs 8-bit
+#endif  // BOARD_C dual-format vs 8-bit-only
