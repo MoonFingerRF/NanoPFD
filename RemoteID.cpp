@@ -203,7 +203,8 @@ static void ble_begin() {
   // Lean CONTROLLER first — its event/buffer counts (driven by ble_max_act) are what the
   // NimBLE host's porting-layer mempools size themselves from.
   esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
-  bt_cfg.ble_max_act = 2;            // default 10 — each activity reserves per-act buffers
+  bt_cfg.ble_max_act = 1;            // default 10 — we run ONE passive scan, no connects/adv,
+                                     // so a single link-layer activity is enough (frees per-act buffers)
   esp_err_t ce = esp_bt_controller_init(&bt_cfg);
   if (ce != ESP_OK && ce != ESP_ERR_INVALID_STATE) {
     RID_LOG("[RID] bt_controller_init err %d — skipping BLE (low RAM?)\n", ce);

@@ -602,18 +602,11 @@ void loop() {
 
 #if DEBUG_SERIAL
   static bool s_stackReported = false;
-  if (!s_stackReported && millis() > 9000) {     // one-shot: per-task stack free-at-peak (bytes), all tasks
+  if (!s_stackReported && millis() > 9000) {     // one-shot: internal-heap headroom (non-allocating)
     s_stackReported = true;
-    const UBaseType_t CAP = 40;
-    TaskStatus_t *arr = (TaskStatus_t *)malloc(sizeof(TaskStatus_t) * CAP);
-    if (arr) {
-      UBaseType_t n = uxTaskGetSystemState(arr, CAP, NULL);
-      USBSerial.printf("=== STACK HWM (free bytes at peak) n=%u iram_free=%u ===\n",
-                       (unsigned)n, (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL));
-      for (UBaseType_t i = 0; i < n; i++)
-        USBSerial.printf("  STK %-14s hwm=%u\n", arr[i].pcTaskName, (unsigned)arr[i].usStackHighWaterMark);
-      free(arr);
-    }
+    USBSerial.printf("=== HEADROOM iram_free=%u largest_block=%u ===\n",
+                     (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL),
+                     (unsigned)heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL));
   }
   static unsigned long lastPrint = 0;
   if (millis() - lastPrint > DEBUG_PRINT_MS) {
