@@ -467,6 +467,11 @@ extern volatile float gBaroInHg;
 // 8-bit) so the AP + both RID radios fit in internal SRAM. 0 = old auto (8-bit unless WiFi
 // needs the SRAM). The 4-bit math is host-proven identical (tests/test_canvas4.cpp).
 #define CANVAS_FORCE_4BIT 1
+// ND_PACKED4: also pack the ND (map/compass) canvas to 4-bit. Halves its PSRAM footprint +
+// the composite-read + fillScreen traffic (the BOARD_C bottleneck is PSRAM bandwidth, since the
+// LCD_CAM continuously scans the framebuffer from PSRAM). The map's scattered pixels go RMW, but
+// that's far fewer pixels than the per-frame fill+composite it saves. 0 = keep ND 8-bit.
+#define ND_PACKED4 1
 
 // ---- Debug -----------------------------------------------------------------
 #define DEBUG_SERIAL       1     // 1 = stream fps / battery telemetry over USB

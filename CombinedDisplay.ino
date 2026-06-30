@@ -256,7 +256,11 @@ void combinedDisplayInit() {
   bool need4 = webConfigApMode() || gRidWifi;
 #endif
   pfd.packed4 = need4;
-  nd.packed4  = false;
+  // ND 4-bit too: halves the ND canvas (153->76KB PSRAM) AND the composite read + fillScreen
+  // PSRAM traffic. The map's scattered drawPixel goes RMW (read-nibble), but that hits only the
+  // ~20K feature pixels, far fewer than the 153K-pixel fillScreen+composite it saves -> net less
+  // PSRAM bandwidth (the BOARD_C bottleneck). Gated on ND_PACKED4 so it's easy to A/B.
+  nd.packed4  = need4 && ND_PACKED4;
   combineLutRebuild();                                  // 4-bit byte -> RGB565 combo LUT
   size_t pfdSz = MyCanvas8::bufBytes(RGB_WIDTH, PFD_REGION_H, need4);
   const char *pfdWhere = need4 ? "INTERNAL (4-bit, WiFi on)" : "INTERNAL (8-bit)";
@@ -266,7 +270,7 @@ void combinedDisplayInit() {
   USBSerial.printf("COMBINED: PFD canvas %s; internal free=%u\n", pfdWhere,
                    (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL));
   pfd.useBuffer(pfdBuf);
-  nd.useBuffer((uint8_t *)heap_caps_malloc(MyCanvas8::bufBytes(RGB_WIDTH, ND_CANVAS_H, false),
+  nd.useBuffer((uint8_t *)heap_caps_malloc(MyCanvas8::bufBytes(RGB_WIDTH, ND_CANVAS_H, nd.packed4),
                                            MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT));
   gCmbPfd = &pfd;   // the drawers set canvas->textScale from width (lyt::txtScale)
   gCmbNd  = &nd;
@@ -314,8 +318,9 @@ void ndDrawTask(void *params) {
     unsigned long t0 = micros();
     drawNavigationDisplay(gCmbNd, &gCmbSnap);
     unsigned long tDraw = micros();
-    compositeRegion8(gRgb->getFramebuffer() + RGB_WIDTH * ND_TOP,  // ND region (always 8-bit)
-                     gCmbNd->getBuffer(), RGB_WIDTH * ND_CANVAS_H);
+    uint16_t *ndfb = gRgb->getFramebuffer() + RGB_WIDTH * ND_TOP;  // ND region of the framebuffer
+    if (gCmbNd->packed4) compositeRegion4(ndfb, gCmbNd->getBuffer(), RGB_WIDTH * ND_CANVAS_H);
+    else                 compositeRegion8(ndfb, gCmbNd->getBuffer(), RGB_WIDTH * ND_CANVAS_H);
     gNdDrawUs = tDraw - t0;            // ND draw (map+compass)
     gNdBlitUs = micros() - tDraw;      // ND composite (LUT -> framebuffer)
     xSemaphoreGive(gNdDone);
