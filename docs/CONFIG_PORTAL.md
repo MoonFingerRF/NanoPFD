@@ -138,12 +138,14 @@ current airspeed unit (0 = off):
 
 <p align="center"><img src="pfd-vspeeds.svg" width="240" alt="Airspeed tape with V-speed markers"/></p>
 
-- **Stall** — a **red** block below it (stall warning) with a thin amber maneuvering band just above.
-- **Caution** and **Overspeed** — an **amber** band from Caution up to Overspeed, then a **red**
-  block above Overspeed.
-- **V1** and **Vʀ** (rotation) — **speed bugs** (short cyan/green bar + label).
+- **Stall** / **Overspeed** — a **red dashed strip** (a vertical run of red squares) below Stall and
+  above Overspeed.
+- **Caution** — a thin **yellow** vertical line from Caution up to Overspeed, centred in the strip
+  (2 px on the single/combined panels, 1 px on the dual display).
+- **V1** and **Vʀ** (rotation) — cyan/green **speed bugs**, the strip's width, drawn on top.
 
-They all move with the tape, and are clipped so they never overlap the bank-angle scale.
+They all move with the tape, on a thin strip just right of the airspeed line that clears the
+bank-angle scale.
 
 ### Tune
 Runtime tuning, no reflash:

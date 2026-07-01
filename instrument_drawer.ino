@@ -702,13 +702,20 @@ void drawHorizonDisplay(MyCanvas8 *canvas, GFXcanvas8 *inc_map, state *s, bool s
     float pxU   = (float)speedSpacing / 5.0f;            // pixels per unit airspeed
     if (gVStall > 0) speedDash(canvas, midPointY, stdW2, tapeX, mw, air_speed, pxU, 0, gVStall, IRED);      // stall (>=0)
     if (gVMax   > 0) speedDash(canvas, midPointY, stdW2, tapeX, mw, air_speed, pxU, gVMax, gVMax + 2000, IRED); // overspeed
-    if (gVCaut > 0 && gVMax > gVCaut) {                  // caution: 1-px vertical line at the strip centre
-      int xc = tapeX + mw / 2;
+    if (gVCaut > 0 && gVMax > gVCaut) {                  // caution: thin vertical line centred in the strip
       int yl = midPointY - (int)((gVMax  - air_speed) * pxU);
       int yh = midPointY - (int)((gVCaut - air_speed) * pxU);
       if (yl < midPointY - stdW2) yl = midPointY - stdW2;
       if (yh > midPointY + stdW2) yh = midPointY + stdW2;
-      if (yh > yl) canvas->drawFastVLine(xc, yl, yh - yl, IYELLOW);
+      if (yh > yl) {
+#if COMBINED_DISPLAY
+        const int lw = 2;                                // single/combined panels: 2 px wide
+#else
+        const int lw = 1;                                // dual display: 1 px wide
+#endif
+        int lx = tapeX + 1 + mw / 2 - lw / 2;            // centre of the mw-wide strip [tapeX+1 .. +mw]
+        for (int i = 0; i < lw; i++) canvas->drawFastVLine(lx + i, yl, yh - yl, IYELLOW);
+      }
     }
     struct { float v; uint8_t col; } bugs[2] = { { gV1, ICYAN }, { gVr, IGREEN } };   // bugs on top, no text
     for (int b = 0; b < 2; b++) {
