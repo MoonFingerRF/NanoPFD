@@ -397,27 +397,19 @@ static inline const char *unitAsiStr(uint8_t u) { return u == 0 ? "KT" : u == 2 
 static inline const char *unitGsStr (uint8_t u) { return u == 1 ? "MPH" : u == 2 ? "KMH" : "KT"; }
 static inline const char *unitAltStr(uint8_t u) { return u == 1 ? "M" : "FT"; }
 
-// Draw a colored band on the airspeed V-speed strip (right of the tape line) between speeds
-// lo..hi, clipped to the tape window AND to the bank-scale arc up top so it never overlaps the
-// bank-angle tick lines. asiDisp = current airspeed (display unit); pxU = pixels per unit.
-static void speedBand(MyCanvas8 *canvas, int midPointX, int midPointY, int stdW1, int stdW2,
-                      int tapeX, int mw, float asiDisp, float pxU, float lo, float hi, uint8_t col) {
-  int yA = midPointY - (int)((lo - asiDisp) * pxU);      // lower speed -> larger y (bottom)
-  int yB = midPointY - (int)((hi - asiDisp) * pxU);      // higher speed -> smaller y (top)
+// Draw the RED warning as a vertical dashed strip of mw-square blocks (mw on, mw off) between
+// speeds lo..hi on the airspeed tape's warning strip. Screen-y-aligned so the pattern is stable as
+// the tape scrolls. The strip (width mw) is thin enough to always clear the bank-scale arc.
+static void speedDash(MyCanvas8 *canvas, int midPointY, int stdW2, int tapeX, int mw,
+                      float asiDisp, float pxU, float lo, float hi, uint8_t col) {
+  int yA = midPointY - (int)((lo - asiDisp) * pxU);
+  int yB = midPointY - (int)((hi - asiDisp) * pxU);
   int yTop = (yB < yA ? yB : yA), yBot = (yB < yA ? yA : yB);
-  int wTop = midPointY - stdW2, wBot = midPointY + stdW2;
-  if (yTop < wTop) yTop = wTop;
-  if (yBot > wBot) yBot = wBot;
-  const long r1 = (long)stdW1 * stdW1;
-  const int  bankLo = midPointY - stdW1 / 2;             // below this y there are no bank ticks
-  for (int y = yTop; y <= yBot; y++) {
-    int rx = tapeX + mw;
-    if (y < bankLo) {                                    // upper zone: clip to the bank arc (radius stdW1)
-      long dy = midPointY - y, inside = r1 - dy * dy;
-      if (inside > 0) { int bx = midPointX - (int)sqrtf((float)inside) - 3; if (rx > bx) rx = bx; }
-    }
-    if (rx > tapeX + 1) canvas->drawFastHLine(tapeX + 1, y, rx - tapeX - 1, col);
-  }
+  if (yTop < midPointY - stdW2) yTop = midPointY - stdW2;
+  if (yBot > midPointY + stdW2) yBot = midPointY + stdW2;
+  if (mw < 1) mw = 1;
+  for (int y = yTop; y <= yBot; y++)
+    if (!((y / mw) & 1)) canvas->drawFastHLine(tapeX + 1, y, mw, col);   // mw rows red, mw rows gap
 }
 
 // Render the full Primary Flight Display into `canvas`, sampling the pre-built
@@ -699,32 +691,29 @@ void drawHorizonDisplay(MyCanvas8 *canvas, GFXcanvas8 *inc_map, state *s, bool s
   drawBankAngleTriangle(canvas, midPointX, midPointY, stdW1, -atan(s->gx / s->gy), topAngle, -topAngle);
 
   // ---- V-speed markers on the airspeed tape (drawn OVER the attitude, right of the tape line) ----
-  // Red warning blocks (stall below Vstall, overspeed above Vmax) + amber caution bands, plus V1/Vr
-  // speed bugs. Values are in the DISPLAYED airspeed unit and move with the tape. speedBand() clips
-  // the top to the bank-scale arc so nothing overlaps the bank-angle lines.
+  // Red warning = a vertical DASHED strip of squares (stall below Vstall / overspeed above Vmax).
+  // Yellow caution = a 1-px vertical line centred in the strip (Caution..Max). Green/cyan V1/Vr bugs
+  // = same width as the strip, drawn ON TOP, no text. All in the display unit and move with the tape.
   if (s->ASI) {
     int   tapeX = midPointX - stdW1;
-    int   mw    = stdW1 * 9 / 100;                   // a thin strip just right of the tape line
-    float pxU   = (float)speedSpacing / 5.0f;       // pixels per unit airspeed
-    if (gVMax > 0) {                                 // high speed: amber Caution..Max, red above Max
-      if (gVCaut > 0 && gVCaut < gVMax)
-        speedBand(canvas, midPointX, midPointY, stdW1, stdW2, tapeX, mw, air_speed, pxU, gVCaut, gVMax, IYELLOW);
-      speedBand(canvas, midPointX, midPointY, stdW1, stdW2, tapeX, mw, air_speed, pxU, gVMax, gVMax + 2000, IRED);
+    int   mw    = stdW1 * 9 / 100; if (mw < 4) mw = 4;   // thin strip; clears the bank arc
+    float pxU   = (float)speedSpacing / 5.0f;            // pixels per unit airspeed
+    if (gVStall > 0) speedDash(canvas, midPointY, stdW2, tapeX, mw, air_speed, pxU, 0, gVStall, IRED);      // stall (>=0)
+    if (gVMax   > 0) speedDash(canvas, midPointY, stdW2, tapeX, mw, air_speed, pxU, gVMax, gVMax + 2000, IRED); // overspeed
+    if (gVCaut > 0 && gVMax > gVCaut) {                  // caution: 1-px vertical line at the strip centre
+      int xc = tapeX + mw / 2;
+      int yl = midPointY - (int)((gVMax  - air_speed) * pxU);
+      int yh = midPointY - (int)((gVCaut - air_speed) * pxU);
+      if (yl < midPointY - stdW2) yl = midPointY - stdW2;
+      if (yh > midPointY + stdW2) yh = midPointY + stdW2;
+      if (yh > yl) canvas->drawFastVLine(xc, yl, yh - yl, IYELLOW);
     }
-    if (gVStall > 0) {                               // stall: thin amber maneuvering band, red below (>=0 only)
-      speedBand(canvas, midPointX, midPointY, stdW1, stdW2, tapeX, mw, air_speed, pxU, gVStall, gVStall * 1.12f, IYELLOW);
-      speedBand(canvas, midPointX, midPointY, stdW1, stdW2, tapeX, mw, air_speed, pxU, 0, gVStall, IRED);
-    }
-    canvas->setFont(); canvas->setTextSize(1);       // V1 / Vr speed bugs (short bar + label)
-    struct { float v; const char *lbl; uint8_t col; } bugs[2] = { { gV1, "V1", ICYAN }, { gVr, "VR", IGREEN } };
+    struct { float v; uint8_t col; } bugs[2] = { { gV1, ICYAN }, { gVr, IGREEN } };   // bugs on top, no text
     for (int b = 0; b < 2; b++) {
       if (bugs[b].v <= 0) continue;
       int by = midPointY - (int)((bugs[b].v - air_speed) * pxU);
-      if (by < midPointY - stdW2 + 2 || by > midPointY + stdW2 - 2) continue;
-      int bw = std5 * 2;
-      canvas->fillRect(tapeX + 1, by - 1, bw, 3, bugs[b].col);
-      canvas->setTextColor(bugs[b].col);
-      drawText(canvas, bugs[b].lbl, tapeX + bw + 3, by, lyt::HL, lyt::VC);
+      if (by < midPointY - stdW2 + 1 || by > midPointY + stdW2 - 1) continue;
+      canvas->fillRect(tapeX + 1, by - 2, mw, 4, bugs[b].col);
     }
   }
 
