@@ -909,7 +909,13 @@ static void mapLine(MyCanvas8 *c, int x0, int y0, int x1, int y1, uint8_t col,
   int dy = -abs(y1 - y0), sy = y0 < y1 ? 1 : -1;
   int err = dx + dy, n = 0;
   for (;;) {
-    if ((!dashed || !(n & 4)) && mapInCirc(x0, y0, cx, cy, r2)) c->drawPixel(x0, y0, col);
+    if ((!dashed || !(n & 4)) && mapInCirc(x0, y0, cx, cy, r2)) {
+#if BOARD_C && !defined(SVG_RENDER)
+      if (c->packed4 && c->identity) c->putNib(x0, y0, col);   // inline nibble write (skip virtual drawPixel)
+      else
+#endif
+      c->drawPixel(x0, y0, col);
+    }
     if (x0 == x1 && y0 == y1) break;
     int e2 = 2 * err;
     if (e2 >= dy) { err += dy; x0 += sx; }

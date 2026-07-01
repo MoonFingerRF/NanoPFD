@@ -64,6 +64,20 @@ public:
     if (packed4) putNib(x, y, (uint8_t)color);
     else GFXcanvas8::drawPixel(x, y, color);
   }
+  // Text/glyphs are drawn a pixel at a time via writePixel(). Override it so the common
+  // identity case writes the nibble/byte inline, skipping the virtual drawPixel() dispatch and
+  // the rotation re-check on every glyph pixel. Falls back to drawPixel() for the rotated ND.
+  void writePixel(int16_t x, int16_t y, uint16_t color) {
+    if (identity) {
+      if ((uint16_t)x >= (uint16_t)WIDTH || (uint16_t)y >= (uint16_t)HEIGHT) return;
+      if (packed4) { int32_t i = (int32_t)y * WIDTH + x; uint8_t *p = buffer + (i >> 1);
+        if (i & 1) *p = (*p & 0xF0) | ((uint8_t)color & 0x0F);
+        else       *p = (*p & 0x0F) | (((uint8_t)color & 0x0F) << 4); }
+      else buffer[(int32_t)y * WIDTH + x] = (uint8_t)color;
+      return;
+    }
+    drawPixel(x, y, color);
+  }
 
   void drawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t color) {
     if (!identity) { for (int16_t i = 0; i < w; i++) drawPixel(x + i, y, color); return; }
