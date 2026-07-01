@@ -111,10 +111,11 @@ quantizes to 8-bit color, so its on-screen shade is coarser than the picker (mos
 
 ### Nav
 - **Map zoom** — sets the moving-map range (same ladder as the on-screen pinch/tap zoom).
-- **Minimap zoom** — off by default. When **off**, the pinch/tap zoom stops at the normal
-  close-in range; when **on**, it continues into the magnified **field/minimap** levels (a
-  small-field survey view). Whenever you're in the minimap, the corner **range readout turns
-  orange** so you know the basemap is magnified.
+- **Minimap zoom** — off by default. You can always pinch/tap zoom the full range (down to
+  ~125 m). This toggle controls the **magnified field basemap** at those deep zooms: **off** = the
+  deep zoom just shows the real close-in view (range rings, own-ship and nearby traffic up close)
+  with the plain chart; **on** = the deep zoom magnifies a **field/minimap basemap** (~8 km around
+  a frozen point) for geographic context, and the corner **range readout turns orange**.
 
 ### Air
 - **Local pressure** — the altimeter (Kollsman) setting in inHg, 28.00–31.00.

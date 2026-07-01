@@ -478,6 +478,7 @@ void drawHorizonDisplay(MyCanvas8 *canvas, GFXcanvas8 *inc_map, state *s, bool s
   int midSpeed = 5 * floor(air_speed / 5);
   for (int n = -5; n <= 5; n++) {
     int this_speed = n * 5 + midSpeed;
+    if (this_speed < 0) continue;                       // airspeed can't be negative: no tick/number
     int y = (this_speed - air_speed) * speedSpacing / 5;
     int even = 2 - ((abs(this_speed) / 5) % 2);
     canvas->drawFastHLine(midPointX - stdW1 - std5 * even, midPointY - y, std5 * even, IWHITE);
@@ -703,16 +704,16 @@ void drawHorizonDisplay(MyCanvas8 *canvas, GFXcanvas8 *inc_map, state *s, bool s
   // the top to the bank-scale arc so nothing overlaps the bank-angle lines.
   if (s->ASI) {
     int   tapeX = midPointX - stdW1;
-    int   mw    = stdW1 * 45 / 100;                 // extends ~halfway toward the attitude centre
+    int   mw    = stdW1 * 9 / 100;                   // a thin strip just right of the tape line
     float pxU   = (float)speedSpacing / 5.0f;       // pixels per unit airspeed
     if (gVMax > 0) {                                 // high speed: amber Caution..Max, red above Max
       if (gVCaut > 0 && gVCaut < gVMax)
         speedBand(canvas, midPointX, midPointY, stdW1, stdW2, tapeX, mw, air_speed, pxU, gVCaut, gVMax, IYELLOW);
       speedBand(canvas, midPointX, midPointY, stdW1, stdW2, tapeX, mw, air_speed, pxU, gVMax, gVMax + 2000, IRED);
     }
-    if (gVStall > 0) {                               // stall: thin amber maneuvering band, red below
+    if (gVStall > 0) {                               // stall: thin amber maneuvering band, red below (>=0 only)
       speedBand(canvas, midPointX, midPointY, stdW1, stdW2, tapeX, mw, air_speed, pxU, gVStall, gVStall * 1.12f, IYELLOW);
-      speedBand(canvas, midPointX, midPointY, stdW1, stdW2, tapeX, mw, air_speed, pxU, -2000, gVStall, IRED);
+      speedBand(canvas, midPointX, midPointY, stdW1, stdW2, tapeX, mw, air_speed, pxU, 0, gVStall, IRED);
     }
     canvas->setFont(); canvas->setTextSize(1);       // V1 / Vr speed bugs (short bar + label)
     struct { float v; const char *lbl; uint8_t col; } bugs[2] = { { gV1, "V1", ICYAN }, { gVr, "VR", IGREEN } };

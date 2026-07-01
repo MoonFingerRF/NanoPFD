@@ -386,7 +386,8 @@ full-rate display and both Remote ID receivers.
   - **Units** — pick knots / mph / km-h for airspeed & ground speed, and feet / meters for altitude.
   - **V-speeds** — 737-style airspeed-tape markers (V1, Vʀ, stall, caution, overspeed): red warning
     blocks + amber caution bands + speed bugs.
-  - **Minimap zoom** — opt-in deep "field" zoom levels (range readout turns orange).
+  - **Minimap zoom** — deep zoom is always available; this opt-in adds a magnified "field"
+    basemap at those close-in ranges (range readout turns orange).
 
 <table>
 <tr>
