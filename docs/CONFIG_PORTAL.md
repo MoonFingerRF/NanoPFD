@@ -41,11 +41,29 @@ Only one phone connects at a time.
 
 ---
 
-## The tabs
+## Layout
+
+Two primary tabs — **Log** (the landing page) and **Flight Plan** — plus a **⚙ Settings**
+dropdown holding the occasional-use config panes (Attitude, Display, Nav, Air, Tune, WiFi).
+
+## Flight plan
+
+Build a route of named waypoints that draws on the ND as a **solid yellow line** with a **yellow
+marker + name** at each waypoint. It's saved to flash and reloaded at boot.
+
+- **Map** — a north-up, zoomable/pannable map with a coarse basemap (coastlines/borders + major
+  airports) and a lat/lon grid. **Tap** an empty spot to add a waypoint there; **drag** a marker
+  to move it; **pinch** or **scroll** to zoom; **drag** empty space to pan. The green dot is your
+  GPS position; **Center on GPS** recenters.
+- **Waypoint list** — edit each waypoint's **name** (≤8 chars) and exact **lat/lon**, or delete
+  it. **+ Waypoint** adds one at the map center; **Clear** removes all.
+- **SAVE FLIGHT PLAN** writes it to flash — it appears on the ND immediately and survives reboots.
+
+## The settings tabs
 
 Most controls **apply live** — you'll see the panel change as you adjust them. A few are
 **save-only** (they need a reboot): the AP password and the Remote ID toggles. **SAVE TO FLASH**
-persists everything.
+(shown on the settings panes) persists everything.
 
 ### Attitude
 - **IMU orientation** — *Upside down*, *Reverse roll*, *Reverse pitch*, *Swap roll/pitch*. These
@@ -122,9 +140,10 @@ on reboot and reloaded at boot, so a recorded flight survives a power cycle for 
 
 On the **Log** tab:
 - **Session peaks** — top GPS speed, top airspeed, max altitude, max g (since power-on / last reset).
-- **History plot** — pick a metric (GPS / ASI / Alt / G); **drag to pan**, and use **− / + / fit**
-  to zoom the time axis.
-- **DOWNLOAD CSV** — the full 10 Hz log as `flightlog.csv` (`t_s,gps_kt,asi_mph,alt_ft,g`).
+- **History plots** — four stacked plots (GPS speed, airspeed, altitude, g), each on its own
+  auto-scaled axis and sharing one time window. **Drag to pan**, **pinch** or **scroll** to zoom,
+  or use **− / + / fit**. The x-axis reads actual UTC clock time once GPS time is acquired.
+- **DOWNLOAD CSV** — the full 10 Hz log as `flightlog.csv` (`t_s,utc,gps_kt,asi_mph,alt_ft,g`).
 - **RESET LOG** — clears the buffer and peaks.
 
 To review a flight: land, join `NanoPFD` (always broadcasting), open the **Log** tab. The log
