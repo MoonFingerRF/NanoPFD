@@ -398,8 +398,9 @@ static inline const char *unitGsStr (uint8_t u) { return u == 1 ? "MPH" : u == 2
 static inline const char *unitAltStr(uint8_t u) { return u == 1 ? "M" : "FT"; }
 
 // Draw the RED warning as a vertical dashed strip of mw-square blocks (mw on, mw off) between
-// speeds lo..hi on the airspeed tape's warning strip. Screen-y-aligned so the pattern is stable as
-// the tape scrolls. The strip (width mw) is thin enough to always clear the bank-scale arc.
+// speeds lo..hi on the airspeed tape's warning strip. The pattern is anchored to the SPEED grid
+// (phased by the airspeed scroll offset) so the squares move WITH the tape as speed changes. The
+// strip (width mw) is thin enough to always clear the bank-scale arc.
 static void speedDash(MyCanvas8 *canvas, int midPointY, int stdW2, int tapeX, int mw,
                       float asiDisp, float pxU, float lo, float hi, uint8_t col) {
   int yA = midPointY - (int)((lo - asiDisp) * pxU);
@@ -408,8 +409,9 @@ static void speedDash(MyCanvas8 *canvas, int midPointY, int stdW2, int tapeX, in
   if (yTop < midPointY - stdW2) yTop = midPointY - stdW2;
   if (yBot > midPointY + stdW2) yBot = midPointY + stdW2;
   if (mw < 1) mw = 1;
+  int phase = (int)(asiDisp * pxU), per = 2 * mw;           // y - phase is constant for a fixed speed
   for (int y = yTop; y <= yBot; y++)
-    if (!((y / mw) & 1)) canvas->drawFastHLine(tapeX + 1, y, mw, col);   // mw rows red, mw rows gap
+    if (((y - phase) % per + per) % per < mw) canvas->drawFastHLine(tapeX + 1, y, mw, col);
 }
 
 // Render the full Primary Flight Display into `canvas`, sampling the pre-built
