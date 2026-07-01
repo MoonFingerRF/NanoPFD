@@ -42,6 +42,7 @@ void mapZoom(int dir, float curLat, float curLon);
 
 // Config-portal helpers: jump to a level + query the ladder.
 void mapZoomSet(int idx);
+void mapZoomReclamp();               // re-clamp after the gMiniMap setting changes
 int  mapZoomIdx();
 int  mapZoomCount();
 int  mapZoomRangeM(int idx);

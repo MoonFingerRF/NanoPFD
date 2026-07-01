@@ -91,6 +91,7 @@ void webConfigLoadSettings() {
     gUnitAsi = UNIT_ASI_DEF; gUnitGs = UNIT_GS_DEF;
     gV1 = V1_DEF; gVr = VR_DEF; gVStall = VSTALL_DEF; gVCaut = VCAUT_DEF; gVMax = VMAX_DEF;
   }
+  gMiniMap = p.getBool("minimap", gMiniMap);   // must precede the mapZoomSet(zoom) below
   int zoom  = p.getInt("zoom", -1);
   if (p.getBytesLength("pal") == NUM_COLORS * sizeof(uint16_t)) {   // restore a saved palette
     p.getBytes("pal", (void *)color_index, NUM_COLORS * sizeof(uint16_t));
@@ -183,7 +184,9 @@ canvas#pmap{width:100%;height:280px;background:#06090c;border:1px solid var(--ln
 <div class=c><h2>Color palette</h2><div id=pal></div></div></div>
 <div class="pane hide" id=nav>
 <div class=c><h2>Navigation</h2>
-<div class=r><label>Map zoom</label><select id=z></select></div></div></div>
+<div class=r><label>Map zoom</label><select id=z></select></div>
+<div class=r><label>Minimap zoom</label><label class=tg><input type=checkbox id=mm><span class=sl></span></label></div>
+<div class=u>Lets the map zoom into the magnified field/minimap levels (range readout turns orange). Off = normal zoom range only.</div></div></div>
 <div class="pane hide" id=air>
 <div class=c><h2>Air data</h2>
 <div class=r><label>Local pressure</label><span><input type=number id=b step=0.01 min=28 max=31><span class=u>inHg</span></span></div></div>
@@ -269,6 +272,7 @@ function bind(){
 $(id).onchange=function(){ap(key+'='+(this.checked?1:0))}});
 $('hdg').onchange=function(){ap('hdg='+(this.value||0))};
 $('z').onchange=function(){ap('zoom='+this.value)};
+$('mm').onchange=function(){ap('minimap='+(this.checked?1:0))};
 $('b').onchange=function(){ap('baro='+this.value)};
 $('pt').onchange=function(){ap('ptrim='+this.value)};$('rt').onchange=function(){ap('rtrim='+this.value)};
 ['aatt','ag','aalt','avs','aasi','vsifs','gmfs','uasi','ugs','ualt','v1','vr','vst','vcaut','vmx'].forEach(function(id){$(id).onchange=function(){ap(id+'='+this.value)}})}
@@ -276,7 +280,7 @@ function setLevel(){ap('level=1').then(function(){flash('✓ captured');setTimeo
 function load(){fetch('/api').then(function(r){return r.json()}).then(function(d){
 $('v').checked=!!d.oriV;$('r').checked=!!d.oriR;$('p').checked=!!d.oriP;$('sw').checked=!!d.oriS;
 $('hdg').value=d.hdg;$('b').value=d.baro.toFixed(2);$('pw').value=d.pass;
-$('rb').checked=!!d.ridble;$('rw').checked=!!d.ridwifi;
+$('rb').checked=!!d.ridble;$('rw').checked=!!d.ridwifi;$('mm').checked=!!d.minimap;
 $('pt').value=d.ptrim;$('rt').value=d.rtrim;$('aatt').value=d.aatt;$('ag').value=d.ag;
 $('aalt').value=d.aalt;$('avs').value=d.avs;$('aasi').value=d.aasi;$('vsifs').value=d.vsifs;$('gmfs').value=d.gmfs;
 $('uasi').value=d.uasi;$('ugs').value=d.ugs;$('ualt').value=d.ualt;$('v1').value=d.v1;$('vr').value=d.vr;$('vst').value=d.vst;$('vcaut').value=d.vcaut;$('vmx').value=d.vmx;
@@ -291,7 +295,7 @@ row.appendChild(lb);row.appendChild(ci);pe.appendChild(row)});
 bind()})}
 function save(){var q='oriV='+($('v').checked?1:0)+'&oriR='+($('r').checked?1:0)+'&oriP='+($('p').checked?1:0)
 +'&oriS='+($('sw').checked?1:0)+'&zoom='+$('z').value+'&baro='+$('b').value+'&hdg='+($('hdg').value||0)
-+'&ridble='+($('rb').checked?1:0)+'&ridwifi='+($('rw').checked?1:0)
++'&ridble='+($('rb').checked?1:0)+'&ridwifi='+($('rw').checked?1:0)+'&minimap='+($('mm').checked?1:0)
 +'&ptrim='+$('pt').value+'&rtrim='+$('rt').value+'&aatt='+$('aatt').value+'&ag='+$('ag').value+'&aalt='+$('aalt').value
 +'&avs='+$('avs').value+'&aasi='+$('aasi').value+'&vsifs='+$('vsifs').value+'&gmfs='+$('gmfs').value
 +'&uasi='+$('uasi').value+'&ugs='+$('ugs').value+'&ualt='+$('ualt').value+'&v1='+$('v1').value+'&vr='+$('vr').value+'&vst='+$('vst').value+'&vcaut='+$('vcaut').value+'&vmx='+$('vmx').value
@@ -434,6 +438,7 @@ static void cfgHandleApiGet() {
   j += "\"uasi\":" + String((int)gUnitAsi) + ",\"ugs\":" + String((int)gUnitGs) + ",\"ualt\":" + String((int)gUnitAlt) + ",";
   j += "\"v1\":" + String(gV1, 0) + ",\"vr\":" + String(gVr, 0) + ",\"vst\":" + String(gVStall, 0) +
        ",\"vcaut\":" + String(gVCaut, 0) + ",\"vmx\":" + String(gVMax, 0) + ",";
+  j += "\"minimap\":" + String(gMiniMap ? 1 : 0) + ",";
   j += "\"pal\":[";
   for (int i = 0; i < NUM_COLORS; i++) {
     char hx[8]; rgb565ToHex(color_index[i], hx);
@@ -500,6 +505,7 @@ static void cfgHandleApiSet() {
   if (cfgServer.hasArg("vst")) gVStall = constrain(cfgServer.arg("vst").toFloat(), 0.0f, 2000.0f);
   if (cfgServer.hasArg("vcaut")) gVCaut = constrain(cfgServer.arg("vcaut").toFloat(), 0.0f, 2000.0f);
   if (cfgServer.hasArg("vmx")) gVMax   = constrain(cfgServer.arg("vmx").toFloat(), 0.0f, 2000.0f);
+  if (cfgServer.hasArg("minimap")) { gMiniMap = cfgServer.arg("minimap").toInt() ? 1 : 0; mapZoomReclamp(); }
   bool palChanged = false;
   for (int i = 0; i < NUM_COLORS; i++) {
     char key[8]; snprintf(key, sizeof key, "pal%d", i);
@@ -520,6 +526,7 @@ static void cfgHandleApiSet() {
   p.putUChar("uasi", gUnitAsi); p.putUChar("ugs", gUnitGs); p.putUChar("ualt", gUnitAlt);
   p.putFloat("v1", gV1); p.putFloat("vr", gVr); p.putFloat("vst", gVStall);
   p.putFloat("vcaut", gVCaut); p.putFloat("vmx", gVMax); p.putUChar("sver", 1);
+  p.putBool("minimap", gMiniMap);
   if (palChanged) p.putBytes("pal", (const void *)color_index, NUM_COLORS * sizeof(uint16_t));
   if (cfgServer.hasArg("pass")) p.putString("appass", cfgServer.arg("pass"));   // applies next config boot
   p.end();

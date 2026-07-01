@@ -397,6 +397,10 @@ extern volatile uint8_t gUnitAsi, gUnitGs, gUnitAlt;
 //   gVStall = red below; gVCaut..gVMax = amber caution band; gVMax = red above (overspeed).
 //   gV1/gVr = speed bugs. Power-on defaults below (applied via the settings-version migration).
 extern volatile float gV1, gVr, gVStall, gVCaut, gVMax;
+// Minimap: allow zooming BELOW FIELD_THRESH_M into the magnified field/minimap levels. Default
+// off -> the touch zoom stops at the last normal level; on -> the full ladder incl. the minimap
+// (which shows the range readout in orange). Config portal Nav tab.
+extern volatile bool gMiniMap;
 #define V1_DEF 30
 #define VR_DEF 40
 #define VSTALL_DEF 35

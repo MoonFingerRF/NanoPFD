@@ -39,6 +39,15 @@ static const ZoomLevel LEVELS[] = {
 static const int NLEV = (int)(sizeof(LEVELS) / sizeof(LEVELS[0]));
 static int gIdx = MAP_ZOOM_DEFAULT_IDX;
 
+// Deepest zoom that is NOT the field/minimap mode (first level at/above FIELD_THRESH_M). When the
+// minimap setting (gMiniMap) is off, the touch zoom stops here instead of continuing into the
+// magnified field levels.
+static int fieldFirstIdx() {
+  for (int i = 0; i < NLEV; i++) if (LEVELS[i].range_m >= FIELD_THRESH_M) return i;
+  return 0;
+}
+static int minIdx() { return gMiniMap ? 0 : fieldFirstIdx(); }
+
 static void apply() {
   gMapRangeM = LEVELS[gIdx].range_m;
   gMapLod    = LEVELS[gIdx].lod;
@@ -46,7 +55,7 @@ static void apply() {
 
 void mapZoomInit() {
   gIdx = MAP_ZOOM_DEFAULT_IDX;
-  if (gIdx < 0) gIdx = 0;
+  if (gIdx < minIdx()) gIdx = minIdx();
   if (gIdx >= NLEV) gIdx = NLEV - 1;
   gMapFieldActive = false;
   apply();
@@ -54,11 +63,17 @@ void mapZoomInit() {
 
 // Jump straight to a zoom level (config portal / saved default). Clamps the index.
 void mapZoomSet(int idx) {
-  if (idx < 0) idx = 0;
+  if (idx < minIdx()) idx = minIdx();
   if (idx >= NLEV) idx = NLEV - 1;
   gIdx = idx;
   gMapFieldActive = false;
   apply();
+}
+
+// Re-clamp after the minimap setting changes: if it was turned off while zoomed into the field
+// levels, pull the zoom back out to the deepest normal level. Called from the config portal.
+void mapZoomReclamp() {
+  if (gIdx < minIdx()) { gIdx = minIdx(); gMapFieldActive = false; apply(); }
 }
 int mapZoomIdx()          { return gIdx; }
 int mapZoomCount()        { return NLEV; }
@@ -66,7 +81,7 @@ int mapZoomRangeM(int i)  { return (i >= 0 && i < NLEV) ? LEVELS[i].range_m : 0;
 
 void mapZoom(int dir, float curLat, float curLon) {
   int ni = gIdx + (dir < 0 ? -1 : +1);
-  if (ni < 0) ni = 0;
+  if (ni < minIdx()) ni = minIdx();             // don't zoom past the minimap gate
   if (ni >= NLEV) ni = NLEV - 1;
   if (ni == gIdx) return;                       // already at the end stop
 
