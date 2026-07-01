@@ -389,6 +389,37 @@ void drawHeadingArc(MyCanvas8 *canvas, state *s) {
   canvas->fillTriangle((int)cx, (int)apexY, (int)(cx - triW), (int)triTop, (int)(cx + triW), (int)triTop, ICYAN);
 }
 
+// Display-unit conversions. Native sensor units: airspeed=mph, ground speed=knots, alt=ft.
+static inline float cvtAsi(float mph, uint8_t u) { return u == 0 ? mph * 0.868976f : u == 2 ? mph * 1.60934f : mph; }
+static inline float cvtGs (float kt,  uint8_t u) { return u == 1 ? kt * 1.15078f  : u == 2 ? kt * 1.852f    : kt; }
+static inline float cvtAlt(float ft,  uint8_t u) { return u == 1 ? ft * 0.3048f : ft; }
+static inline const char *unitAsiStr(uint8_t u) { return u == 0 ? "KT" : u == 2 ? "KMH" : "MPH"; }
+static inline const char *unitGsStr (uint8_t u) { return u == 1 ? "MPH" : u == 2 ? "KMH" : "KT"; }
+static inline const char *unitAltStr(uint8_t u) { return u == 1 ? "M" : "FT"; }
+
+// Draw a colored band on the airspeed V-speed strip (right of the tape line) between speeds
+// lo..hi, clipped to the tape window AND to the bank-scale arc up top so it never overlaps the
+// bank-angle tick lines. asiDisp = current airspeed (display unit); pxU = pixels per unit.
+static void speedBand(MyCanvas8 *canvas, int midPointX, int midPointY, int stdW1, int stdW2,
+                      int tapeX, int mw, float asiDisp, float pxU, float lo, float hi, uint8_t col) {
+  int yA = midPointY - (int)((lo - asiDisp) * pxU);      // lower speed -> larger y (bottom)
+  int yB = midPointY - (int)((hi - asiDisp) * pxU);      // higher speed -> smaller y (top)
+  int yTop = (yB < yA ? yB : yA), yBot = (yB < yA ? yA : yB);
+  int wTop = midPointY - stdW2, wBot = midPointY + stdW2;
+  if (yTop < wTop) yTop = wTop;
+  if (yBot > wBot) yBot = wBot;
+  const long r1 = (long)stdW1 * stdW1;
+  const int  bankLo = midPointY - stdW1 / 2;             // below this y there are no bank ticks
+  for (int y = yTop; y <= yBot; y++) {
+    int rx = tapeX + mw;
+    if (y < bankLo) {                                    // upper zone: clip to the bank arc (radius stdW1)
+      long dy = midPointY - y, inside = r1 - dy * dy;
+      if (inside > 0) { int bx = midPointX - (int)sqrtf((float)inside) - 3; if (rx > bx) rx = bx; }
+    }
+    if (rx > tapeX + 1) canvas->drawFastHLine(tapeX + 1, y, rx - tapeX - 1, col);
+  }
+}
+
 // Render the full Primary Flight Display into `canvas`, sampling the pre-built
 // pitch ladder `inc_map`. All geometry is derived from the canvas size, so it
 // scales with the panel resolution.
@@ -440,7 +471,7 @@ void drawHorizonDisplay(MyCanvas8 *canvas, GFXcanvas8 *inc_map, state *s, bool s
   //draw speed
   float air_speed = 0;
   if (s->ASI)
-    air_speed = s->air_speed;
+    air_speed = cvtAsi(s->air_speed, gUnitAsi);
 
   canvas->drawFastVLine(midPointX - stdW1, midPointY - stdW2, 2 * stdW2, IWHITE);
 
@@ -472,11 +503,14 @@ void drawHorizonDisplay(MyCanvas8 *canvas, GFXcanvas8 *inc_map, state *s, bool s
   canvas->fillRect(stdW3, midPointY + stdW2 - 1, midPointX - stdW2 - stdW3, stdW3 + 1, IBLACK);
   canvas->drawFastHLine(stdW3, midPointY + stdW2, midPointX - stdW2 - stdW3, IWHITE);
   canvas->drawFastHLine(stdW3, midPointY - stdW2, midPointX - stdW2 - stdW3, IWHITE);
+  // airspeed unit, just above the tape frame (right-aligned at the tape line)
+  { canvas->setFont(); canvas->setTextSize(1); canvas->setTextColor(IGREY);
+    drawText(canvas, unitAsiStr(gUnitAsi), midPointX - stdW1, midPointY - stdW2 - lyt::scaled(7, width), lyt::HR, lyt::VC); }
 
   //draw alt
   float alt = 0;
   if (s->BPS)
-    alt = s->alt;
+    alt = cvtAlt(s->alt, gUnitAlt);
 
   canvas->drawFastVLine(midPointX + stdW1, midPointY - stdW2, 2 * stdW2, IWHITE);
 
@@ -516,7 +550,10 @@ void drawHorizonDisplay(MyCanvas8 *canvas, GFXcanvas8 *inc_map, state *s, bool s
   { char baro[8]; sprintf(baro, "%.2f", gBaroInHg);
     canvas->setTextColor(IWHITE);
     drawText(canvas, baro, midPointX + stdW1 + lyt::scaled(2, width),
-             midPointY - stdW2 - lyt::scaled(7, width), lyt::HL, lyt::VC); }
+             midPointY - stdW2 - lyt::scaled(7, width), lyt::HL, lyt::VC);
+    canvas->setTextColor(IGREY);   // altitude unit, right-aligned left of the alt tape line
+    drawText(canvas, unitAltStr(gUnitAlt), midPointX + stdW1 - lyt::scaled(2, width),
+             midPointY - stdW2 - lyt::scaled(7, width), lyt::HR, lyt::VC); }
   // GPS altitude (ft) BELOW: a two-line "GPS"/"ALT" label + a divider line, with the
   // value to the right — mirrors the "GS" block under the airspeed tape.
   {
@@ -660,6 +697,36 @@ void drawHorizonDisplay(MyCanvas8 *canvas, GFXcanvas8 *inc_map, state *s, bool s
   canvas->drawTriangle(midPointX, midPointY - stdW1, midPointX - skyW, midPointY - stdW1 - skyH, midPointX + skyW, midPointY - stdW1 - skyH, IWHITE);
   drawBankAngleTriangle(canvas, midPointX, midPointY, stdW1, -atan(s->gx / s->gy), topAngle, -topAngle);
 
+  // ---- V-speed markers on the airspeed tape (drawn OVER the attitude, right of the tape line) ----
+  // Red warning blocks (stall below Vstall, overspeed above Vmax) + amber caution bands, plus V1/Vr
+  // speed bugs. Values are in the DISPLAYED airspeed unit and move with the tape. speedBand() clips
+  // the top to the bank-scale arc so nothing overlaps the bank-angle lines.
+  if (s->ASI) {
+    int   tapeX = midPointX - stdW1;
+    int   mw    = stdW1 * 45 / 100;                 // extends ~halfway toward the attitude centre
+    float pxU   = (float)speedSpacing / 5.0f;       // pixels per unit airspeed
+    float caut  = (gUnitAsi == 2) ? 20.0f : 12.0f;  // amber caution margin (in display units)
+    if (gVMax > 0) {                                 // overspeed: amber band then red above it
+      speedBand(canvas, midPointX, midPointY, stdW1, stdW2, tapeX, mw, air_speed, pxU, gVMax - caut, gVMax, IYELLOW);
+      speedBand(canvas, midPointX, midPointY, stdW1, stdW2, tapeX, mw, air_speed, pxU, gVMax, gVMax + 2000, IRED);
+    }
+    if (gVStall > 0) {                               // stall: amber band then red below it
+      speedBand(canvas, midPointX, midPointY, stdW1, stdW2, tapeX, mw, air_speed, pxU, gVStall, gVStall + caut, IYELLOW);
+      speedBand(canvas, midPointX, midPointY, stdW1, stdW2, tapeX, mw, air_speed, pxU, -2000, gVStall, IRED);
+    }
+    canvas->setFont(); canvas->setTextSize(1);       // V1 / Vr speed bugs (short bar + label)
+    struct { float v; const char *lbl; uint8_t col; } bugs[2] = { { gV1, "V1", ICYAN }, { gVr, "VR", IGREEN } };
+    for (int b = 0; b < 2; b++) {
+      if (bugs[b].v <= 0) continue;
+      int by = midPointY - (int)((bugs[b].v - air_speed) * pxU);
+      if (by < midPointY - stdW2 + 2 || by > midPointY + stdW2 - 2) continue;
+      int bw = std5 * 2;
+      canvas->fillRect(tapeX + 1, by - 1, bw, 3, bugs[b].col);
+      canvas->setTextColor(bugs[b].col);
+      drawText(canvas, bugs[b].lbl, tapeX + bw + 3, by, lyt::HL, lyt::VC);
+    }
+  }
+
 
   //draw plane reference
   canvas->fillTriangle(midPointX, midPointY, midPointX - std1, midPointY + std2, midPointX - std3, midPointY + std4, IBLACK);
@@ -703,12 +770,13 @@ void drawHorizonDisplay(MyCanvas8 *canvas, GFXcanvas8 *inc_map, state *s, bool s
 
     canvas->drawFastVLine(lineX, by - 1, 19 * lyt::txtScale(width), IGREY);
 
-    // GS, stacked, to the RIGHT of the divider (all the way right)
+    // GS, stacked, to the RIGHT of the divider (all the way right); unit next to the label
     canvas->setTextColor(IWHITE);
     canvas->setCursor(lineX + 4, by);
-    canvas->print("GS");
+    canvas->print("GS ");
+    canvas->setTextColor(IGREY); canvas->print(unitGsStr(gUnitGs)); canvas->setTextColor(IWHITE);
     if (!s->GPS) sprintf(num, "--");
-    else         sprintf(num, "%d", (int)(s->ground_speed * 1.15078));
+    else         sprintf(num, "%d", (int)cvtGs(s->ground_speed, gUnitGs));
     canvas->setCursor(lineX + 4, by2);
     canvas->print(num);
 

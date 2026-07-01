@@ -69,6 +69,8 @@ volatile bool  gPaletteDirty   = false;
 volatile float gAlphaAtt = ALPHA_ATTITUDE, gAlphaG = ALPHA_GFORCE, gAlphaAlt = ALPHA_ALT,
                gAlphaVs  = ALPHA_VSPEED,   gAlphaAsi = ALPHA_ASPEED;
 volatile float gVsiFs = VSI_FULL_SCALE, gGmeterFs = GMETER_FS;
+volatile uint8_t gUnitAsi = UNIT_ASI_DEF, gUnitGs = UNIT_GS_DEF, gUnitAlt = UNIT_ALT_DEF;
+volatile float gV1 = 0, gVr = 0, gVStall = 0, gVMax = 0;
 // IMU mounting trim (deg) + one-shot level-capture flag (set from the portal).
 volatile float gPitchTrim = 0, gRollTrim = 0;
 volatile bool  gLevelCapture = false;

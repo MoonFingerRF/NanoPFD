@@ -387,6 +387,15 @@ extern volatile bool  gPaletteDirty;
 // defaults are the ALPHA_*/VSI/GMETER #defines below; these globals override at runtime.
 extern volatile float gAlphaAtt, gAlphaG, gAlphaAlt, gAlphaVs, gAlphaAsi;
 extern volatile float gVsiFs, gGmeterFs;
+// Display units (config portal). Native sensor units are asi=mph, gs=knots, alt=ft.
+//   gUnitAsi/gUnitGs: 0=knots 1=mph 2=km/h.   gUnitAlt: 0=ft 1=m.
+extern volatile uint8_t gUnitAsi, gUnitGs, gUnitAlt;
+#define UNIT_ASI_DEF 1
+#define UNIT_GS_DEF  1
+#define UNIT_ALT_DEF 0
+// V-speed markers on the airspeed tape (in the DISPLAYED airspeed unit; 0 = off).
+//   gVStall/gVMax draw red warning blocks + amber caution bands; gV1/gVr draw speed bugs.
+extern volatile float gV1, gVr, gVStall, gVMax;
 // ---- IMU mounting trim (deg) — lets the IMU sit at ANY angle ------------------------
 // Applied to the sensor up-vector before the orientation flips (IMU.ino/ICM.ino). The
 // flips handle the gross 90-deg orientation; these trims cancel the residual tilt so the
