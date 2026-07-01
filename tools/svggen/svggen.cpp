@@ -233,6 +233,22 @@ void svgAttitudeHook   (MyCanvas8 *c) { static_cast<SvgCanvas*>(c)->endAttitude(
 
 int imuSource() { return 1; }   // stub (IMU.ino owns the real one): 1 = BNO08x
 
+// Flight-plan accessors live in FlightPlan.ino (not compiled here). By default stub them empty so
+// the illustration renders with no user route (drawFlightPlan early-returns on count 0). Under
+// -DFPLAN_DEMO, return a short demo route near the map centre so nd-route.svg shows the feature.
+#ifdef FPLAN_DEMO
+int  fplanCount() { return 4; }
+void fplanGet(int i, float *la, float *lo, char *nm) {
+  static const float O[4][2] = { { -0.05f, -0.055f }, { 0.00f, -0.015f }, { 0.055f, 0.020f }, { 0.09f, -0.02f } };
+  static const char *N[4]     = { "ALPHA", "BRAVO", "CHARL", "DELTA" };
+  *la = MAP_DEFAULT_LAT + O[i][0]; *lo = MAP_DEFAULT_LON + O[i][1];
+  for (int k = 0; k < 9 && (nm[k] = N[i][k]); k++) {}
+}
+#else
+int  fplanCount() { return 0; }
+void fplanGet(int, float *, float *, char *) {}
+#endif
+
 // Representative screen positions of map features, recorded by SVG_RENDER hooks
 // in drawChart/drawNavigationDisplay so the legend's callouts point at real spots.
 struct Landmark { std::string name; int x, y; };
@@ -268,6 +284,11 @@ volatile bool    gMapFieldActive = false;
 volatile float   gMapFieldLat    = 0.0f;
 volatile float   gMapFieldLon    = 0.0f;
 volatile float   gBaroInHg       = 29.92f;
+// Instrument-scale / unit / V-speed runtime globals (InstrumentPanel.ino owns them on the
+// device) — pinned to the power-on defaults so the illustration matches the out-of-box panel.
+volatile float   gVsiFs   = VSI_FULL_SCALE, gGmeterFs = GMETER_FS;
+volatile uint8_t gUnitAsi = UNIT_ASI_DEF, gUnitGs = UNIT_GS_DEF, gUnitAlt = UNIT_ALT_DEF;
+volatile float   gV1 = V1_DEF, gVr = VR_DEF, gVStall = VSTALL_DEF, gVCaut = VCAUT_DEF, gVMax = VMAX_DEF;
 
 #include "instrument_drawer.ino"
 #undef p     // the drawer's '#define p 3.1415926' must not leak into our code below
@@ -701,10 +722,15 @@ int main() {
   SvgCanvas nd(RGB_WIDTH, ND_CANVAS_H);
   drawNavigationDisplay(&nd, &s);
 
+#ifdef FPLAN_DEMO
+  // demo route only: the ND with a user flight plan overlaid (yellow route + waypoints)
+  writeSvg("docs/nd-route.svg", RGB_WIDTH, ND_CANVAS_H, {{nd.elems, 0, 0}});
+#else
   writeSvg("docs/pfd.svg", RGB_WIDTH, PFD_REGION_H, {{pfd.elems, 0, 0}});
   writeSvg("docs/nd.svg",  RGB_WIDTH, ND_CANVAS_H, {{nd.elems, 0, 0}});
   writeSvg("docs/combined.svg", RGB_WIDTH, RGB_HEIGHT,
            {{pfd.elems, 0, 0}, {nd.elems, 0, ND_TOP}});
+#endif
 #else
   // ---- Dual-display config (BOARD_A): two separate ST7789 screens ----
   SvgCanvas pfd(SCREEN1_WIDTH, SCREEN1_HEIGHT);

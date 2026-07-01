@@ -632,7 +632,7 @@ void drawHorizonDisplay(MyCanvas8 *canvas, GFXcanvas8 *inc_map, state *s, bool s
       case 2:  base = (long)(nativeW - 1 - cx) + (long)(nativeH - 1 - ly) * nativeW; break;
       default: base = (long)ly + (long)(nativeH - 1 - cx) * nativeW; break;   // 3
     }
-#if BOARD_C
+#if BOARD_C && !defined(SVG_RENDER)
     if (canvas->packed4) {
       // 4-bit packed canvas: write the sampled index into its nibble. The column cx has fixed
       // parity (nativeW even), so it's the HIGH nibble (even x) or LOW (odd x) all the way down.

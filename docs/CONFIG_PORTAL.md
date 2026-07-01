@@ -6,9 +6,9 @@ reflashing**. Join the **`NanoPFD`** Wi-Fi network and open `http://192.168.4.1`
 
 <table>
 <tr>
-<td align="center" width="33%"><img src="portal-log.svg" width="240" alt="Log tab — per-metric plots"/></td>
-<td align="center" width="34%"><img src="portal-plan.svg" width="240" alt="Flight Plan tab — map editor"/></td>
-<td align="center" width="33%"><img src="portal-settings.svg" width="240" alt="Settings dropdown"/></td>
+<td align="center" width="33%"><img src="portal-log.png" width="240" alt="Log tab — per-metric plots"/></td>
+<td align="center" width="34%"><img src="portal-plan.png" width="240" alt="Flight Plan tab — map editor"/></td>
+<td align="center" width="33%"><img src="portal-settings.png" width="240" alt="Settings dropdown"/></td>
 </tr>
 <tr>
 <td align="center"><sub><b>Log</b> — four per-metric plots</sub></td>
@@ -25,21 +25,11 @@ NanoPFD runs **everything at once, all the time** — the glass display (PFD + N
 logging), the Wi-Fi AP + web portal, and **both** Remote ID receivers (BLE and Wi-Fi). There is
 **no mode to switch**: the AP is always up and the portal is always reachable.
 
-This is possible because the display canvas is packed to 4 bits/pixel, which frees enough
-internal memory for the AP and both radios to coexist (the older firmware had to pick *one* of
-{full-fps display, Wi-Fi AP, BLE} per boot — that limitation is gone).
-
-- **Frame rate:** ~16 fps on the 2.8B / BOARD_C, near the panel's hardware ceiling (the RGB
-  display continuously streams its framebuffer out of PSRAM, which caps how fast the map can be
-  redrawn) — it is **not** affected by having the AP and radios on.
 - **Wi-Fi RID** listens on the AP's channel (**6**, where Remote ID Wi-Fi beacons almost always
   are) since it can't channel-hop without dropping your phone. **BLE RID** scans at low duty so
   the AP keeps the radio responsive. Both plot drones as orange dots on the compass.
 - The **WiFi** tab has a **Reboot** button (re-reads flash / recovers); both RID toggles also
   flip live.
-
-> To revert to the old two-mode (flight / config) firmware, build with `ALWAYS_ON_MODE 0` in
-> `config.h`.
 
 ---
 
@@ -57,7 +47,7 @@ Only one phone connects at a time.
 
 ## Using the web configurator
 
-<p align="center"><img src="portal-settings.svg" width="320" alt="Settings dropdown open over the Attitude pane"/></p>
+<p align="center"><img src="portal-settings.png" width="320" alt="Settings dropdown open over the Attitude pane"/></p>
 
 The portal has two big primary tabs — **Log** (the landing page) and **Flight Plan** — the things
 you touch often — plus a **⚙ Settings** dropdown for the occasional-use panes.
@@ -73,7 +63,7 @@ See [the settings tabs](#the-settings-tabs) for what each pane does.
 
 ## Flight plan
 
-<p align="center"><img src="portal-plan.svg" width="320" alt="Flight Plan tab — map editor + waypoint list"/></p>
+<p align="center"><img src="portal-plan.png" width="320" alt="Flight Plan tab — map editor + waypoint list"/></p>
 
 Build a route of named waypoints. It's saved to flash and drawn on the ND as a **solid yellow
 line** with a **yellow marker + name** at each waypoint.
@@ -90,7 +80,7 @@ delete it. **+ Waypoint** adds one at the map center; **Clear** removes all.
 Then tap **SAVE FLIGHT PLAN** — it writes to flash, appears on the ND immediately, and survives
 reboots. On the **ND**, the route overlays the moving map and rotates heading-up with everything else:
 
-<p align="center"><img src="portal-nd-route.svg" width="300" alt="Flight plan drawn on the ND"/></p>
+<p align="center"><img src="nd-route.svg" width="300" alt="Flight plan drawn on the ND"/></p>
 
 ## The settings tabs
 
@@ -123,7 +113,7 @@ quantizes to 8-bit color, so its on-screen shade is coarser than the picker (mos
 
 ## Units & V-speeds
 
-<p align="center"><img src="portal-air.svg" width="300" alt="Air tab: Units + V-speeds"/></p>
+<p align="center"><img src="portal-air.png" width="300" alt="Air tab: Units + V-speeds"/></p>
 
 **Units** (Air tab) — choose the readout units independently:
 - **Airspeed** and **Ground speed**: knots / mph / km-h.
@@ -136,7 +126,7 @@ to standard sea-level air density, which is the reference for indicated airspeed
 **V-speeds** (Air tab) — reference speeds drawn on the airspeed tape, 737-style. Enter them in the
 current airspeed unit (0 = off):
 
-<p align="center"><img src="pfd-vspeeds.svg" width="240" alt="Airspeed tape with V-speed markers"/></p>
+<p align="center"><img src="pfd.svg" width="200" alt="PFD airspeed tape showing the V-speed markers"/></p>
 
 - **Stall** / **Overspeed** — a **red dashed strip** (a vertical run of red squares) below Stall and
   above Overspeed.
@@ -199,7 +189,7 @@ Both toggles flip live and default on at every boot.
 
 ## Flight log
 
-<p align="center"><img src="portal-log.svg" width="320" alt="Log tab — session peaks + four per-metric plots"/></p>
+<p align="center"><img src="portal-log.png" width="320" alt="Log tab — session peaks + four per-metric plots"/></p>
 
 A circular buffer continuously records **GPS ground speed, indicated airspeed, MSL altitude, and
 load factor (g)** at **10 Hz**, keeping the **last 30 minutes** (in PSRAM). It is saved to flash

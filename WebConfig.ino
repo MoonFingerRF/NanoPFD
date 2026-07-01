@@ -198,9 +198,9 @@ canvas#pmap{width:100%;height:280px;background:#06090c;border:1px solid var(--ln
 <div class=r><label>V1</label><input type=number id=v1 min=0 max=2000 step=1></div>
 <div class=r><label>Rotation (V<sub>R</sub>)</label><input type=number id=vr min=0 max=2000 step=1></div>
 <div class=r><label>Stall &mdash; red below</label><input type=number id=vst min=0 max=2000 step=1></div>
-<div class=r><label>Caution &mdash; amber above</label><input type=number id=vcaut min=0 max=2000 step=1></div>
+<div class=r><label>Caution &mdash; yellow above</label><input type=number id=vcaut min=0 max=2000 step=1></div>
 <div class=r><label>Overspeed &mdash; red above</label><input type=number id=vmx min=0 max=2000 step=1></div>
-<div class=u>On the airspeed tape: red block below Stall + above Overspeed, amber band from Caution to Overspeed; V1/V<sub>R</sub> show as speed bugs.</div></div></div>
+<div class=u>On the airspeed tape: a red dashed strip below Stall + above Overspeed, a thin yellow line from Caution to Overspeed; V1/V<sub>R</sub> show as speed bugs.</div></div></div>
 <div class="pane hide" id=tune>
 <div class=c><h2>Smoothing</h2>
 <div class=r><label>Attitude</label><input type=number id=aatt step=0.02 min=0.02 max=1></div>

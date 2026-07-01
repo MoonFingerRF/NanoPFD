@@ -46,6 +46,12 @@ mkdir -p "$TMP/a"; board_config A > "$TMP/a/config.h"
 g++ "${COMMON[@]}" -I"$TMP/a" -I"$ROOT" -I"$GFX" "$HERE/svggen.cpp" "$TMP/gfx.o" -lz -o "$TMP/svggen_a"
 ( cd "$ROOT" && "$TMP/svggen_a" )
 
+# ---- ND with a demo user flight plan overlaid (single-panel): nd-route.svg ----
+mkdir -p "$TMP/c"; board_config C > "$TMP/c/config.h"
+g++ "${COMMON[@]}" -I"$TMP/c" -I"$ROOT" -I"$GFX" -DFPLAN_DEMO \
+    "$HERE/svggen.cpp" "$TMP/gfx.o" -lz -o "$TMP/svggen_route"
+( cd "$ROOT" && "$TMP/svggen_route" )
+
 # ---- annotated ND + PFD legends (single-panel, real national chart centred on PHL) ----
 # Uses the real chart_data.h (per-LOD pyramid) so the legend map is the actual data.
 g++ "${COMMON[@]}" -I"$TMP/c" -I"$ROOT" -I"$GFX" -I"$HERE" \
@@ -53,4 +59,4 @@ g++ "${COMMON[@]}" -I"$TMP/c" -I"$ROOT" -I"$GFX" -I"$HERE" \
     "$HERE/svggen.cpp" "$TMP/gfx.o" -lz -o "$TMP/svggen_legend"
 ( cd "$ROOT" && "$TMP/svggen_legend" )
 
-echo "Regenerated $ROOT/docs/{pfd,nd,combined,nd_legend,pfd_legend,dual}.svg"
+echo "Regenerated $ROOT/docs/{pfd,nd,combined,nd-route,nd_legend,pfd_legend,dual}.svg"

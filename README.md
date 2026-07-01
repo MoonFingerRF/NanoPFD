@@ -364,9 +364,9 @@ full-rate display and both Remote ID receivers.
 
 <table>
 <tr>
-<td align="center" width="33%"><a href="docs/CONFIG_PORTAL.md"><img src="docs/portal-log.svg" width="230" alt="Log tab — per-metric plots"/></a></td>
-<td align="center" width="34%"><a href="docs/CONFIG_PORTAL.md"><img src="docs/portal-plan.svg" width="230" alt="Flight Plan tab — map editor"/></a></td>
-<td align="center" width="33%"><a href="docs/CONFIG_PORTAL.md"><img src="docs/portal-settings.svg" width="230" alt="Settings dropdown"/></a></td>
+<td align="center" width="33%"><a href="docs/CONFIG_PORTAL.md"><img src="docs/portal-log.png" width="230" alt="Log tab — per-metric plots"/></a></td>
+<td align="center" width="34%"><a href="docs/CONFIG_PORTAL.md"><img src="docs/portal-plan.png" width="230" alt="Flight Plan tab — map editor"/></a></td>
+<td align="center" width="33%"><a href="docs/CONFIG_PORTAL.md"><img src="docs/portal-settings.png" width="230" alt="Settings dropdown"/></a></td>
 </tr>
 <tr>
 <td align="center"><sub><b>Log</b> — four per-metric plots, pinch-zoom, actual-time axis, CSV</sub></td>
@@ -384,21 +384,13 @@ full-rate display and both Remote ID receivers.
 - **Settings** (⚙ dropdown) — IMU orientation + *mount-at-any-angle* trim, per-color palette,
   map zoom, local pressure, smoothing/scales, Remote ID toggles + AP password, plus:
   - **Units** — pick knots / mph / km-h for airspeed & ground speed, and feet / meters for altitude.
-  - **V-speeds** — 737-style airspeed-tape markers (V1, Vʀ, stall, caution, overspeed): red warning
-    blocks + amber caution bands + speed bugs.
+  - **V-speeds** — 737-style airspeed-tape markers (V1, Vʀ, stall, caution, overspeed): red dashed
+    warning strips + a thin yellow caution line + speed bugs.
   - **Minimap zoom** — deep zoom is always available; this opt-in adds a magnified "field"
     basemap at those close-in ranges (range readout turns orange).
 
-<table>
-<tr>
-<td align="center" width="42%"><img src="docs/pfd-vspeeds.svg" width="200" alt="Airspeed tape with V-speed markers"/></td>
-<td align="center" width="58%"><img src="docs/portal-air.svg" width="260" alt="Units + V-speeds config"/></td>
-</tr>
-<tr>
-<td align="center"><sub>V-speed markers on the airspeed tape</sub></td>
-<td align="center"><sub>Units + V-speeds on the <b>Air</b> tab</sub></td>
-</tr>
-</table>
+<p align="center"><img src="docs/portal-air.png" width="300" alt="Units + V-speeds on the Air tab"/></p>
+<p align="center"><sub>Units + V-speeds on the <b>Air</b> tab — the markers themselves are on the airspeed tape in the PFD above</sub></p>
 
 <p align="center"><b>→ Full walkthrough with screenshots: <a href="docs/CONFIG_PORTAL.md">docs/CONFIG_PORTAL.md</a></b></p>
 
