@@ -14,6 +14,11 @@
 
 <sub>NanoPFD is free &amp; open source. If it's useful or fun, <a href="https://www.paypal.com/donate/?business=D7CRFDQZ8LNKA&amp;no_recurring=0&amp;item_name=Pay+for+my+silly+projects&amp;currency_code=USD"><b>chip in via PayPal</b></a> to help fund more open hardware. 🙏</sub>
 
+<p align="center">
+  <a href="docs/CONFIG_PORTAL.md"><img src="https://img.shields.io/badge/%F0%9F%93%B1%20Web%20Configurator-Full%20Guide-22d3ee?style=for-the-badge&amp;labelColor=0c0f12" alt="Web configurator & flight-plan guide" height="34"/></a>
+</p>
+<sub><b>Configure it, plan a route, and review your flight log from your phone</b> — no reflashing. See the <a href="docs/CONFIG_PORTAL.md"><b>Web Configurator Guide →</b></a></sub>
+
 </div>
 
 NanoPFD turns an inexpensive ESP32-S3 dev display and a handful of I²C sensors into a self-contained
@@ -350,20 +355,36 @@ python3 tools/build_chart_data.py --lat 39.10 --lon -84.51 --radius-km 120
 
 ---
 
-## Config portal (Wi-Fi) & flight log
+## 📱 Web configurator, flight planner & log
 
-NanoPFD serves a small **web settings page** over its own Wi-Fi AP, so you can configure it and
-review a flight log from your phone — **no reflashing**. Hold **BOOT** ~3 s to toggle between
-*config mode* (the AP) and *flight mode* (full-fps display); the AP network is **`NanoPFD`** at
-`http://192.168.4.1`.
+NanoPFD serves a **web app** over its own Wi-Fi AP — configure it, **plan a route**, and review
+your **flight log** from your phone, with **no reflashing**. It's **always on**: the AP network
+**`NanoPFD`** is always up at `http://192.168.4.1` (no mode switching), running alongside the
+full-rate display and both Remote ID receivers.
 
-Tabs: **Attitude** (orientation, heading offset, *mount-at-any-angle* trim + Set level),
-**Display** (per-color palette pickers), **Nav** (map zoom), **Air** (local pressure),
-**Tune** (smoothing + instrument scales), **Log** (session peaks, zoomable plot, CSV download),
-**WiFi** (Remote ID BLE/WiFi toggles + AP password). The flight log records GPS speed, airspeed,
-altitude, and g at 10 Hz for the last 30 min and survives the mode switch.
+<table>
+<tr>
+<td align="center" width="33%"><a href="docs/CONFIG_PORTAL.md"><img src="docs/portal-log.svg" width="230" alt="Log tab — per-metric plots"/></a></td>
+<td align="center" width="34%"><a href="docs/CONFIG_PORTAL.md"><img src="docs/portal-plan.svg" width="230" alt="Flight Plan tab — map editor"/></a></td>
+<td align="center" width="33%"><a href="docs/CONFIG_PORTAL.md"><img src="docs/portal-settings.svg" width="230" alt="Settings dropdown"/></a></td>
+</tr>
+<tr>
+<td align="center"><sub><b>Log</b> — four per-metric plots, pinch-zoom, actual-time axis, CSV</sub></td>
+<td align="center"><sub><b>Flight Plan</b> — tap/drag a route on a zoomable map → yellow route on the ND</sub></td>
+<td align="center"><sub><b>⚙ Settings</b> — orientation, palette, map zoom, pressure, tuning, Wi-Fi</sub></td>
+</tr>
+</table>
 
-**→ Full walkthrough: [docs/CONFIG_PORTAL.md](docs/CONFIG_PORTAL.md)**
+- **Flight plan** — add named waypoints by tapping a zoomable map (or by lat/lon), drag them to
+  shape the route, and **Save**. It persists to flash and draws on the ND as a **solid yellow
+  line + marker + name** at each waypoint, heading-up over the moving map.
+- **Log** — GPS speed, airspeed, altitude, and g recorded at 10 Hz for the last 30 min; four
+  stacked per-metric plots with pinch-zoom and a real UTC time axis; CSV download. Survives power
+  cycles.
+- **Settings** (⚙ dropdown) — IMU orientation + *mount-at-any-angle* trim, per-color palette,
+  map zoom, local pressure, smoothing/scales, Remote ID toggles + AP password.
+
+<p align="center"><b>→ Full walkthrough with screenshots: <a href="docs/CONFIG_PORTAL.md">docs/CONFIG_PORTAL.md</a></b></p>
 
 ## Configuration
 

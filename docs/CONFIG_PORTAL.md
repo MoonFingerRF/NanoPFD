@@ -1,7 +1,21 @@
 # NanoPFD config portal & flight log
 
 NanoPFD has a built-in Wi-Fi **config portal** — a small web page served from the device — so
-you can change settings and review a flight log from your phone, with **no reflashing**.
+you can change settings, plan a route, and review a flight log from your phone, with **no
+reflashing**. Join the **`NanoPFD`** Wi-Fi network and open `http://192.168.4.1`.
+
+<table>
+<tr>
+<td align="center" width="33%"><img src="portal-log.svg" width="240" alt="Log tab — per-metric plots"/></td>
+<td align="center" width="34%"><img src="portal-plan.svg" width="240" alt="Flight Plan tab — map editor"/></td>
+<td align="center" width="33%"><img src="portal-settings.svg" width="240" alt="Settings dropdown"/></td>
+</tr>
+<tr>
+<td align="center"><sub><b>Log</b> — four per-metric plots</sub></td>
+<td align="center"><sub><b>Flight Plan</b> — map + waypoint list</sub></td>
+<td align="center"><sub><b>⚙ Settings</b> dropdown</sub></td>
+</tr>
+</table>
 
 ---
 
@@ -15,7 +29,7 @@ This is possible because the display canvas is packed to 4 bits/pixel, which fre
 internal memory for the AP and both radios to coexist (the older firmware had to pick *one* of
 {full-fps display, Wi-Fi AP, BLE} per boot — that limitation is gone).
 
-- **Frame rate:** ~13 fps on the 2.8B / BOARD_C. This is the panel's hardware ceiling (the RGB
+- **Frame rate:** ~16 fps on the 2.8B / BOARD_C, near the panel's hardware ceiling (the RGB
   display continuously streams its framebuffer out of PSRAM, which caps how fast the map can be
   redrawn) — it is **not** affected by having the AP and radios on.
 - **Wi-Fi RID** listens on the AP's channel (**6**, where Remote ID Wi-Fi beacons almost always
@@ -34,30 +48,49 @@ internal memory for the AP and both radios to coexist (the older firmware had to
 1. On your phone, join the Wi-Fi network **`NanoPFD`** (it's always broadcasting).
    - It is an **open** network out of the box (the 7-character default password is below the
      WPA2 minimum). Set an 8–63 character password on the **WiFi** tab to switch it to WPA2.
-3. A **captive portal** should pop the settings page automatically. If not, open
+2. A **captive portal** should pop the settings page automatically. If not, open
    **`http://192.168.4.1`** in a browser.
 
 Only one phone connects at a time.
 
 ---
 
-## Layout
+## Using the web configurator
 
-Two primary tabs — **Log** (the landing page) and **Flight Plan** — plus a **⚙ Settings**
-dropdown holding the occasional-use config panes (Attitude, Display, Nav, Air, Tune, WiFi).
+<p align="center"><img src="portal-settings.svg" width="320" alt="Settings dropdown open over the Attitude pane"/></p>
+
+The portal has two big primary tabs — **Log** (the landing page) and **Flight Plan** — the things
+you touch often — plus a **⚙ Settings** dropdown for the occasional-use panes.
+
+1. **Log** / **Flight Plan** are the large buttons across the top.
+2. Tap **⚙** to open the settings menu: **Attitude**, **Display**, **Nav**, **Air**, **Tune**,
+   **WiFi**. Pick one to open its pane.
+3. Most settings **apply live** as you change them (you'll see the panel update). A few — the AP
+   password and the Remote ID toggles — take effect after a reboot.
+4. **SAVE TO FLASH** (shown on settings panes) persists everything across power cycles.
+
+See [the settings tabs](#the-settings-tabs) for what each pane does.
 
 ## Flight plan
 
-Build a route of named waypoints that draws on the ND as a **solid yellow line** with a **yellow
-marker + name** at each waypoint. It's saved to flash and reloaded at boot.
+<p align="center"><img src="portal-plan.svg" width="320" alt="Flight Plan tab — map editor + waypoint list"/></p>
 
-- **Map** — a north-up, zoomable/pannable map with a coarse basemap (coastlines/borders + major
-  airports) and a lat/lon grid. **Tap** an empty spot to add a waypoint there; **drag** a marker
-  to move it; **pinch** or **scroll** to zoom; **drag** empty space to pan. The green dot is your
-  GPS position; **Center on GPS** recenters.
-- **Waypoint list** — edit each waypoint's **name** (≤8 chars) and exact **lat/lon**, or delete
-  it. **+ Waypoint** adds one at the map center; **Clear** removes all.
-- **SAVE FLIGHT PLAN** writes it to flash — it appears on the ND immediately and survives reboots.
+Build a route of named waypoints. It's saved to flash and drawn on the ND as a **solid yellow
+line** with a **yellow marker + name** at each waypoint.
+
+**On the map** (north-up, zoomable):
+- **Tap** an empty spot to drop a waypoint there.
+- **Drag** a marker to move it; **pinch** or **scroll-wheel** to zoom; **drag** empty space to pan.
+- The **green dot** is your live GPS position; **Center on GPS** recenters on it.
+- A coarse basemap (coastlines/borders + major airports) and a lat/lon grid give you context.
+
+**In the list**, edit each waypoint's **name** (≤ 8 chars) and exact **lat/lon**, or tap **✕** to
+delete it. **+ Waypoint** adds one at the map center; **Clear** removes all.
+
+Then tap **SAVE FLIGHT PLAN** — it writes to flash, appears on the ND immediately, and survives
+reboots. On the **ND**, the route overlays the moving map and rotates heading-up with everything else:
+
+<p align="center"><img src="portal-nd-route.svg" width="300" alt="Flight plan drawn on the ND"/></p>
 
 ## The settings tabs
 
@@ -133,6 +166,8 @@ Both toggles flip live and default on at every boot.
 ---
 
 ## Flight log
+
+<p align="center"><img src="portal-log.svg" width="320" alt="Log tab — session peaks + four per-metric plots"/></p>
 
 A circular buffer continuously records **GPS ground speed, indicated airspeed, MSL altitude, and
 load factor (g)** at **10 Hz**, keeping the **last 30 minutes** (in PSRAM). It is saved to flash
