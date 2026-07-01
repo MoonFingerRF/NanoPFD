@@ -1380,12 +1380,16 @@ static void drawFlightPlan(MyCanvas8 *canvas, int cx, int cy, int rad,
   m.cosLat = cosf(clat * p / 180.0f);
   float h = headingDeg * p / 180.0f; m.cosH = cosf(h); m.sinH = sinf(h);
   m.scale = (float)rad / rangeM;
-  // route line (clipped to the circle by mapLine)
+  // route line — SOLID + THICK. A single-pixel diagonal Bresenham line only touches at the
+  // corners and reads as "dashed" on the panel, so draw the segment 5x on a +-shaped offset
+  // (a 3-px-wide solid band). Each pass is clipped to the radar circle by mapLine (dashed=false).
+  static const int OFX[5] = { 0, 1, -1, 0, 0 }, OFY[5] = { 0, 0, 0, 1, -1 };
   int px = 0, py = 0;
   for (int i = 0; i < nwp; i++) {
     float la, lo; char nm[10]; fplanGet(i, &la, &lo, nm);
     int sx, sy; mapXY(m, la, lo, sx, sy);
-    if (i) mapLine(canvas, px, py, sx, sy, IYELLOW, cx, cy, r2, false);
+    if (i) for (int o = 0; o < 5; o++)
+      mapLine(canvas, px + OFX[o], py + OFY[o], sx + OFX[o], sy + OFY[o], IYELLOW, cx, cy, r2, false);
     px = sx; py = sy;
   }
   // markers + names on top

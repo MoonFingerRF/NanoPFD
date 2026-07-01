@@ -98,6 +98,7 @@ void webConfigLoadSettings() {
 // for instant preview on the panel (the display runs in config mode); SAVE persists all,
 // incl. the AP password (which is save-only and takes effect next config boot).
 static const char CFG_PAGE[] PROGMEM = R"HTML(<!doctype html><html><head>
+<meta charset="utf-8">
 <meta name=viewport content="width=device-width,initial-scale=1"><title>NanoPFD</title><style>
 :root{--bg:#000;--fg:#e8e8e8;--cy:#22d3ee;--gn:#37d067;--sky:#5aa9e6;--gy:#6b7280;--pn:#0c0f12;--ln:#1b2228}
 *{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--fg);
