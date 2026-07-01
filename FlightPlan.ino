@@ -81,5 +81,6 @@ int fplanSetFromText(const String &body) {
   gFplanN = n;                 // publish count LAST
   gFplanRev++;
   fplanPersist();
+  USBSerial.printf("[FPLAN] saved %d waypoints (body %d bytes)\n", n, (int)body.length());
   return n;
 }

@@ -370,16 +370,17 @@ var dl=document.createElement('button');dl.className='del';dl.textContent='✕';
 row.appendChild(nm);row.appendChild(la);row.appendChild(lo);row.appendChild(dl);e.appendChild(row)})}
 $('wpadd').onclick=function(){WP.push({n:'',lat:MC.lat,lon:MC.lon});wpList();drawMap()};
 $('wpctr').onclick=function(){if(MG.ok){MC.lat=MG.lat;MC.lon=MG.lon;drawMap()}};
-$('wpclr').onclick=function(){if(confirm('Clear all waypoints?')){WP=[];wpList();drawMap()}};
+$('wpclr').onclick=function(){WP=[];wpList();drawMap()};
 function planSave(){var body=WP.map(function(p){return(p.n||'').replace(/[\t\n]/g,' ').slice(0,8)+'\t'+p.lat.toFixed(6)+'\t'+p.lon.toFixed(6)}).join('\n');
-fetch('/plan',{method:'POST',headers:{'Content-Type':'text/plain'},body:body})
-.then(function(r){$('planst').textContent=r.ok?'✓ saved to flash':'error';setTimeout(function(){$('planst').textContent=''},2500)})}
+fetch('/plan',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'wp='+encodeURIComponent(body)})
+.then(function(r){return r.text()}).then(function(t){$('planst').textContent='✓ saved ('+t+')';setTimeout(function(){$('planst').textContent=''},2500)})
+.catch(function(){$('planst').textContent='error'})}
 (function(){var cv=$('pmap'),P={},drag=-1,panL=null,lastD=0,moved=false,downXY=null;
 function dist2(){var ids=Object.keys(P);return Math.hypot(P[ids[0]].x-P[ids[1]].x,P[ids[0]].y-P[ids[1]].y)||1}
 function hit(px,py,rc){for(var i=WP.length-1;i>=0;i--){var p=pxOf(WP[i].lat,WP[i].lon,rc);if(Math.abs(px-p.x)<11&&Math.abs(py-p.y)<11)return i}return -1}
 cv.addEventListener('pointerdown',function(e){cv.setPointerCapture(e.pointerId);P[e.pointerId]={x:e.clientX,y:e.clientY};
 var ids=Object.keys(P),rc=cv.getBoundingClientRect();
-if(ids.length==2){drag=-1;panL=null;lastD=dist2()}else{moved=false;downXY={x:e.clientX-rc.left,y:e.clientY-rc.top};drag=hit(downXY.x,downXY.y,rc);if(drag<0)panL={x:e.clientX,y:e.clientY}}});
+if(ids.length>=2){drag=-1;panL=null;moved=true;lastD=dist2()}else{moved=false;downXY={x:e.clientX-rc.left,y:e.clientY-rc.top};drag=hit(downXY.x,downXY.y,rc);if(drag<0)panL={x:e.clientX,y:e.clientY}}});
 cv.addEventListener('pointermove',function(e){if(!P[e.pointerId])return;P[e.pointerId]={x:e.clientX,y:e.clientY};
 var ids=Object.keys(P),rc=cv.getBoundingClientRect();
 if(ids.length>=2){var d=dist2(),mx=(P[ids[0]].x+P[ids[1]].x)/2-rc.left,my=(P[ids[0]].y+P[ids[1]].y)/2-rc.top;
@@ -601,10 +602,12 @@ static void cfgHandlePlanGet() {
   cfgServer.send(200, "application/json", j);
 }
 
-// POST /plan  body = "name\tlat\tlon\n" per line -> replace + persist to flash.
+// POST /plan  form-urlencoded: wp=<url-encoded "name\tlat\tlon\n" per line> -> replace + persist.
+// (Form args are parsed reliably by the WebServer; a raw text/plain body via arg("plain") is not.)
 static void cfgHandlePlanPost() {
-  int n = fplanSetFromText(cfgServer.arg("plain"));
-  cfgServer.send(200, "text/plain", "ok " + String(n));
+  String body = cfgServer.hasArg("wp") ? cfgServer.arg("wp") : cfgServer.arg("plain");
+  int n = fplanSetFromText(body);
+  cfgServer.send(200, "text/plain", String(n) + " waypoints");
 }
 
 // GET /basemap -> {p:[[la,lo,...],...], a:[{lat,lon,n}]}: a coarse LOD basemap for the editor

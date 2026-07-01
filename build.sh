@@ -32,7 +32,13 @@ if [ "$CORE_VER" != "3.3.6" ]; then
 fi
 
 # --- 1. Clean Arduino_GFX clone (the user's installed copies are too old) -----
+#   NOTE: macOS periodically purges /tmp, which can leave $GFX as a PARTIAL dir
+#   (present but missing the header). The old guard then tried to `git clone` into
+#   a non-empty dir -> "fatal: destination path already exists" -> `set -e` aborted
+#   the WHOLE build BEFORE compiling/flashing (silent: nothing new gets flashed).
+#   Fix: if the marker header is missing, nuke the dir first, then re-clone.
 if [ ! -f "$GFX/src/Arduino_GFX_Library.h" ]; then
+  rm -rf "$GFX"
   git clone --depth 1 https://github.com/moononournation/Arduino_GFX "$GFX"
 fi
 

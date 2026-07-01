@@ -1392,14 +1392,17 @@ static void drawFlightPlan(MyCanvas8 *canvas, int cx, int cy, int rad,
       mapLine(canvas, px + OFX[o], py + OFY[o], sx + OFX[o], sy + OFY[o], IYELLOW, cx, cy, r2, false);
     px = sx; py = sy;
   }
-  // markers + names on top
+  // markers + names on top: a filled yellow circle (radius mr) at each waypoint + its name
   canvas->setFont(); canvas->setTextSize(1); canvas->setTextColor(IYELLOW);
+  const int mr = 2 + sc;                        // ~4 px on the wide panel
   for (int i = 0; i < nwp; i++) {
     float la, lo; char nm[10]; fplanGet(i, &la, &lo, nm);
     int sx, sy; mapXY(m, la, lo, sx, sy);
     if (!mapInCirc(sx, sy, cx, cy, r2)) continue;
-    canvas->fillRect(sx - 2 * sc, sy - 2 * sc, 4 * sc, 4 * sc, IYELLOW);
-    if (nm[0]) { canvas->setCursor(sx + 4 * sc, sy + 3 * sc); canvas->print(nm); }
+    for (int dy = -mr; dy <= mr; dy++)          // filled disc via drawPixel (safe on the 4-bit canvas)
+      for (int dx = -mr; dx <= mr; dx++)
+        if (dx * dx + dy * dy <= mr * mr) canvas->drawPixel(sx + dx, sy + dy, IYELLOW);
+    if (nm[0]) { canvas->setCursor(sx + mr + 2, sy + 3 * sc); canvas->print(nm); }
   }
 }
 
