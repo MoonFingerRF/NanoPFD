@@ -1366,6 +1366,39 @@ static void drawChartLabels(MyCanvas8 *canvas, int cx, int cy, int rad,
 #endif // MAP_LABELS
 #endif // MAP_ENABLE
 
+// Draw the user flight plan (FlightPlan.ino) over the moving map: a solid YELLOW route line
+// between waypoints, a yellow marker at each, and each waypoint's name beside its marker —
+// heading-up, projected + clipped to the radar circle exactly like the chart.
+static void drawFlightPlan(MyCanvas8 *canvas, int cx, int cy, int rad,
+                           float clat, float clon, float headingDeg, int rangeM) {
+  int nwp = fplanCount();
+  if (nwp < 1) return;
+  canvas->setRotationMatrix();                 // identity: the projection does the rotation
+  const long r2 = (long)rad * rad;
+  const int  sc = lyt::txtScale(canvas->width());
+  MapProj m; m.clat = clat; m.clon = clon; m.cx = cx; m.cy = cy;
+  m.cosLat = cosf(clat * p / 180.0f);
+  float h = headingDeg * p / 180.0f; m.cosH = cosf(h); m.sinH = sinf(h);
+  m.scale = (float)rad / rangeM;
+  // route line (clipped to the circle by mapLine)
+  int px = 0, py = 0;
+  for (int i = 0; i < nwp; i++) {
+    float la, lo; char nm[10]; fplanGet(i, &la, &lo, nm);
+    int sx, sy; mapXY(m, la, lo, sx, sy);
+    if (i) mapLine(canvas, px, py, sx, sy, IYELLOW, cx, cy, r2, false);
+    px = sx; py = sy;
+  }
+  // markers + names on top
+  canvas->setFont(); canvas->setTextSize(1); canvas->setTextColor(IYELLOW);
+  for (int i = 0; i < nwp; i++) {
+    float la, lo; char nm[10]; fplanGet(i, &la, &lo, nm);
+    int sx, sy; mapXY(m, la, lo, sx, sy);
+    if (!mapInCirc(sx, sy, cx, cy, r2)) continue;
+    canvas->fillRect(sx - 2 * sc, sy - 2 * sc, 4 * sc, 4 * sc, IYELLOW);
+    if (nm[0]) { canvas->setCursor(sx + 4 * sc, sy + 3 * sc); canvas->print(nm); }
+  }
+}
+
 // Render the Navigation Display (rotating compass card / HSI) into `canvas`.
 // Heading is the tilt-compensated value computed in updateHeading() (IMU.ino),
 // so the card stays accurate when the unit is pitched or rolled.
@@ -1474,6 +1507,11 @@ void drawNavigationDisplay(MyCanvas8 *canvas, state *s) {
                        width / 2 + 0.04 * height, triApex + 0.06 * height, IWHITE);
   canvas->drawLine(width / 2, height, width / 2, lyt::scaled(23, width) + ringTop, IMAGENTA);
   canvas->drawLine(width / 2, lyt::scaled(23, width) + ringTop, width / 2, ringTop, IGREY);
+
+  // ---- user flight plan (yellow route + waypoint markers/names), over the map ----
+#if MAP_ENABLE
+  drawFlightPlan(canvas, width / 2, cyc, rad, clat, clon, angle, chartRangeM);
+#endif
 
   // ---- home + ground-track overlays (ground-track drawn LAST = on top) ------
   float ndcx = width / 2.0f, ndcy = cyc, ndr = rad;   // match the (possibly shrunk) compass

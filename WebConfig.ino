@@ -135,13 +135,30 @@ input[type=color]{width:48px;height:30px;padding:2px;cursor:pointer}
 font-weight:700;letter-spacing:2px;cursor:pointer;margin-top:2px}.save:active{filter:brightness(.85)}
 .st{text-align:center;color:var(--gn);min-height:20px;margin-top:10px;letter-spacing:1px}
 .u{color:var(--gy);font-size:11px;margin-left:6px}
+.tb.pri{flex:1 1 0;font-size:13px;padding:12px 4px}
+.dd{position:relative;flex:0 0 auto}
+.ddm{position:absolute;right:0;top:112%;background:#11161b;border:1px solid var(--ln);border-radius:7px;padding:4px;z-index:9;display:none;min-width:132px}
+.ddm.show{display:block}
+.ddi{display:block;width:100%;text-align:left;background:none;border:0;color:var(--fg);padding:9px 10px;font:inherit;font-size:12px;cursor:pointer;border-radius:5px}
+.ddi:active{background:#1b2228}
+.plt{width:100%;height:96px;background:#06090c;border:1px solid var(--ln);border-radius:7px;display:block;margin-bottom:7px;touch-action:none}
+.plabel{font-size:10px;color:var(--gy);letter-spacing:1px;text-transform:uppercase;margin:2px 0}
+.wp{display:flex;gap:6px;align-items:center;padding:5px 0;border-bottom:1px solid var(--ln)}
+.wp input{padding:6px}.wp .nm{flex:1 1 60px;min-width:0}.wp .ll{width:82px;text-align:right}
+.wp .del{background:#2a1015;color:#fd6a6a;border:1px solid #52222a;border-radius:6px;padding:6px 9px;cursor:pointer;font:inherit}
+canvas#pmap{width:100%;height:280px;background:#06090c;border:1px solid var(--ln);border-radius:7px;display:block;touch-action:none}
+.hint{color:var(--gy);font-size:11px;margin:6px 0}
 </style></head><body><div class=w>
 <h1>NANO&middot;PFD</h1><div class=s>configuration</div>
 <div class=tabs>
-<button class="tb on" data-t=att>Attitude</button><button class=tb data-t=disp>Display</button>
-<button class=tb data-t=nav>Nav</button><button class=tb data-t=air>Air</button>
-<button class=tb data-t=tune>Tune</button><button class=tb data-t=log>Log</button><button class=tb data-t=net>WiFi</button></div>
-<div class=pane id=att>
+<button class="tb pri on" data-t=log>&#9635; Log</button>
+<button class="tb pri" data-t=plan>&#9873; Flight Plan</button>
+<div class=dd><button class=tb id=setBtn>&#9881;</button>
+<div class=ddm id=setMenu>
+<button class=ddi data-t=att>Attitude</button><button class=ddi data-t=disp>Display</button>
+<button class=ddi data-t=nav>Nav</button><button class=ddi data-t=air>Air</button>
+<button class=ddi data-t=tune>Tune</button><button class=ddi data-t=net>WiFi</button></div></div></div>
+<div class="pane hide" id=att>
 <div class=c><h2>IMU orientation</h2>
 <div class=r><label>Upside down</label><label class=tg><input type=checkbox id=v><span class=sl></span></label></div>
 <div class=r><label>Reverse roll</label><label class=tg><input type=checkbox id=r><span class=sl></span></label></div>
@@ -173,7 +190,7 @@ font-weight:700;letter-spacing:2px;cursor:pointer;margin-top:2px}.save:active{fi
 <div class=c><h2>Instrument scales</h2>
 <div class=r><label>VSI full-scale</label><span><input type=number id=vsifs step=1 min=1><span class=u>ft/s</span></span></div>
 <div class=r><label>G-meter full-scale</label><span><input type=number id=gmfs step=0.5 min=1><span class=u>g</span></span></div></div></div>
-<div class="pane hide" id=log>
+<div class=pane id=log>
 <div class=c><h2>Session peaks</h2>
 <div class=grid>
 <div class=mc><div class=ml>Top GPS</div><div class=mv id=mxgs>&ndash;</div></div>
@@ -181,15 +198,26 @@ font-weight:700;letter-spacing:2px;cursor:pointer;margin-top:2px}.save:active{fi
 <div class=mc><div class=ml>Max altitude</div><div class=mv id=mxalt>&ndash;</div></div>
 <div class=mc><div class=ml>Max g</div><div class=mv id=mxg>&ndash;</div></div></div></div>
 <div class=c><h2>History <span class=u id=logdur></span></h2>
-<div class=mt>
-<button class="mb on" data-m=0>GPS kt</button><button class=mb data-m=1>ASI mph</button>
-<button class=mb data-m=2>Alt ft</button><button class=mb data-m=3>G</button></div>
-<canvas id=plot></canvas>
+<div id=plots>
+<div class=plabel>GPS speed &middot; kt</div><canvas class=plt data-m=0></canvas>
+<div class=plabel>Airspeed &middot; mph</div><canvas class=plt data-m=1></canvas>
+<div class=plabel>Altitude &middot; ft</div><canvas class=plt data-m=2></canvas>
+<div class=plabel>Load factor &middot; g</div><canvas class=plt data-m=3></canvas></div>
 <div class=pc><button class=pb id=zout>&minus;</button><button class=pb id=zin>+</button>
-<button class=pb id=zall>fit</button><span class=u id=plbl></span></div></div>
+<button class=pb id=zall>fit</button><span class=u id=plbl></span></div>
+<div class=hint>Drag to pan &middot; pinch or &minus;/+ to zoom the time axis</div></div>
 <div class=c><h2>Data</h2>
 <a class=save id=dl href="/flog.csv">DOWNLOAD CSV</a>
 <button class="save sec" onclick=resetLog()>RESET LOG</button></div></div>
+<div class="pane hide" id=plan>
+<div class=c><h2>Flight plan <span class=u id=wpn></span></h2>
+<canvas id=pmap></canvas>
+<div class=hint>Tap the map to add a waypoint &middot; drag a marker to move it &middot; pinch/scroll to zoom</div>
+<div id=wplist></div>
+<div class=pc style="margin-top:8px"><button class=pb id=wpadd>+ Waypoint</button>
+<button class=pb id=wpctr>Center on GPS</button><button class=pb id=wpclr>Clear</button></div></div>
+<button class=save onclick=planSave()>SAVE FLIGHT PLAN</button>
+<div class=st id=planst></div></div>
 <div class="pane hide" id=net>
 <div class=c><h2>Remote ID receiver</h2>
 <div class=r><label>Bluetooth LE</label><label class=tg><input type=checkbox id=rb><span class=sl></span></label></div>
@@ -201,16 +229,22 @@ font-weight:700;letter-spacing:2px;cursor:pointer;margin-top:2px}.save:active{fi
 <div class=c><h2>Reboot</h2>
 <div class=u style="margin:0 0 10px">This unit runs <b>one always-on mode</b>: the glass display, the WiFi AP, and both Remote&nbsp;ID receivers, all the time. Reboot to re-read flash or recover.</div>
 <button class=save onclick=exitCfg()>REBOOT</button></div></div>
-<button class=save onclick=save()>SAVE TO FLASH</button><div class=st id=st></div>
+<button class=save id=savebtn onclick=save() style=display:none>SAVE TO FLASH</button><div class=st id=st></div>
 </div><script>
 var $=function(i){return document.getElementById(i)};
 var PAL=['Background','Blue','Red / warning','Green','Cyan','Magenta','Yellow','White / text','Sky','Ground','Grey','Roads','Traffic','Water','Roads (med)'];
 function ap(q){return fetch('/api?'+q,{method:'POST'})}
 function flash(t){$('st').textContent=t;setTimeout(function(){$('st').textContent=''},2000)}
-var tb=document.querySelectorAll('.tb');for(var k=0;k<tb.length;k++){tb[k].onclick=function(){
-for(var j=0;j<tb.length;j++)tb[j].classList.remove('on');
-var ps=document.querySelectorAll('.pane');for(var j=0;j<ps.length;j++)ps[j].classList.add('hide');
-this.classList.add('on');$(this.dataset.t).classList.remove('hide');if(this.dataset.t=='log')loadLog()}}
+function showPane(t){var ps=document.querySelectorAll('.pane');for(var j=0;j<ps.length;j++)ps[j].classList.add('hide');
+$(t).classList.remove('hide');
+var pr=document.querySelectorAll('.tb.pri');for(var j=0;j<pr.length;j++)pr[j].classList.toggle('on',pr[j].dataset.t==t);
+var cfg=['att','disp','nav','air','tune','net'].indexOf(t)>=0;
+$('setBtn').classList.toggle('on',cfg);$('savebtn').style.display=cfg?'block':'none';
+$('setMenu').classList.remove('show');
+if(t=='log')loadLog();if(t=='plan')planShow()}
+var alltb=document.querySelectorAll('[data-t]');for(var k=0;k<alltb.length;k++)alltb[k].onclick=function(){showPane(this.dataset.t)};
+$('setBtn').onclick=function(e){e.stopPropagation();$('setMenu').classList.toggle('show')};
+document.addEventListener('click',function(){$('setMenu').classList.remove('show')});
 function bind(){
 ['v','r','p','sw'].forEach(function(id,n){var key=['oriV','oriR','oriP','oriS'][n];
 $(id).onchange=function(){ap(key+'='+(this.checked?1:0))}});
@@ -254,36 +288,111 @@ $('mxgs').textContent=d.maxgs.toFixed(0)+' kt';$('mxasi').textContent=d.maxasi.t
 $('mxalt').textContent=d.maxalt+' ft';$('mxg').textContent=d.maxg.toFixed(2)+' g';
 $('logdur').textContent='last '+fmtT(d.secs)+(useUTC()?' · ended '+fmtClock(d.tend)+'Z':' · no GPS time');
 v0=0;v1=d.n;drawPlot()})}
-function curArr(){return[LOG.gs,LOG.asi,LOG.alt,LOG.g][met]}
-function drawPlot(){if(!LOG||!LOG.n)return;var cv=$('plot'),w=cv.clientWidth,h=190;cv.width=w;cv.height=h;
-var x=cv.getContext('2d');x.clearRect(0,0,w,h);var a=curArr();
-if(v1<=v0){v0=0;v1=LOG.n}var i0=Math.max(0,Math.floor(v0)),i1=Math.min(LOG.n,Math.ceil(v1));if(i1<=i0)return;
+var COL=['#22d3ee','#37d067','#5aa9e6','#fd6800'];
+function clampV(){if(v1<=v0)v1=v0+1;if(v0<0){v1-=v0;v0=0}if(v1>LOG.n){v0-=(v1-LOG.n);v1=LOG.n;if(v0<0)v0=0}}
+function drawOne(cv,a,col,dc){var w=cv.clientWidth,h=cv.clientHeight;cv.width=w;cv.height=h;
+var x=cv.getContext('2d');x.clearRect(0,0,w,h);
+var i0=Math.max(0,Math.floor(v0)),i1=Math.min(LOG.n,Math.ceil(v1));if(i1<=i0)return;
 var mn=1e9,mx=-1e9,i;for(i=i0;i<i1;i++){if(a[i]<mn)mn=a[i];if(a[i]>mx)mx=a[i]}
-if(mx<=mn)mx=mn+1;var pd=(mx-mn)*0.1;mn-=pd;mx+=pd;
-x.strokeStyle='#1b2228';for(var gy=0;gy<=4;gy++){var yy=h-1-gy/4*(h-2);x.beginPath();x.moveTo(0,yy);x.lineTo(w,yy);x.stroke()}
-x.strokeStyle=['#22d3ee','#37d067','#5aa9e6','#fd6800'][met];x.lineWidth=1.5;x.beginPath();
-var n=i1-i0;for(i=0;i<n;i++){var v=a[i0+i],px=n>1?i/(n-1)*w:0,py=h-1-(v-mn)/(mx-mn)*(h-2);
-i?x.lineTo(px,py):x.moveTo(px,py)}x.stroke();
-x.fillStyle='#6b7280';x.font='10px monospace';var dc=met==3?2:0;
-x.fillText(mx.toFixed(dc),3,11);x.fillText(mn.toFixed(dc),3,h-4);
-// x-axis = actual time: center + right ticks in-canvas (avoid the bottom-left value label)
-var U=useUTC();function tlab(k){return U?fmtClock(epAt(k)):fmtT(k/LOG.n*LOG.secs)}
-x.textAlign='center';x.fillText(tlab((i0+i1)/2),w/2,h-4);
-x.textAlign='right';x.fillText(tlab(i1-1),w-3,h-4);x.textAlign='left';
+if(mx<=mn)mx=mn+1;var pd=(mx-mn)*0.12;mn-=pd;mx+=pd;
+x.strokeStyle='#141a1f';for(var gy=0;gy<=3;gy++){var yy=h-1-gy/3*(h-2);x.beginPath();x.moveTo(0,yy);x.lineTo(w,yy);x.stroke()}
+x.strokeStyle=col;x.lineWidth=1.5;x.beginPath();var n=i1-i0;
+for(i=0;i<n;i++){var v=a[i0+i],px=n>1?i/(n-1)*w:0,py=h-1-(v-mn)/(mx-mn)*(h-2);i?x.lineTo(px,py):x.moveTo(px,py)}x.stroke();
+x.fillStyle='#6b7280';x.font='10px monospace';x.textAlign='left';
+x.fillText(mx.toFixed(dc),3,11);x.fillText(mn.toFixed(dc),3,h-4)}
+function drawPlot(){if(!LOG||!LOG.n)return;clampV();
+var a=[LOG.gs,LOG.asi,LOG.alt,LOG.g],dcs=[0,0,0,2],pl=document.querySelectorAll('.plt');
+for(var m=0;m<pl.length;m++)drawOne(pl[m],a[m],COL[m],dcs[m]);
+var i0=Math.max(0,Math.floor(v0)),i1=Math.min(LOG.n,Math.ceil(v1)),U=useUTC();
+function tlab(k){return U?fmtClock(epAt(k)):fmtT(k/LOG.n*LOG.secs)}
 $('plbl').textContent=(U?tlab(i0)+' – '+tlab(i1-1)+' UTC':fmtT(i0/LOG.n*LOG.secs)+'-'+fmtT(i1/LOG.n*LOG.secs))}
-var mb=document.querySelectorAll('.mb');for(var mi=0;mi<mb.length;mi++){mb[mi].onclick=function(){
-for(var j=0;j<mb.length;j++)mb[j].classList.remove('on');this.classList.add('on');met=+this.dataset.m;drawPlot()}}
 $('zin').onclick=function(){var c=(v0+v1)/2,r=(v1-v0)/4;v0=c-r;v1=c+r;drawPlot()};
-$('zout').onclick=function(){var c=(v0+v1)/2,r=v1-v0;v0=c-r;v1=c+r;if(v0<0)v0=0;if(v1>LOG.n)v1=LOG.n;drawPlot()};
+$('zout').onclick=function(){var c=(v0+v1)/2,r=v1-v0;v0=c-r;v1=c+r;drawPlot()};
 $('zall').onclick=function(){v0=0;v1=LOG.n;drawPlot()};
-(function(){var cv=$('plot'),dn=false,sx=0,s0=0,s1=0;
-cv.addEventListener('pointerdown',function(e){dn=true;sx=e.clientX;s0=v0;s1=v1;cv.setPointerCapture(e.pointerId)});
-cv.addEventListener('pointermove',function(e){if(!dn||!LOG)return;var d=(e.clientX-sx)/cv.clientWidth*(s1-s0);
-v0=s0-d;v1=s1-d;if(v0<0){v1-=v0;v0=0}if(v1>LOG.n){v0-=v1-LOG.n;v1=LOG.n;if(v0<0)v0=0}drawPlot()});
-cv.addEventListener('pointerup',function(){dn=false})})();
+(function(){var P={},panX=0,lastD=0,panning=false;
+function ax(cv){
+cv.addEventListener('pointerdown',function(e){P[e.pointerId]=e.clientX;cv.setPointerCapture(e.pointerId);
+var ids=Object.keys(P);if(ids.length==1){panning=true;panX=e.clientX}else if(ids.length==2){panning=false;lastD=Math.abs(P[ids[0]]-P[ids[1]])||1}});
+cv.addEventListener('pointermove',function(e){if(P[e.pointerId]===undefined||!LOG)return;P[e.pointerId]=e.clientX;
+var ids=Object.keys(P),rc=cv.getBoundingClientRect();
+if(ids.length>=2){var d=Math.abs(P[ids[0]]-P[ids[1]])||1,mid=(P[ids[0]]+P[ids[1]])/2,span=v1-v0;
+var idxc=v0+(mid-rc.left)/rc.width*span,ns=span*lastD/d,frac=(mid-rc.left)/rc.width;
+v0=idxc-frac*ns;v1=v0+ns;lastD=d;drawPlot()}
+else if(panning){var dd=(e.clientX-panX)/rc.width*(v1-v0);v0-=dd;v1-=dd;panX=e.clientX;drawPlot()}});
+function up(e){delete P[e.pointerId];var ids=Object.keys(P);panning=ids.length==1;if(panning)panX=P[ids[0]]}
+cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',up);
+cv.addEventListener('wheel',function(e){e.preventDefault();if(!LOG)return;var rc=cv.getBoundingClientRect(),span=v1-v0;
+var idxc=v0+(e.clientX-rc.left)/rc.width*span,f=e.deltaY<0?.85:1.18,ns=span*f,frac=(e.clientX-rc.left)/rc.width;
+v0=idxc-frac*ns;v1=v0+ns;drawPlot()},{passive:false})}
+var pl=document.querySelectorAll('.plt');for(var i=0;i<pl.length;i++)ax(pl[i])})();
 function resetLog(){fetch('/flog/reset',{method:'POST'}).then(loadLog)}
 function exitCfg(){$('st').textContent='Rebooting…';ap('exit=1')}
-load();
+// ---- flight plan editor ----
+var WP=[],MC={lat:39.1,lon:-84.5,scl:600},MG={lat:0,lon:0,ok:0},ploaded=false,BASE=null;
+function coslat(){return Math.cos(MC.lat*Math.PI/180)}
+function pxOf(la,lo,rc){return{x:rc.width/2+(lo-MC.lon)*coslat()*MC.scl,y:rc.height/2-(la-MC.lat)*MC.scl}}
+function llOf(px,py,rc){return{lat:MC.lat-(py-rc.height/2)/MC.scl,lon:MC.lon+(px-rc.width/2)/(coslat()*MC.scl)}}
+function planShow(){if(!ploaded)planLoad();else drawMap()}
+function planLoad(){fetch('/plan').then(function(r){return r.ok?r.json():{}}).then(function(d){ploaded=true;
+WP=(d.wp||[]).map(function(w){return{n:w.n||'',lat:+w.lat,lon:+w.lon}});
+if(d.gps){MG={lat:+d.gps.lat,lon:+d.gps.lon,ok:d.gps.ok?1:0}}
+if(d.def){MC.lat=+d.def.lat;MC.lon=+d.def.lon}
+if(WP.length){var la=0,lo=0;WP.forEach(function(w){la+=w.lat;lo+=w.lon});MC.lat=la/WP.length;MC.lon=lo/WP.length}
+else if(MG.ok){MC.lat=MG.lat;MC.lon=MG.lon}
+wpList();if(!BASE)fetch('/basemap').then(function(r){return r.ok?r.json():null}).then(function(b){BASE=b||{p:[]};drawMap()}).catch(function(){BASE={p:[]};drawMap()});else drawMap()
+}).catch(function(){ploaded=true;wpList();drawMap()})}
+function drawBase(x,rc){if(!BASE||!BASE.p)return;x.strokeStyle='#243039';x.lineWidth=1;
+BASE.p.forEach(function(ln){x.beginPath();for(var i=0;i<ln.length;i+=2){var p=pxOf(ln[i],ln[i+1],rc);i?x.lineTo(p.x,p.y):x.moveTo(p.x,p.y)}x.stroke()});
+if(BASE.a){x.fillStyle='#39505f';x.font='9px monospace';BASE.a.forEach(function(ap){var p=pxOf(ap.lat,ap.lon,rc);
+if(p.x<-20||p.x>rc.width+20||p.y<-20||p.y>rc.height+20)return;x.beginPath();x.arc(p.x,p.y,2,0,7);x.fill();if(MC.scl>500&&ap.n)x.fillText(ap.n,p.x+4,p.y+3)})}}
+function drawMap(){var cv=$('pmap');if(!cv)return;var w=cv.clientWidth,h=cv.clientHeight;cv.width=w;cv.height=h;
+var x=cv.getContext('2d'),rc={width:w,height:h};x.clearRect(0,0,w,h);
+var step=MC.scl>2500?0.1:MC.scl>800?0.25:MC.scl>300?1:5;
+x.strokeStyle='#141a1f';x.lineWidth=1;x.fillStyle='#3a444d';x.font='9px monospace';x.textAlign='left';
+var tl=llOf(0,0,rc),br=llOf(w,h,rc);
+for(var lo=Math.ceil(tl.lon/step)*step;lo<br.lon;lo+=step){var p=pxOf(MC.lat,lo,rc);x.beginPath();x.moveTo(p.x,0);x.lineTo(p.x,h);x.stroke();x.fillText(lo.toFixed(2),p.x+2,h-3)}
+for(var la=Math.floor(tl.lat/step)*step;la>br.lat;la-=step){var p=pxOf(la,MC.lon,rc);x.beginPath();x.moveTo(0,p.y);x.lineTo(w,p.y);x.stroke();x.fillText(la.toFixed(2),2,p.y-2)}
+drawBase(x,rc);
+if(MG.ok){var g=pxOf(MG.lat,MG.lon,rc);x.fillStyle='#37d067';x.beginPath();x.arc(g.x,g.y,4,0,7);x.fill();x.fillText('GPS',g.x+6,g.y+3)}
+x.strokeStyle='#fd6800';x.lineWidth=2;x.beginPath();
+WP.forEach(function(wp,i){var p=pxOf(wp.lat,wp.lon,rc);i?x.lineTo(p.x,p.y):x.moveTo(p.x,p.y)});x.stroke();
+WP.forEach(function(wp,i){var p=pxOf(wp.lat,wp.lon,rc);x.fillStyle='#fd6800';x.fillRect(p.x-4,p.y-4,8,8);
+x.fillStyle='#ffd9a6';x.font='11px monospace';x.fillText(wp.n||('WP'+(i+1)),p.x+7,p.y+4)})}
+function wpUpdRow(i){var rows=$('wplist').children;if(rows[i]){rows[i].children[1].value=WP[i].lat.toFixed(4);rows[i].children[2].value=WP[i].lon.toFixed(4)}}
+function wpList(){var e=$('wplist');e.innerHTML='';$('wpn').textContent=WP.length+' waypoint'+(WP.length==1?'':'s');
+WP.forEach(function(wp,i){var row=document.createElement('div');row.className='wp';
+var nm=document.createElement('input');nm.className='nm';nm.value=wp.n;nm.placeholder='WP'+(i+1);nm.maxLength=8;
+nm.oninput=function(){wp.n=this.value;drawMap()};
+var la=document.createElement('input');la.className='ll';la.type='number';la.step=0.0001;la.value=wp.lat.toFixed(4);la.onchange=function(){wp.lat=+this.value;drawMap()};
+var lo=document.createElement('input');lo.className='ll';lo.type='number';lo.step=0.0001;lo.value=wp.lon.toFixed(4);lo.onchange=function(){wp.lon=+this.value;drawMap()};
+var dl=document.createElement('button');dl.className='del';dl.textContent='✕';dl.onclick=function(){WP.splice(i,1);wpList();drawMap()};
+row.appendChild(nm);row.appendChild(la);row.appendChild(lo);row.appendChild(dl);e.appendChild(row)})}
+$('wpadd').onclick=function(){WP.push({n:'',lat:MC.lat,lon:MC.lon});wpList();drawMap()};
+$('wpctr').onclick=function(){if(MG.ok){MC.lat=MG.lat;MC.lon=MG.lon;drawMap()}};
+$('wpclr').onclick=function(){if(confirm('Clear all waypoints?')){WP=[];wpList();drawMap()}};
+function planSave(){var body=WP.map(function(p){return(p.n||'').replace(/[\t\n]/g,' ').slice(0,8)+'\t'+p.lat.toFixed(6)+'\t'+p.lon.toFixed(6)}).join('\n');
+fetch('/plan',{method:'POST',headers:{'Content-Type':'text/plain'},body:body})
+.then(function(r){$('planst').textContent=r.ok?'✓ saved to flash':'error';setTimeout(function(){$('planst').textContent=''},2500)})}
+(function(){var cv=$('pmap'),P={},drag=-1,panL=null,lastD=0,moved=false,downXY=null;
+function dist2(){var ids=Object.keys(P);return Math.hypot(P[ids[0]].x-P[ids[1]].x,P[ids[0]].y-P[ids[1]].y)||1}
+function hit(px,py,rc){for(var i=WP.length-1;i>=0;i--){var p=pxOf(WP[i].lat,WP[i].lon,rc);if(Math.abs(px-p.x)<11&&Math.abs(py-p.y)<11)return i}return -1}
+cv.addEventListener('pointerdown',function(e){cv.setPointerCapture(e.pointerId);P[e.pointerId]={x:e.clientX,y:e.clientY};
+var ids=Object.keys(P),rc=cv.getBoundingClientRect();
+if(ids.length==2){drag=-1;panL=null;lastD=dist2()}else{moved=false;downXY={x:e.clientX-rc.left,y:e.clientY-rc.top};drag=hit(downXY.x,downXY.y,rc);if(drag<0)panL={x:e.clientX,y:e.clientY}}});
+cv.addEventListener('pointermove',function(e){if(!P[e.pointerId])return;P[e.pointerId]={x:e.clientX,y:e.clientY};
+var ids=Object.keys(P),rc=cv.getBoundingClientRect();
+if(ids.length>=2){var d=dist2(),mx=(P[ids[0]].x+P[ids[1]].x)/2-rc.left,my=(P[ids[0]].y+P[ids[1]].y)/2-rc.top;
+var b=llOf(mx,my,rc);MC.scl*=d/lastD;lastD=d;var af=llOf(mx,my,rc);MC.lat+=b.lat-af.lat;MC.lon+=b.lon-af.lon;drawMap();return}
+moved=true;var lx=e.clientX-rc.left,ly=e.clientY-rc.top;
+if(drag>=0){var ll=llOf(lx,ly,rc);WP[drag].lat=ll.lat;WP[drag].lon=ll.lon;drawMap();wpUpdRow(drag)}
+else if(panL){MC.lon-=(e.clientX-panL.x)/(coslat()*MC.scl);MC.lat+=(e.clientY-panL.y)/MC.scl;panL={x:e.clientX,y:e.clientY};drawMap()}});
+function up(e){var wd=drag,mv=moved;delete P[e.pointerId];var ids=Object.keys(P);
+if(ids.length==0){if(!mv&&wd<0&&downXY){var rc=cv.getBoundingClientRect(),ll=llOf(downXY.x,downXY.y,rc);WP.push({n:'',lat:ll.lat,lon:ll.lon});wpList();drawMap()}
+else if(mv&&wd>=0)wpList();drag=-1;panL=null;downXY=null}else if(ids.length==1)lastD=0}
+cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',up);
+cv.addEventListener('wheel',function(e){e.preventDefault();var rc=cv.getBoundingClientRect(),lx=e.clientX-rc.left,ly=e.clientY-rc.top;
+var b=llOf(lx,ly,rc);MC.scl*=e.deltaY<0?1.15:0.87;var af=llOf(lx,ly,rc);MC.lat+=b.lat-af.lat;MC.lon+=b.lon-af.lon;drawMap()},{passive:false})})();
+load();showPane('log');
 </script></body></html>)HTML";
 
 static void cfgHandleRoot() { cfgServer.send_P(200, "text/html", CFG_PAGE); }
@@ -467,6 +576,67 @@ static void cfgHandleFlogCsv() {
 
 static void cfgHandleFlogReset() { flightLogReset(); cfgServer.send(200, "text/plain", "ok"); }
 
+// ---- Flight plan -----------------------------------------------------------
+extern int      fplanCount();
+extern bool     fplanGet(int, float *, float *, char *);
+extern int      fplanSetFromText(const String &);
+static void jsonEsc(String &j, const char *s) { for (; s && *s; s++) { if (*s == '"' || *s == '\\') j += '\\'; if ((uint8_t)*s >= 32) j += *s; } }
+
+// GET /plan -> {def, gps, wp:[{n,lat,lon}]}: the saved waypoints + map-center hints for the editor.
+static void cfgHandlePlanGet() {
+  state s; getState(&s);
+  float glat = s.has_pos ? s.last_lat : (float)MAP_DEFAULT_LAT;
+  float glon = s.has_pos ? s.last_lon : (float)MAP_DEFAULT_LON;
+  String j = "{\"def\":{\"lat\":" + String((float)MAP_DEFAULT_LAT, 5) + ",\"lon\":" + String((float)MAP_DEFAULT_LON, 5) + "},";
+  j += "\"gps\":{\"ok\":" + String(s.GPS ? 1 : 0) + ",\"lat\":" + String(glat, 6) + ",\"lon\":" + String(glon, 6) + "},\"wp\":[";
+  int n = fplanCount();
+  for (int i = 0; i < n; i++) {
+    float la, lo; char nm[10]; fplanGet(i, &la, &lo, nm);
+    if (i) j += ",";
+    j += "{\"n\":\""; jsonEsc(j, nm);
+    j += "\",\"lat\":" + String(la, 6) + ",\"lon\":" + String(lo, 6) + "}";
+  }
+  j += "]}";
+  cfgServer.send(200, "application/json", j);
+}
+
+// POST /plan  body = "name\tlat\tlon\n" per line -> replace + persist to flash.
+static void cfgHandlePlanPost() {
+  int n = fplanSetFromText(cfgServer.arg("plain"));
+  cfgServer.send(200, "text/plain", "ok " + String(n));
+}
+
+// GET /basemap -> {p:[[la,lo,...],...], a:[{lat,lon,n}]}: a coarse LOD basemap for the editor
+// (L1 polylines for coast/borders orientation + L2 major airports as named reference points).
+static void cfgHandleBasemap() {
+  cfgServer.setContentLength(CONTENT_LENGTH_UNKNOWN);
+  cfgServer.send(200, "application/json", "");
+  String chunk; chunk.reserve(1900);
+  chunk = "{\"p\":[";
+  const ChartPoly *POLYS = LOD_POLYS[1]; int np = LOD_NPOLYS[1];
+  for (int i = 0; i < np; i++) {
+    const ChartPoly &P = POLYS[i];
+    if (i) chunk += ",";
+    chunk += "[";
+    for (int k = 0; k < P.n; k++) { if (k) chunk += ","; chunk += String(P.pts[2 * k], 4); chunk += ","; chunk += String(P.pts[2 * k + 1], 4); }
+    chunk += "]";
+    if (chunk.length() > 1500) { cfgServer.sendContent(chunk); chunk = ""; }
+  }
+  chunk += "],\"a\":[";
+  const ChartPt *PTS = LOD_PTS[2]; int na = LOD_NPTS[2]; bool first = true;
+  for (int i = 0; i < na; i++) {
+    const ChartPt &pt = PTS[i];
+    if (pt.type == PT_CITY) continue;
+    if (!first) chunk += ","; first = false;
+    chunk += "{\"lat\":" + String(pt.lat, 4) + ",\"lon\":" + String(pt.lon, 4) + ",\"n\":\"";
+    jsonEsc(chunk, pt.id); chunk += "\"}";
+    if (chunk.length() > 1500) { cfgServer.sendContent(chunk); chunk = ""; }
+  }
+  chunk += "]}";
+  cfgServer.sendContent(chunk);
+  cfgServer.sendContent("");
+}
+
 // esp_netif's default AP gateway (we bring the AP up via raw esp_wifi, below).
 #define AP_IP_STR "192.168.4.1"
 
@@ -584,6 +754,9 @@ void webConfigBegin() {
   cfgServer.on("/flog", HTTP_GET, cfgHandleFlog);
   cfgServer.on("/flog.csv", HTTP_GET, cfgHandleFlogCsv);
   cfgServer.on("/flog/reset", HTTP_POST, cfgHandleFlogReset);
+  cfgServer.on("/plan", HTTP_GET,  cfgHandlePlanGet);
+  cfgServer.on("/plan", HTTP_POST, cfgHandlePlanPost);
+  cfgServer.on("/basemap", HTTP_GET, cfgHandleBasemap);
   cfgServer.onNotFound(cfgHandleNotFound);
   cfgServer.begin();
   USBSerial.printf("WiFi AP '%s' (%s) init=%d start=%d internal_free=%u at http://%s/\n",

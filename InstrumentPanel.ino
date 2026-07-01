@@ -465,6 +465,7 @@ void setup(void) {
   mapZoomInit();                  // set the boot map zoom level (range/tier)
   webConfigLoadSettings();        // apply saved IMU orientation + default map zoom (NVS)
   flightLogInit();                // alloc the 30-min flight-log ring (PSRAM) + reload from flash
+  fplanLoad();                    // reload the saved flight plan (waypoints) from flash
 
   init_state(&State);
   init_state(&gLocal);
