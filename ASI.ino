@@ -96,14 +96,14 @@ void updateASI(state *s) {
     asi_fail = 0;
     s->ASI = true;
     pitot_pressure = pitot_pressure * 0.9 + 0.1 * (pitot_offset - pitot.pressure);
-    // Airspeed from dynamic pressure needs valid static air density (P, T) from
-    // the baro. If the baro isn't present/ready, hold the previous estimate
-    // rather than dividing by a stale or zero pressure.
-    if (s->BPS && bmp.pressure > 0) {
-      float airTemp = bmp.temperature + 273.15f;   // K
-      float v = 2.23694f * sqrt(fabsf(pitot_pressure) * 2 * 287.05f * airTemp / bmp.pressure);
-      s->air_speed = s->air_speed * (1 - gAlphaAsi) + gAlphaAsi * v;
-    }
+    // Airspeed from dynamic pressure needs a static air density (P, T). Use the baro when
+    // present; otherwise fall back to the ISA sea-level standard (101325 Pa / 288.15 K) so
+    // airspeed keeps working when the baro is absent/flaky — that standard density is in fact
+    // the reference for INDICATED airspeed, which is what this tape shows.
+    float pStat = 101325.0f, airTemp = 288.15f;              // ISA sea level
+    if (s->BPS && bmp.pressure > 0) { pStat = bmp.pressure; airTemp = bmp.temperature + 273.15f; }
+    float v = 2.23694f * sqrt(fabsf(pitot_pressure) * 2 * 287.05f * airTemp / pStat);
+    s->air_speed = s->air_speed * (1 - gAlphaAsi) + gAlphaAsi * v;
   } else if (++asi_fail > 5) {
     // tolerate brief dropouts (occasional stale/NAK read on a loaded bus) — keep
     // showing the last airspeed; only blank to N/A after several misses in a row.

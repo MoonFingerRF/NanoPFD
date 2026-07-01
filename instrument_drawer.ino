@@ -705,13 +705,13 @@ void drawHorizonDisplay(MyCanvas8 *canvas, GFXcanvas8 *inc_map, state *s, bool s
     int   tapeX = midPointX - stdW1;
     int   mw    = stdW1 * 45 / 100;                 // extends ~halfway toward the attitude centre
     float pxU   = (float)speedSpacing / 5.0f;       // pixels per unit airspeed
-    float caut  = (gUnitAsi == 2) ? 20.0f : 12.0f;  // amber caution margin (in display units)
-    if (gVMax > 0) {                                 // overspeed: amber band then red above it
-      speedBand(canvas, midPointX, midPointY, stdW1, stdW2, tapeX, mw, air_speed, pxU, gVMax - caut, gVMax, IYELLOW);
+    if (gVMax > 0) {                                 // high speed: amber Caution..Max, red above Max
+      if (gVCaut > 0 && gVCaut < gVMax)
+        speedBand(canvas, midPointX, midPointY, stdW1, stdW2, tapeX, mw, air_speed, pxU, gVCaut, gVMax, IYELLOW);
       speedBand(canvas, midPointX, midPointY, stdW1, stdW2, tapeX, mw, air_speed, pxU, gVMax, gVMax + 2000, IRED);
     }
-    if (gVStall > 0) {                               // stall: amber band then red below it
-      speedBand(canvas, midPointX, midPointY, stdW1, stdW2, tapeX, mw, air_speed, pxU, gVStall, gVStall + caut, IYELLOW);
+    if (gVStall > 0) {                               // stall: thin amber maneuvering band, red below
+      speedBand(canvas, midPointX, midPointY, stdW1, stdW2, tapeX, mw, air_speed, pxU, gVStall, gVStall * 1.12f, IYELLOW);
       speedBand(canvas, midPointX, midPointY, stdW1, stdW2, tapeX, mw, air_speed, pxU, -2000, gVStall, IRED);
     }
     canvas->setFont(); canvas->setTextSize(1);       // V1 / Vr speed bugs (short bar + label)

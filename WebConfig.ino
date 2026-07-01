@@ -85,7 +85,12 @@ void webConfigLoadSettings() {
   gAlphaAsi  = p.getFloat("aasi", gAlphaAsi);
   gVsiFs     = p.getFloat("vsifs", gVsiFs);    gGmeterFs = p.getFloat("gmfs", gGmeterFs);
   gUnitAsi   = p.getUChar("uasi", gUnitAsi);   gUnitGs   = p.getUChar("ugs", gUnitGs);   gUnitAlt = p.getUChar("ualt", gUnitAlt);
-  gV1        = p.getFloat("v1", gV1);   gVr = p.getFloat("vr", gVr);   gVStall = p.getFloat("vst", gVStall);   gVMax = p.getFloat("vmx", gVMax);
+  gV1        = p.getFloat("v1", gV1);   gVr = p.getFloat("vr", gVr);   gVStall = p.getFloat("vst", gVStall);
+  gVCaut     = p.getFloat("vcaut", gVCaut);   gVMax = p.getFloat("vmx", gVMax);
+  if (p.getUChar("sver", 0) < 1) {   // one-time migration: push the new knots + V-speed defaults
+    gUnitAsi = UNIT_ASI_DEF; gUnitGs = UNIT_GS_DEF;
+    gV1 = V1_DEF; gVr = VR_DEF; gVStall = VSTALL_DEF; gVCaut = VCAUT_DEF; gVMax = VMAX_DEF;
+  }
   int zoom  = p.getInt("zoom", -1);
   if (p.getBytesLength("pal") == NUM_COLORS * sizeof(uint16_t)) {   // restore a saved palette
     p.getBytes("pal", (void *)color_index, NUM_COLORS * sizeof(uint16_t));
@@ -190,8 +195,9 @@ canvas#pmap{width:100%;height:280px;background:#06090c;border:1px solid var(--ln
 <div class=r><label>V1</label><input type=number id=v1 min=0 max=2000 step=1></div>
 <div class=r><label>Rotation (V<sub>R</sub>)</label><input type=number id=vr min=0 max=2000 step=1></div>
 <div class=r><label>Stall &mdash; red below</label><input type=number id=vst min=0 max=2000 step=1></div>
-<div class=r><label>Max &mdash; red above</label><input type=number id=vmx min=0 max=2000 step=1></div>
-<div class=u>Red warning blocks + amber caution bands appear on the airspeed tape; V1/V<sub>R</sub> show as speed bugs.</div></div></div>
+<div class=r><label>Caution &mdash; amber above</label><input type=number id=vcaut min=0 max=2000 step=1></div>
+<div class=r><label>Overspeed &mdash; red above</label><input type=number id=vmx min=0 max=2000 step=1></div>
+<div class=u>On the airspeed tape: red block below Stall + above Overspeed, amber band from Caution to Overspeed; V1/V<sub>R</sub> show as speed bugs.</div></div></div>
 <div class="pane hide" id=tune>
 <div class=c><h2>Smoothing</h2>
 <div class=r><label>Attitude</label><input type=number id=aatt step=0.02 min=0.02 max=1></div>
@@ -265,7 +271,7 @@ $('hdg').onchange=function(){ap('hdg='+(this.value||0))};
 $('z').onchange=function(){ap('zoom='+this.value)};
 $('b').onchange=function(){ap('baro='+this.value)};
 $('pt').onchange=function(){ap('ptrim='+this.value)};$('rt').onchange=function(){ap('rtrim='+this.value)};
-['aatt','ag','aalt','avs','aasi','vsifs','gmfs','uasi','ugs','ualt','v1','vr','vst','vmx'].forEach(function(id){$(id).onchange=function(){ap(id+'='+this.value)}})}
+['aatt','ag','aalt','avs','aasi','vsifs','gmfs','uasi','ugs','ualt','v1','vr','vst','vcaut','vmx'].forEach(function(id){$(id).onchange=function(){ap(id+'='+this.value)}})}
 function setLevel(){ap('level=1').then(function(){flash('✓ captured');setTimeout(load,500)})}
 function load(){fetch('/api').then(function(r){return r.json()}).then(function(d){
 $('v').checked=!!d.oriV;$('r').checked=!!d.oriR;$('p').checked=!!d.oriP;$('sw').checked=!!d.oriS;
@@ -273,7 +279,7 @@ $('hdg').value=d.hdg;$('b').value=d.baro.toFixed(2);$('pw').value=d.pass;
 $('rb').checked=!!d.ridble;$('rw').checked=!!d.ridwifi;
 $('pt').value=d.ptrim;$('rt').value=d.rtrim;$('aatt').value=d.aatt;$('ag').value=d.ag;
 $('aalt').value=d.aalt;$('avs').value=d.avs;$('aasi').value=d.aasi;$('vsifs').value=d.vsifs;$('gmfs').value=d.gmfs;
-$('uasi').value=d.uasi;$('ugs').value=d.ugs;$('ualt').value=d.ualt;$('v1').value=d.v1;$('vr').value=d.vr;$('vst').value=d.vst;$('vmx').value=d.vmx;
+$('uasi').value=d.uasi;$('ugs').value=d.ugs;$('ualt').value=d.ualt;$('v1').value=d.v1;$('vr').value=d.vr;$('vst').value=d.vst;$('vcaut').value=d.vcaut;$('vmx').value=d.vmx;
 var z=$('z');z.innerHTML='';d.zooms.forEach(function(m,i){var o=document.createElement('option');
 o.value=i;o.text=m;if(i==d.zoom)o.selected=true;z.add(o)});
 var pe=$('pal');pe.innerHTML='';d.pal.forEach(function(hex,i){
@@ -288,7 +294,7 @@ function save(){var q='oriV='+($('v').checked?1:0)+'&oriR='+($('r').checked?1:0)
 +'&ridble='+($('rb').checked?1:0)+'&ridwifi='+($('rw').checked?1:0)
 +'&ptrim='+$('pt').value+'&rtrim='+$('rt').value+'&aatt='+$('aatt').value+'&ag='+$('ag').value+'&aalt='+$('aalt').value
 +'&avs='+$('avs').value+'&aasi='+$('aasi').value+'&vsifs='+$('vsifs').value+'&gmfs='+$('gmfs').value
-+'&uasi='+$('uasi').value+'&ugs='+$('ugs').value+'&ualt='+$('ualt').value+'&v1='+$('v1').value+'&vr='+$('vr').value+'&vst='+$('vst').value+'&vmx='+$('vmx').value
++'&uasi='+$('uasi').value+'&ugs='+$('ugs').value+'&ualt='+$('ualt').value+'&v1='+$('v1').value+'&vr='+$('vr').value+'&vst='+$('vst').value+'&vcaut='+$('vcaut').value+'&vmx='+$('vmx').value
 +'&pass='+encodeURIComponent($('pw').value);
 for(var i=0;i<PAL.length;i++){var e=$('pal'+i);if(e)q+='&pal'+i+'='+encodeURIComponent(e.value)}
 ap(q).then(function(r){flash(r.ok?'✓ saved':'error')})}
@@ -426,7 +432,8 @@ static void cfgHandleApiGet() {
        ",\"avs\":" + String(gAlphaVs, 3) + ",\"aasi\":" + String(gAlphaAsi, 3) + ",";
   j += "\"vsifs\":" + String(gVsiFs, 1) + ",\"gmfs\":" + String(gGmeterFs, 1) + ",";
   j += "\"uasi\":" + String((int)gUnitAsi) + ",\"ugs\":" + String((int)gUnitGs) + ",\"ualt\":" + String((int)gUnitAlt) + ",";
-  j += "\"v1\":" + String(gV1, 0) + ",\"vr\":" + String(gVr, 0) + ",\"vst\":" + String(gVStall, 0) + ",\"vmx\":" + String(gVMax, 0) + ",";
+  j += "\"v1\":" + String(gV1, 0) + ",\"vr\":" + String(gVr, 0) + ",\"vst\":" + String(gVStall, 0) +
+       ",\"vcaut\":" + String(gVCaut, 0) + ",\"vmx\":" + String(gVMax, 0) + ",";
   j += "\"pal\":[";
   for (int i = 0; i < NUM_COLORS; i++) {
     char hx[8]; rgb565ToHex(color_index[i], hx);
@@ -491,6 +498,7 @@ static void cfgHandleApiSet() {
   if (cfgServer.hasArg("v1"))  gV1     = constrain(cfgServer.arg("v1").toFloat(),  0.0f, 2000.0f);
   if (cfgServer.hasArg("vr"))  gVr     = constrain(cfgServer.arg("vr").toFloat(),  0.0f, 2000.0f);
   if (cfgServer.hasArg("vst")) gVStall = constrain(cfgServer.arg("vst").toFloat(), 0.0f, 2000.0f);
+  if (cfgServer.hasArg("vcaut")) gVCaut = constrain(cfgServer.arg("vcaut").toFloat(), 0.0f, 2000.0f);
   if (cfgServer.hasArg("vmx")) gVMax   = constrain(cfgServer.arg("vmx").toFloat(), 0.0f, 2000.0f);
   bool palChanged = false;
   for (int i = 0; i < NUM_COLORS; i++) {
@@ -510,7 +518,8 @@ static void cfgHandleApiSet() {
   p.putFloat("avs", gAlphaVs); p.putFloat("aasi", gAlphaAsi);
   p.putFloat("vsifs", gVsiFs); p.putFloat("gmfs", gGmeterFs);
   p.putUChar("uasi", gUnitAsi); p.putUChar("ugs", gUnitGs); p.putUChar("ualt", gUnitAlt);
-  p.putFloat("v1", gV1); p.putFloat("vr", gVr); p.putFloat("vst", gVStall); p.putFloat("vmx", gVMax);
+  p.putFloat("v1", gV1); p.putFloat("vr", gVr); p.putFloat("vst", gVStall);
+  p.putFloat("vcaut", gVCaut); p.putFloat("vmx", gVMax); p.putUChar("sver", 1);
   if (palChanged) p.putBytes("pal", (const void *)color_index, NUM_COLORS * sizeof(uint16_t));
   if (cfgServer.hasArg("pass")) p.putString("appass", cfgServer.arg("pass"));   // applies next config boot
   p.end();

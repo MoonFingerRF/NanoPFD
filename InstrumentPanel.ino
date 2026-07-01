@@ -70,7 +70,7 @@ volatile float gAlphaAtt = ALPHA_ATTITUDE, gAlphaG = ALPHA_GFORCE, gAlphaAlt = A
                gAlphaVs  = ALPHA_VSPEED,   gAlphaAsi = ALPHA_ASPEED;
 volatile float gVsiFs = VSI_FULL_SCALE, gGmeterFs = GMETER_FS;
 volatile uint8_t gUnitAsi = UNIT_ASI_DEF, gUnitGs = UNIT_GS_DEF, gUnitAlt = UNIT_ALT_DEF;
-volatile float gV1 = 0, gVr = 0, gVStall = 0, gVMax = 0;
+volatile float gV1 = V1_DEF, gVr = VR_DEF, gVStall = VSTALL_DEF, gVCaut = VCAUT_DEF, gVMax = VMAX_DEF;
 // IMU mounting trim (deg) + one-shot level-capture flag (set from the portal).
 volatile float gPitchTrim = 0, gRollTrim = 0;
 volatile bool  gLevelCapture = false;
@@ -627,11 +627,11 @@ void loop() {
     unsigned long sdt = millis() - lastSensT;
     int sensHz = sdt ? (int)((gSensCount - lastSensCount) * 1000UL / sdt) : 0;
     lastSensCount = gSensCount; lastSensT = millis();
-    USBSerial.printf("pfd_fps=%.1f nd_fps=%.1f sens=%dHz draw=%luus blit=%luus nd_draw=%luus nd_blit=%luus iram=%u psram=%u/%u IMU=%d(%s) BPS=%d ASI=%d GPS=%d\n",
+    USBSerial.printf("pfd_fps=%.1f nd_fps=%.1f sens=%dHz draw=%luus blit=%luus nd_draw=%luus nd_blit=%luus iram=%u psram=%u/%u IMU=%d(%s) BPS=%d ASI=%d(%.1fmph) GPS=%d uasi=%d\n",
                      gPfdFps, gNdFps, sensHz, gPfdDrawUs, gPfdBlitUs, gNdDrawUs, gNdBlitUs,
                      (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL),
                      (unsigned)ESP.getFreePsram(), (unsigned)ESP.getPsramSize(),
-                     gLocal.IMU, src, gLocal.BPS, gLocal.ASI, gLocal.GPS);
+                     gLocal.IMU, src, gLocal.BPS, gLocal.ASI, gLocal.air_speed, gLocal.GPS, (int)gUnitAsi);
 #endif
   }
 #endif
