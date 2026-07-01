@@ -111,9 +111,38 @@ quantizes to 8-bit color, so its on-screen shade is coarser than the picker (mos
 
 ### Nav
 - **Map zoom** — sets the moving-map range (same ladder as the on-screen pinch/tap zoom).
+- **Minimap zoom** — off by default. When **off**, the pinch/tap zoom stops at the normal
+  close-in range; when **on**, it continues into the magnified **field/minimap** levels (a
+  small-field survey view). Whenever you're in the minimap, the corner **range readout turns
+  orange** so you know the basemap is magnified.
 
 ### Air
 - **Local pressure** — the altimeter (Kollsman) setting in inHg, 28.00–31.00.
+- **Units** and **V-speeds** — see [Units & V-speeds](#units--v-speeds) below.
+
+## Units & V-speeds
+
+<p align="center"><img src="portal-air.svg" width="300" alt="Air tab: Units + V-speeds"/></p>
+
+**Units** (Air tab) — choose the readout units independently:
+- **Airspeed** and **Ground speed**: knots / mph / km-h.
+- **Altitude**: feet / meters.
+
+The tapes, the GS readout and their tick scales all follow your choice, with a small unit label at
+the top of each tape. *(Airspeed indication works even if the barometer is absent — it falls back
+to standard sea-level air density, which is the reference for indicated airspeed anyway.)*
+
+**V-speeds** (Air tab) — reference speeds drawn on the airspeed tape, 737-style. Enter them in the
+current airspeed unit (0 = off):
+
+<p align="center"><img src="pfd-vspeeds.svg" width="240" alt="Airspeed tape with V-speed markers"/></p>
+
+- **Stall** — a **red** block below it (stall warning) with a thin amber maneuvering band just above.
+- **Caution** and **Overspeed** — an **amber** band from Caution up to Overspeed, then a **red**
+  block above Overspeed.
+- **V1** and **Vʀ** (rotation) — **speed bugs** (short cyan/green bar + label).
+
+They all move with the tape, and are clipped so they never overlap the bank-angle scale.
 
 ### Tune
 Runtime tuning, no reflash:

@@ -382,7 +382,22 @@ full-rate display and both Remote ID receivers.
   stacked per-metric plots with pinch-zoom and a real UTC time axis; CSV download. Survives power
   cycles.
 - **Settings** (⚙ dropdown) — IMU orientation + *mount-at-any-angle* trim, per-color palette,
-  map zoom, local pressure, smoothing/scales, Remote ID toggles + AP password.
+  map zoom, local pressure, smoothing/scales, Remote ID toggles + AP password, plus:
+  - **Units** — pick knots / mph / km-h for airspeed & ground speed, and feet / meters for altitude.
+  - **V-speeds** — 737-style airspeed-tape markers (V1, Vʀ, stall, caution, overspeed): red warning
+    blocks + amber caution bands + speed bugs.
+  - **Minimap zoom** — opt-in deep "field" zoom levels (range readout turns orange).
+
+<table>
+<tr>
+<td align="center" width="42%"><img src="docs/pfd-vspeeds.svg" width="200" alt="Airspeed tape with V-speed markers"/></td>
+<td align="center" width="58%"><img src="docs/portal-air.svg" width="260" alt="Units + V-speeds config"/></td>
+</tr>
+<tr>
+<td align="center"><sub>V-speed markers on the airspeed tape</sub></td>
+<td align="center"><sub>Units + V-speeds on the <b>Air</b> tab</sub></td>
+</tr>
+</table>
 
 <p align="center"><b>→ Full walkthrough with screenshots: <a href="docs/CONFIG_PORTAL.md">docs/CONFIG_PORTAL.md</a></b></p>
 
